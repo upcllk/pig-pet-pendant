@@ -9,7 +9,7 @@ final class StatusItemController: NSObject {
     private(set) var iconRotation: CGFloat = 0
     private var iconAudioScale: CGFloat = 1
     private var previousIconElapsed: TimeInterval = 0
-    private let iconRotationPeriod: TimeInterval = 1.2
+    private let iconRotationPeriod: TimeInterval = 2.4
     private let iconAnimationStartTime = ProcessInfo.processInfo.systemUptime
     private let iconCanvasSize: CGFloat = 42
     private let iconFrameSize: CGFloat = 28
