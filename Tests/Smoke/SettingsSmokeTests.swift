@@ -12,6 +12,7 @@ extension SettingsWindowController {
         let haloYRange = 201..<344
         var translucentHaloPixels = 0
         var opaqueHaloPixels = 0
+        var nearWhiteEdgePixels = 0
         for y in 0..<bitmap.pixelsHigh {
             for x in 0..<bitmap.pixelsWide {
                 guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else {
@@ -27,10 +28,29 @@ extension SettingsWindowController {
                     } else {
                         precondition(color.alphaComponent > 0.999, "Hanging pig body must not be translucent")
                     }
+                    if !(haloXRange.contains(x) && haloYRange.contains(y)),
+                       color.alphaComponent > 0.999,
+                       color.redComponent >= 240.0 / 255,
+                       color.greenComponent >= 240.0 / 255,
+                       color.blueComponent >= 235.0 / 255,
+                       max(color.redComponent, max(color.greenComponent, color.blueComponent))
+                            - min(color.redComponent, min(color.greenComponent, color.blueComponent)) <= 36.0 / 255,
+                       (-1...1).contains(where: { dy in
+                           (-1...1).contains(where: { dx in
+                               guard (dx != 0 || dy != 0), x + dx >= 0, x + dx < bitmap.pixelsWide,
+                                     y + dy >= 0, y + dy < bitmap.pixelsHigh,
+                                     let neighbor = bitmap.colorAt(x: x + dx, y: y + dy)?
+                                        .usingColorSpace(.deviceRGB) else { return false }
+                               return neighbor.alphaComponent < 0.001
+                           })
+                       }) {
+                        nearWhiteEdgePixels += 1
+                    }
                 }
             }
         }
         precondition(translucentHaloPixels > 100 && opaqueHaloPixels > 0, "Hanging pig halo must retain soft edges")
+        precondition(nearWhiteEdgePixels <= 500, "Hanging pig silhouette must not have a bright white matte")
 
         let xOrigin = 210
         let yOrigin = 180
