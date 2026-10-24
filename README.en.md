@@ -12,7 +12,7 @@ A small desktop pig pendant that follows your mouse. The macOS version is availa
 
 ## Modes
 
-- **Rope Pendant**: The default mode. The pig swings as you move the mouse and continues to bob gently at rest.
+- **Rope Pendant**: The default mode. The pig swings with the mouse while playing the original GIF's body, blink, ear, and leg movements, rather than translating a static image.
 - **Pig Balloons**: Shows 1–8 pig-shaped balloons floating upward; the default is 2.
 - **Pig in a Net**: A pig in a net with a looping animation.
 - **Pig on Bamboo**: The pig hugs a bamboo stalk that bends with mouse movement.
@@ -45,6 +45,8 @@ To run the build, physics, and GUI smoke checks:
 ```
 
 GUI checks require a logged-in desktop session. The test pendant appears briefly and exits automatically.
+
+The rope pig uses a separate transparent animation, `PigPendant/Resources/rope-pig.png`, extracted from the user's GIF. All 75 frames, 40 ms frame durations, and the 3-second loop are preserved. Only the upper rope and distant stray pixels are removed; frames share a fixed canvas and attachment point without redrawing the character. The original static `pig.png` is unchanged. Character animation continues when rope physics settles and pauses while hidden or asleep. Re-extract with `swift tools/extract-rope-pig.swift source.gif PigPendant/Resources/rope-pig.png`.
 
 ## Known Limitations
 

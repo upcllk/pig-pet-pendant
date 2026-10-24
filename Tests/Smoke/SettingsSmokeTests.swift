@@ -170,7 +170,7 @@ extension SettingsWindowController {
         modeControl.selectedSegment = 0
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.activeRopes.count == 1 && model.physics.endPoint.y < model.physics.nodes[0].y)
-        precondition(model.displayImage === model.pigImage && image.image === model.pigImage)
+        precondition(model.displayImage === model.ropeAnimation.frames[0] && image.image === model.displayImage)
         precondition(!countStepper.isEnabled && parameterLabels[5].stringValue == "重力")
         precondition(countRow.isHidden && window?.contentView?.frame.height == 510)
         precondition(bambooPositionRow.isHidden)

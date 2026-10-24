@@ -24,6 +24,7 @@ extension PendantCoordinator {
     var hangingImage: NSImage { artwork.hanging }
     var ghostImage: NSImage { artwork.ghost }
     var netAnimation: AnimatedArtwork { artwork.net }
+    var ropeAnimation: AnimatedArtwork { artwork.rope }
 
     func changeGravity(_ value: Double) { changeParameter(.gravity, value: value) }
     func changeDamping(_ value: Double) { changeParameter(.damping, value: value) }

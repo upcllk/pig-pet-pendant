@@ -4,12 +4,13 @@ import Foundation
 final class SimulationTests {
     private let anchor = V2(-500, 300)
     private let durations = Array(repeating: 0.04, count: 62)
+    private let ropeDurations = Array(repeating: 0.04, count: 75)
 
     func testEightBalloonsShareAnchorAndNonFirstActivityPreventsIdle() throws {
         var settings = PendantSettings()
         settings.mode = .balloon
         settings.setCount(8)
-        let simulation = PendantSimulation(settings: settings, frameDurations: durations)
+        let simulation = PendantSimulation(settings: settings, frameDurations: durations, ropeFrameDurations: ropeDurations)
         simulation.reset(anchor: anchor)
         try expectEqual(simulation.activeRopes.count, 8)
         for rope in simulation.activeRopes {
@@ -35,7 +36,7 @@ final class SimulationTests {
             settings.setCount(count)
             for mode in DisplayMode.allCases {
                 settings.mode = mode
-                let simulation = PendantSimulation(settings: settings, frameDurations: durations)
+                let simulation = PendantSimulation(settings: settings, frameDurations: durations, ropeFrameDurations: ropeDurations)
                 simulation.reset(anchor: anchor)
                 try expectEqual(simulation.activeRopes.count, mode == .balloon ? count : 1)
                 try expectEqual(simulation.settings.balloonCount, count)
@@ -47,7 +48,7 @@ final class SimulationTests {
     func testNetAnimationContinuesWithoutIntegratingSettledRope() throws {
         var settings = PendantSettings()
         settings.mode = .net
-        let simulation = PendantSimulation(settings: settings, frameDurations: durations)
+        let simulation = PendantSimulation(settings: settings, frameDurations: durations, ropeFrameDurations: ropeDurations)
         simulation.reset(anchor: anchor)
         simulation.advance(anchor: anchor, elapsed: 0.01)
         try expect(simulation.isIdle)
@@ -61,18 +62,19 @@ final class SimulationTests {
         try expectEqual(simulation.updateInterval, 0.04)
     }
 
-    func testRopePendantKeepsSubtleAnimationAfterPhysicsSleeps() throws {
-        let simulation = PendantSimulation(settings: PendantSettings(), frameDurations: durations)
+    func testRopeCharacterAnimationContinuesWithoutIntegratingSettledRope() throws {
+        let simulation = PendantSimulation(settings: PendantSettings(), frameDurations: durations, ropeFrameDurations: ropeDurations)
         simulation.reset(anchor: anchor)
         simulation.advance(anchor: anchor, elapsed: 1.0 / 60.0)
         try expect(simulation.isIdle)
         let nodes = simulation.physics.nodes
-        let previousTime = simulation.ropeAnimationTime
+        let frame = simulation.timeline.frameIndex
 
         try expect(simulation.advance(anchor: anchor, elapsed: simulation.idleInterval))
         try expect(simulation.isIdle)
-        try expectGreaterThan(simulation.ropeAnimationTime, previousTime)
-        try expectEqual(simulation.updateInterval, simulation.idleInterval)
+        try expectNotEqual(simulation.timeline.frameIndex, frame)
+        try expectEqual(simulation.timeline.frameDurations.count, 75)
+        try expectEqual(simulation.updateInterval, 0.04)
         for (before, after) in zip(nodes, simulation.physics.nodes) {
             try expectEqual((after - before).magnitude, 0)
         }
@@ -80,13 +82,21 @@ final class SimulationTests {
         var otherMode = simulation.settings
         otherMode.mode = .balloon
         simulation.apply(otherMode)
-        try expectEqual(simulation.ropeAnimationTime, 0)
+        try expectEqual(simulation.timeline.frameIndex, 0)
+        try expectEqual(simulation.updateInterval, 1.0 / 15.0)
+        otherMode.mode = .net
+        simulation.apply(otherMode)
+        try expectEqual(simulation.timeline.frameDurations.count, 62)
+        otherMode.mode = .rope
+        simulation.apply(otherMode)
+        try expectEqual(simulation.timeline.frameDurations.count, 75)
+        try expectEqual(simulation.timeline.frameIndex, 0)
     }
 
     func testGhostFollowsNearbyWithoutUsingRopeMotion() throws {
         var settings = PendantSettings()
         settings.mode = .ghost
-        let simulation = PendantSimulation(settings: settings, frameDurations: durations)
+        let simulation = PendantSimulation(settings: settings, frameDurations: durations, ropeFrameDurations: ropeDurations)
         simulation.reset(anchor: anchor)
         let initialPosition = simulation.ghostPosition
         try expectEqual(initialPosition.x, anchor.x + 44)
@@ -119,10 +129,31 @@ final class SimulationTests {
         try expectEqual(simulation.ghostPosition.y, movedAnchor.y + 96)
     }
 
+    func testRopeAnimationRunsAtOriginalSpeedAcrossFrameRates() throws {
+        for rate in [25, 30, 60, 120, 144] {
+            let simulation = PendantSimulation(settings: PendantSettings(), frameDurations: durations,
+                                               ropeFrameDurations: ropeDurations)
+            simulation.reset(anchor: anchor)
+            simulation.advance(anchor: anchor, elapsed: 0.01)
+            try expect(simulation.isIdle)
+            let nodes = simulation.physics.nodes
+            for _ in 0..<(rate * 3 + rate / 2) {
+                simulation.advance(anchor: anchor, elapsed: 1.0 / Double(rate))
+            }
+            let elapsed = 0.01 + Double(rate * 3 + rate / 2) / Double(rate)
+            try expectEqual(simulation.timeline.elapsed, elapsed, accuracy: 0.000001)
+            try expectEqual(simulation.timeline.frameIndex, Int((elapsed - 3) / 0.04))
+            try expect(simulation.isIdle)
+            for (before, after) in zip(nodes, simulation.physics.nodes) {
+                try expectEqual((after - before).magnitude, 0)
+            }
+        }
+    }
+
     func testBambooBendMustCompleteBeforeIdleAndMovementWakesIt() throws {
         var settings = PendantSettings()
         settings.mode = .bamboo
-        let simulation = PendantSimulation(settings: settings, frameDurations: durations)
+        let simulation = PendantSimulation(settings: settings, frameDurations: durations, ropeFrameDurations: ropeDurations)
         simulation.reset(anchor: anchor)
         simulation.bambooBend = BambooBend(progress: 0)
         simulation.advance(anchor: anchor, elapsed: 0.05)
@@ -139,7 +170,7 @@ final class SimulationTests {
     func testBambooVerticalShakesHaveNoPoseCuts() throws {
         var settings = PendantSettings()
         settings.mode = .bamboo
-        let simulation = PendantSimulation(settings: settings, frameDurations: durations)
+        let simulation = PendantSimulation(settings: settings, frameDurations: durations, ropeFrameDurations: ropeDurations)
         var anchor = V2(-400, 200)
         simulation.reset(anchor: anchor)
         simulation.bambooBend = BambooBend(progress: 0.55)
@@ -178,7 +209,7 @@ final class SimulationTests {
     }
 
     func testLengthChangesPreservePoseAndTransitionSmoothly() throws {
-        let simulation = PendantSimulation(settings: PendantSettings(), frameDurations: durations)
+        let simulation = PendantSimulation(settings: PendantSettings(), frameDurations: durations, ropeFrameDurations: ropeDurations)
         simulation.reset(anchor: anchor)
         let initialNode = simulation.physics.nodes[1]
 
@@ -217,7 +248,7 @@ final class SimulationTests {
 
         var lengthSamples: [CGFloat] = []
         for rate in [30, 60, 120, 144] {
-            let candidate = PendantSimulation(settings: PendantSettings(), frameDurations: durations)
+            let candidate = PendantSimulation(settings: PendantSettings(), frameDurations: durations, ropeFrameDurations: ropeDurations)
             candidate.reset(anchor: anchor)
             var candidateSettings = candidate.settings
             try candidateSettings.set(600, for: .length)
@@ -243,7 +274,7 @@ final class SimulationTests {
             try settings.set(777 + Double(index), for: .length, mode: mode)
             try settings.set(188 + Double(index), for: .weight, mode: mode)
         }
-        let simulation = PendantSimulation(settings: settings, frameDurations: durations)
+        let simulation = PendantSimulation(settings: settings, frameDurations: durations, ropeFrameDurations: ropeDurations)
         for (index, mode) in DisplayMode.allCases.enumerated() {
             settings.mode = mode
             simulation.apply(settings)

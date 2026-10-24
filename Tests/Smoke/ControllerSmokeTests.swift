@@ -33,6 +33,7 @@ extension PendantCoordinator {
         reset()
         tick()
         precondition(isIdle && timerInterval == idleTimerInterval)
+        if mode == .rope { smokeCheckRopeAnimation() }
         if mode == .bamboo {
             let savedLength = physics.length
             physics.length = 180
