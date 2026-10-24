@@ -2,6 +2,72 @@ import AppKit
 import Foundation
 
 extension SettingsWindowController {
+    private func checkHangingArtwork() {
+        guard let cgImage = model.hangingImage.cgImage(forProposedRect: nil, context: nil, hints: nil),
+              cgImage.width == 360, cgImage.height == 384 else {
+            preconditionFailure("Hanging pig artwork dimensions are invalid")
+        }
+        let bitmap = NSBitmapImageRep(cgImage: cgImage)
+        for y in 0..<bitmap.pixelsHigh {
+            for x in 0..<bitmap.pixelsWide {
+                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else {
+                    preconditionFailure("Cannot inspect hanging pig artwork")
+                }
+                if color.alphaComponent > 0 {
+                    precondition(color.alphaComponent > 0.999, "Hanging pig foreground must not be translucent")
+                }
+            }
+        }
+
+        let xOrigin = 210
+        let yOrigin = 180
+        let width = 150
+        let height = 180
+        var halo = [Bool](repeating: false, count: width * height)
+        for y in 0..<height {
+            for x in 0..<width {
+                guard let color = bitmap.colorAt(x: x + xOrigin, y: y + yOrigin)?
+                    .usingColorSpace(.deviceRGB) else {
+                    preconditionFailure("Cannot inspect hanging pig halo")
+                }
+                halo[y * width + x] = color.alphaComponent > 0.999
+                    && color.redComponent > 245.0 / 255
+                    && color.greenComponent > 220.0 / 255
+                    && color.blueComponent < 230.0 / 255
+            }
+        }
+
+        var outside = [Bool](repeating: false, count: halo.count)
+        var queue: [Int] = []
+        for y in 0..<height {
+            for x in 0..<width where x == 0 || x == width - 1 || y == 0 || y == height - 1 {
+                let index = y * width + x
+                if !halo[index] && !outside[index] {
+                    outside[index] = true
+                    queue.append(index)
+                }
+            }
+        }
+        var cursor = 0
+        while cursor < queue.count {
+            let index = queue[cursor]
+            cursor += 1
+            let x = index % width
+            let y = index / width
+            for (nextX, nextY) in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
+            where nextX >= 0 && nextX < width && nextY >= 0 && nextY < height {
+                let next = nextY * width + nextX
+                if !halo[next] && !outside[next] {
+                    outside[next] = true
+                    queue.append(next)
+                }
+            }
+        }
+        let enclosedHaloPixels = halo.indices.filter { !halo[$0] && !outside[$0] }.count
+        precondition(enclosedHaloPixels > 0, "Hanging pig halo must be a closed loop")
+        NSLog("PASS: hanging pig foreground opacity and closed halo")
+    }
+
     private func captureSettingsSnapshot(named filename: String) {
         guard let content = window?.contentView,
               let bitmap = content.bitmapImageRepForCachingDisplay(in: content.bounds) else {
@@ -31,6 +97,7 @@ extension SettingsWindowController {
     }
 
     func smokeCheck() {
+        checkHangingArtwork()
         let defaults = model.validationDefaults
         let legacyKeys = ParameterID.allCases.map(\.storageKey)
         let modeParameterKeys = DisplayMode.allCases.flatMap { mode in
