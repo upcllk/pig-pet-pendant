@@ -15,7 +15,7 @@ enum AudioLevelMonitorError: LocalizedError {
         case .outputUnavailable:
             return "无法获取当前系统音频输出设备。"
         case .unsupportedFormat:
-            return "系统音频输出格式不受支持，无法分析音量。"
+            return "系统音频输出格式不受支持，无法分析节拍。"
         case .coreAudio(let operation, let status):
             return "\(operation)失败（Core Audio 错误 \(status)）。"
         }
@@ -29,7 +29,8 @@ final class AudioLevelMonitor {
     private var processTapID = AudioObjectID(kAudioObjectUnknown)
     private var aggregateDeviceID = AudioObjectID(kAudioObjectUnknown)
     private var deviceProcID: AudioDeviceIOProcID?
-    var onLevel: ((Double) -> Void)?
+    private var beatDetector: DrumBeatDetector?
+    var onBeat: ((Double) -> Void)?
 
     func start(completion: @escaping (Result<Void, Error>) -> Void) {
         lifecycleQueue.async { [weak self] in
@@ -90,9 +91,11 @@ final class AudioLevelMonitor {
         let format = try tapStreamFormat(tapID)
         guard format.mFormatID == kAudioFormatLinearPCM,
               format.mBitsPerChannel == 32,
-              format.mFormatFlags & kAudioFormatFlagIsFloat != 0 else {
+              format.mFormatFlags & kAudioFormatFlagIsFloat != 0,
+              let beatDetector = DrumBeatDetector(sampleRate: format.mSampleRate) else {
             throw AudioLevelMonitorError.unsupportedFormat
         }
+        self.beatDetector = beatDetector
 
         var procID: AudioDeviceIOProcID?
         try check(AudioDeviceCreateIOProcIDWithBlock(&procID, aggregateID, captureQueue) {
@@ -142,21 +145,36 @@ final class AudioLevelMonitor {
 
     private func consume(_ inputData: UnsafePointer<AudioBufferList>) {
         let buffers = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: inputData))
-        var sum: Double = 0
-        var sampleCount = 0
-        for buffer in buffers {
-            guard let data = buffer.mData, buffer.mDataByteSize >= MemoryLayout<Float>.size else { continue }
-            let count = Int(buffer.mDataByteSize) / MemoryLayout<Float>.size
-            let samples = data.assumingMemoryBound(to: Float.self)
-            for index in 0..<count {
-                let sample = Double(samples[index])
-                sum += sample * sample
-            }
-            sampleCount += count
+        let channels = buffers.compactMap { buffer -> (samples: UnsafePointer<Float>, count: Int, channels: Int)? in
+            guard let data = buffer.mData, buffer.mDataByteSize >= MemoryLayout<Float>.size else { return nil }
+            return (UnsafePointer(data.assumingMemoryBound(to: Float.self)),
+                    Int(buffer.mDataByteSize) / MemoryLayout<Float>.size,
+                    max(1, Int(buffer.mNumberChannels)))
         }
-        guard sampleCount > 0 else { return }
-        let rms = sqrt(sum / Double(sampleCount))
-        DispatchQueue.main.async { [weak self] in self?.onLevel?(rms) }
+        var mono: [Float] = []
+        if channels.count > 1 && channels.allSatisfy({ $0.channels == 1 }) {
+            let frameCount = channels.map { $0.count }.min() ?? 0
+            mono.reserveCapacity(frameCount)
+            for frame in 0..<frameCount {
+                var sample: Float = 0
+                for channel in channels { sample += channel.samples[frame] }
+                mono.append(sample / Float(channels.count))
+            }
+        } else {
+            for channel in channels {
+                let frameCount = channel.count / channel.channels
+                mono.reserveCapacity(mono.count + frameCount)
+                for frame in 0..<frameCount {
+                    var sample: Float = 0
+                    for channelIndex in 0..<channel.channels {
+                        sample += channel.samples[frame * channel.channels + channelIndex]
+                    }
+                    mono.append(sample / Float(channel.channels))
+                }
+            }
+        }
+        guard !mono.isEmpty, let beatStrength = beatDetector?.process(mono), beatStrength > 0 else { return }
+        DispatchQueue.main.async { [weak self] in self?.onBeat?(beatStrength) }
     }
 
     private func stopTap() {
@@ -183,6 +201,7 @@ final class AudioLevelMonitor {
             }
             processTapID = AudioObjectID(kAudioObjectUnknown)
         }
+        beatDetector = nil
     }
 
     private func check(_ status: OSStatus, operation: String) throws {
