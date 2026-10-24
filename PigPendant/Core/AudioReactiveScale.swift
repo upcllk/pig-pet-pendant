@@ -2,7 +2,7 @@ import Foundation
 
 enum AudioReactiveScale {
     static let minimumScale: CGFloat = 0.73
-    static let maximumScale: CGFloat = 1.36
+    static let maximumScale: CGFloat = 1.6
 
     static func scale(forRMS rms: Double, relativeTo average: Double) -> CGFloat {
         guard rms.isFinite, rms > 0 else { return minimumScale }

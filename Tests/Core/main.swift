@@ -8,7 +8,7 @@ let settingsChecks: [Check] = [
     ("settings.defaults-and-storage-keys", settings.testDefaultsAndOriginalStorageKeys),
     ("settings.audio-reactive-scale-bounds", {
         try expectEqual(AudioReactiveScale.minimumScale, CGFloat(0.73))
-        try expectEqual(AudioReactiveScale.maximumScale, CGFloat(1.36))
+        try expectEqual(AudioReactiveScale.maximumScale, CGFloat(1.6))
         try expectEqual(AudioReactiveScale.scale(forRMS: 0, relativeTo: 0.1),
                         AudioReactiveScale.minimumScale)
         try expectEqual(AudioReactiveScale.scale(forRMS: 0.1, relativeTo: 0.1), CGFloat(1))
