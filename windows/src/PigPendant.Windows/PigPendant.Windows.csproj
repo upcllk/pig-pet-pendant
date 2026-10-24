@@ -10,7 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../PigPendant.Core/PigPendant.Core.csproj" />
-    <Content Include="../../../PigPendant/Resources/*.png" Link="Resources/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="../../../PigPendant/Resources/*.gif" Link="Resources/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="../../../PigPendant/Resources/*.png" LogicalName="PigPendant.Resources.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../../PigPendant/Resources/*.gif" LogicalName="PigPendant.Resources.%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

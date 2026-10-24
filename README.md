@@ -51,13 +51,13 @@ powershell -ExecutionPolicy Bypass -File .\windows\scripts\build.ps1 -Test
 
 托盘菜单可切换六种模式、显示/隐藏、重置姿态、打开设置和退出。设置保存在 `%LOCALAPPDATA%\PigPendant\settings.json`。再次启动会通知已运行实例打开设置。
 
-自包含发布使用：
+单文件自包含发布使用：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\windows\scripts\build.ps1 -Test -Publish
 ```
 
-发布结果位于 `dist/windows/win-x64/`，ZIP 位于 `dist/PigPendant-Windows-win-x64.zip`。ZIP 是自包含目录包，用户解压后双击其中的 EXE，不需要安装 .NET SDK。
+发布结果为 `dist/PigPendant-Windows-win-x64.exe`，约 79 MB；素材、.NET 运行时与应用代码都打包在这一个文件中，用户双击即可运行，不需要安装 .NET SDK。首次启动时 .NET 会把必要的原生组件解包到用户临时目录；设置仍保存在 `%LOCALAPPDATA%\PigPendant\settings.json`。当前只发布 Windows x64，未做代码签名。
 
 ## 已知限制
 

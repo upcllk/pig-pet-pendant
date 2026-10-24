@@ -1,5 +1,6 @@
 using System.Windows.Media.Imaging;
 using System.IO;
+using System.Reflection;
 using PigPendant.Core;
 
 namespace PigPendant.Windows;
@@ -8,6 +9,9 @@ internal sealed class Artwork
 {
     private readonly Dictionary<DisplayMode, BitmapSource> images = new();
     private readonly Apng net;
+    public static Stream Open(string name) =>
+        Assembly.GetExecutingAssembly().GetManifestResourceStream("PigPendant.Resources." + name)
+        ?? throw new FileNotFoundException("Missing embedded artwork", name);
     public Artwork()
     {
         var names = new Dictionary<DisplayMode, string>
@@ -21,11 +25,13 @@ internal sealed class Artwork
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.UriSource = new Uri(Path.Combine(AppContext.BaseDirectory, "Resources", name));
+            using var stream = Open(name);
+            bitmap.StreamSource = stream;
             bitmap.EndInit(); bitmap.Freeze();
             images[mode] = bitmap;
         }
-        net = new Apng(Path.Combine(AppContext.BaseDirectory, "Resources", "net-pig.png"));
+        using var netStream = Open("net-pig.png");
+        net = new Apng(netStream);
     }
     public BitmapSource this[DisplayMode mode] => images[mode];
     public int NetFrameCount => net.Frames.Count;

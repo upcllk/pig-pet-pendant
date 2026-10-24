@@ -11,9 +11,11 @@ internal sealed class Apng
 {
     public IReadOnlyList<BitmapSource> Frames { get; }
     public IReadOnlyList<double> Delays { get; }
-    public Apng(string path)
+    public Apng(Stream input)
     {
-        var bytes = File.ReadAllBytes(path);
+        using var raw = new MemoryStream();
+        input.CopyTo(raw);
+        var bytes = raw.ToArray();
         if (!bytes.AsSpan(0, 8).SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 })) throw new InvalidDataException("PNG signature");
         var frames = new List<Frame>();
         var shared = new List<(string, byte[])>();

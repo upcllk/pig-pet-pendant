@@ -31,9 +31,11 @@ internal static class Native
         SetWindowLongPtr(hwnd, GwlExStyle, style | Transparent | ToolWindow | NoActivate);
         SetWindowPos(hwnd, (nint)(-1), bounds.X, bounds.Y, bounds.Width, bounds.Height, SwpNoActivate | SwpShowWindow);
     }
+    #if TESTING
     public static bool HasOverlayStyles(Window window)
     {
         var style = GetWindowLongPtr(new WindowInteropHelper(window).Handle, GwlExStyle);
         return (style & (Transparent | ToolWindow | NoActivate)) == (Transparent | ToolWindow | NoActivate);
     }
+    #endif
 }

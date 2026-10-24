@@ -22,6 +22,7 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        #if TESTING
         if (args.Contains("--self-check"))
         {
             try
@@ -35,6 +36,7 @@ internal static class Program
             }
             catch (Exception e) { File.WriteAllText(Path.Combine(Path.GetTempPath(), "PigPendant-self-check-error.txt"), e.ToString()); return 1; }
         }
+        #endif
         var identity = WindowsIdentity.GetCurrent().User?.Value?.Replace('-', '_') ?? Environment.UserName;
         var name = "PigPendant_" + identity + "_" + Process.GetCurrentProcess().SessionId;
         using var mutex = new Mutex(true, name, out var first);
@@ -55,6 +57,7 @@ internal static class Program
             var controller = new Controller(app, name);
             app.Exit += (_, _) => controller.Dispose();
             controller.Start();
+            #if TESTING
             if (args.Contains("--smoke"))
             {
                 if (!controller.OverlayStylesValid) throw new InvalidOperationException("Overlay styles missing");
@@ -62,6 +65,7 @@ internal static class Program
                 smokeTimer.Tick += (_, _) => { smokeTimer.Stop(); app.Shutdown(); };
                 smokeTimer.Start();
             }
+            #endif
             app.Run();
             return 0;
         }
@@ -87,6 +91,7 @@ internal sealed class Controller : IDisposable
     private readonly Forms.NotifyIcon tray = new();
     private System.Drawing.Icon? trayIcon;
     private readonly System.Drawing.Image trayAnimation;
+    private readonly Stream trayAnimationStream;
     private readonly System.Drawing.Imaging.FrameDimension trayFrameDimension;
     private readonly DispatcherTimer trayTimer = new() { Interval = TimeSpan.FromMilliseconds(40) };
     private int trayFrame;
@@ -97,7 +102,9 @@ internal sealed class Controller : IDisposable
     private PendantSettings settings;
     private readonly PendantSimulation simulation;
     private readonly Forms.ContextMenuStrip menu = new();
+    #if TESTING
     public bool OverlayStylesValid => overlays.Count == Forms.Screen.AllScreens.Length && overlays.All(Native.HasOverlayStyles);
+    #endif
     private static readonly (DisplayMode mode, string title)[] modes =
     [
         (DisplayMode.Rope, "绳子挂件"), (DisplayMode.Balloon, "猪猪气球"),
@@ -109,7 +116,8 @@ internal sealed class Controller : IDisposable
         this.app = app; this.pipeName = pipeName;
         settings = store.Load();
         simulation = new(settings);
-        trayAnimation = System.Drawing.Image.FromFile(Path.Combine(AppContext.BaseDirectory, "Resources", "status-pig-spin.gif"));
+        trayAnimationStream = Artwork.Open("status-pig-spin.gif");
+        trayAnimation = System.Drawing.Image.FromStream(trayAnimationStream);
         trayFrameDimension = new System.Drawing.Imaging.FrameDimension(trayAnimation.FrameDimensionsList[0]);
         trayTimer.Tick += (_, _) => AdvanceTrayIcon();
         AdvanceTrayIcon();
@@ -350,7 +358,7 @@ internal sealed class Controller : IDisposable
         cancel.Cancel(); timer.Stop(); trayTimer.Stop();
         SystemEvents.DisplaySettingsChanged -= DisplayChanged;
         SystemEvents.PowerModeChanged -= PowerChanged;
-        tray.Visible = false; tray.Dispose(); trayIcon?.Dispose(); trayAnimation.Dispose(); menu.Dispose();
+        tray.Visible = false; tray.Dispose(); trayIcon?.Dispose(); trayAnimation.Dispose(); trayAnimationStream.Dispose(); menu.Dispose();
         foreach (var overlay in overlays) overlay.Close();
         cancel.Dispose();
     }

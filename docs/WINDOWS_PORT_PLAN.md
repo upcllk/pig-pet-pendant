@@ -2,7 +2,7 @@
 
 ## 1. 交付状态与边界
 
-状态更新（2026-10-25）：已新增 `windows/` 下的 .NET 10/WPF 工程、构建脚本、核心检查、六模式绘制、APNG 解码、动态托盘与设置。全局 .NET 10.0.402 SDK 安装、构建、核心与素材检查、自包含发布及独立启动检查已在 Windows 本机通过；原方案以下各阶段中仍有未完成的交互桌面验收。
+状态更新（2026-10-25）：已新增 `windows/` 下的 .NET 10/WPF 工程、构建脚本、核心检查、六模式绘制、APNG 解码、动态托盘与设置。全局 .NET 10.0.402 SDK 安装、构建、核心与素材检查、自包含单 EXE 发布及独立启动检查已在 Windows 本机通过；原方案以下各阶段中仍有未完成的交互桌面验收。当前发布命令及产物以 README 的 Windows 章节为准；下文保留最初移植方案，部分路径与发布形式已过时。
 
 编写日期：2026-10-25。代码阅读基线为 `ee729be`，当前产品已是六种模式，不是早期四模式版本。编写时工作区还存在其他任务的未提交修改；它们不随本方案提交。开始移植时必须重新读取最新源码、README 和项目约束，不能把本方案当作冻结的实现规范。
 
@@ -16,7 +16,7 @@
 - 初期共用现有原始素材和行为规范，C# 与 Swift 分别实现模拟算法，以公共输入轨迹和误差阈值验证一致性。不为了复用而先引入 C++、Rust 或跨语言桥接。
 - Windows 阶段增加按目录生效的平台协作约束，明确根规则中哪些是 macOS 专属；保留原图、单实例、无后台服务和不得宣称未验证结果等共同约束。
 
-拟议目录如下，当前尚未创建这些工程：
+以下是移植前的拟议目录；已落地的实际结构见 `windows/`：
 
 ```text
 PigPendant/                          # 现有 macOS 客户端，路径不变
@@ -122,7 +122,7 @@ dist/                                # 生成物，继续忽略
 2. **平台可行性。** 静态透明挂件、真实穿透、不抢焦点、托盘入口、单实例及 100%/150%/200% DPI。通过后再实现模拟；失败时先更换显示适配方案。
 3. **移植核心。** 依次移植向量、Verlet/XPBD、时间线、竹子姿态、模式推进及幽灵跟随。移植现有回归断言，再生成公共轨迹文件；Swift 导出的基线应在 Mac 上生成并记录版本，不能在 Windows 上凭空标为已对照。
 4. **接入功能。** 用场景快照完成六模式、动画、设置保存、菜单同步、暂停/恢复；保留最新的长度调节及长帧间隔连续过渡，不恢复旧版重置/跳切问题。
-5. **交付验证。** 正式版排除冒烟代码，发布自包含 EXE 及资源 ZIP，在另一目录解压双击运行，确认不依赖 SDK、源码目录或用户下载路径。
+5. **交付验证。** 正式版排除冒烟代码，发布自包含单文件 EXE，在另一目录双击运行，确认不依赖 SDK、源码目录或用户下载路径。
 
 每阶段独立提交；失败就停留在本阶段，不用“能编译”替代 GUI 或手感验收。Windows 实施不能顺便更改 macOS 算法或外观。
 
@@ -146,22 +146,15 @@ git switch -c feature/windows-port
 
 > 请按 docs/WINDOWS_PORT_PLAN.md，从阶段 1 开始实施 Windows 原生版本。先读取最新 AGENTS.md、README.md、源码和提交状态；保留 macOS 工程及用户改动。采用 C#/.NET 10、WPF 与独立 Win32 适配，先验证透明、跨进程点击穿透、非激活、多屏 DPI、托盘和单实例，再移植六模式及现有回归。配置和 GUI 测试使用独立临时目录，外部脚本负责异常退出清理。分阶段构建、测试并提交；不把未经实机验证的功能写成通过。若当前实现已偏离方案，先核对差异，不盲目覆盖。
 
-### 只有对应工程实现后才能运行的目标命令
+### 已实现的 Windows 构建命令
 
-以下不是当前已有命令，不能在只有本方案的仓库里直接执行：
+在仓库根目录执行：
 
 ```powershell
-dotnet restore .\windows\PigPendant.slnx
-dotnet build .\windows\PigPendant.slnx -c Release
-dotnet test .\windows\tests\PigPendant.Core.Tests\PigPendant.Core.Tests.csproj -c Release
-pwsh -File .\windows\scripts\build.ps1 -Test
-dotnet publish .\windows\src\PigPendant.Windows\PigPendant.Windows.csproj `
-  -c Release -r win-x64 --self-contained true `
-  -p:PublishSingleFile=false -p:PublishTrimmed=false `
-  -o .\dist\windows\win-x64
+powershell -ExecutionPolicy Bypass -File .\windows\scripts\build.ps1 -Test -Publish
 ```
 
-首版发布采用**自包含目录 + ZIP**，其中包含可双击的 EXE，但不承诺仅一个文件。它更容易排查 WPF、原生运行库和素材加载问题；后续单文件发布另做兼容性检查，不开启未经验证的 trimming 或 Native AOT。SDK、测试框架等开发依赖只在 Windows 实施时添加和还原，本次 Mac 不安装。
+当前发布为 `dist/PigPendant-Windows-win-x64.exe`，自包含约 79 MB，所有素材内嵌；首次启动会把必要的原生组件解包到用户临时目录。未启用 trimming 或 Native AOT。
 
 ## 8. Windows 验收清单
 
@@ -171,7 +164,7 @@ dotnet publish .\windows\src\PigPendant.Windows\PigPendant.Windows.csproj `
 - 桌面：在实际其他应用上验证点击穿透、键盘焦点、窗口激活、托盘交互、第二实例转交；100%/150%/200% 缩放、负坐标多屏、跨 DPI、热插拔、睡眠/解锁、Explorer 重启。
 - 动画与性能：透明边缘、帧序及时长、长时间播放；分别记录活动、空闲、隐藏的 CPU/内存/GDI 句柄，不把托盘动画耗时误记为挂件未休眠，也不预先填写性能通过阈值。
 - 测试安全：专用配置目录及用户配置外部备份；正常、断言失败和强制终止后均恢复；保留用户要求的实例数。
-- 发布：资源哈希、ZIP 完整性、解压后 EXE 独立运行、自包含运行库；未做代码签名时明确 SmartScreen 风险，不指导用户全局关闭安全功能。
+- 发布：资源哈希、单 EXE 完整性、复制到独立目录后运行、自包含运行库；未做代码签名时明确 SmartScreen 风险，不指导用户全局关闭安全功能。
 
 记录 Windows 版本、CPU 架构、SDK、显示器布局和缩放、测试 commit、日志、截图及未通过项。CI 编译和单元测试可以后续增加，但不替代交互桌面验收。
 
