@@ -112,7 +112,9 @@ func runPhysicsTests() {
         if progress == 1 {
             let chord = pose.tip - anchor
             let middle = pose.points[12] - anchor
-            let deviation = abs(chord.x * middle.y - chord.y * middle.x) / chord.magnitude
+            let crossProduct: CGFloat = chord.x * middle.y - chord.y * middle.x
+            let chordLength: CGFloat = chord.magnitude
+            let deviation: CGFloat = abs(crossProduct) / chordLength
             require(deviation > 180 * 0.15, "settled bamboo keeps a visible loaded curve")
             let rootTangent = pose.points[1] - pose.points[0]
             let tipTangent = pose.points[24] - pose.points[23]

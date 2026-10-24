@@ -8,6 +8,10 @@ struct BambooBend {
     var isSettled: Bool { progress >= 1 && abs(progressVelocity) < 0.01 }
     var angle: CGFloat { -.pi / 2 * progress * progress * (3 - 2 * progress) }
 
+    init(progress: CGFloat = 1) {
+        self.progress = progress
+    }
+
     mutating func advance(elapsed: CGFloat, moving: Bool) {
         guard elapsed.isFinite, elapsed > 0 else { return }
         let step = min(0.1, elapsed)
