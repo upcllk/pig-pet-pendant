@@ -21,7 +21,7 @@ A small desktop pig pendant that follows your mouse. The macOS version is availa
 
 ## Music Reactive Experiment
 
-At launch, the app attempts to read system playback audio and detect drum onsets from changes in low- and mid-frequency energy. The menu-bar status icon grows on detected hits and falls back between them; the desktop pendant itself is unaffected. This is a real-time onset estimate, not full-song beat-grid or music recognition. It uses Core Audio taps on macOS 14.2 or later and requests the separate System Audio Recording permission on first launch; it does not request Screen Recording permission. Audio is analyzed in memory and is not recorded, saved, or uploaded. The current permission or capture status is available in the status-item menu.
+At launch, the app detects drum onsets from changes in low- and mid-frequency energy in system playback audio. The menu-bar icon grows on detected hits and falls back between them; the desktop pendant is unaffected. This is a real-time onset estimate, not full-song beat-grid or music recognition. On macOS 14.2 or later, first launch requests **System Audio Recording** permission solely to analyze playback locally in real time for drum onsets that drive the menu-bar icon; audio is not recorded or saved, and **Screen Recording** permission is not requested. The current permission or capture status is available in the status-item menu.
 
 ## Usage
 
