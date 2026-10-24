@@ -8,16 +8,29 @@ extension SettingsWindowController {
             preconditionFailure("Hanging pig artwork dimensions are invalid")
         }
         let bitmap = NSBitmapImageRep(cgImage: cgImage)
+        let haloXRange = 235..<356
+        let haloYRange = 201..<344
+        var translucentHaloPixels = 0
+        var opaqueHaloPixels = 0
         for y in 0..<bitmap.pixelsHigh {
             for x in 0..<bitmap.pixelsWide {
                 guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else {
                     preconditionFailure("Cannot inspect hanging pig artwork")
                 }
                 if color.alphaComponent > 0 {
-                    precondition(color.alphaComponent > 0.999, "Hanging pig foreground must not be translucent")
+                    if haloXRange.contains(x) && haloYRange.contains(y) {
+                        if color.alphaComponent < 0.999 {
+                            translucentHaloPixels += 1
+                        } else {
+                            opaqueHaloPixels += 1
+                        }
+                    } else {
+                        precondition(color.alphaComponent > 0.999, "Hanging pig body must not be translucent")
+                    }
                 }
             }
         }
+        precondition(translucentHaloPixels > 0 && opaqueHaloPixels > 0, "Hanging pig halo must retain soft edges")
 
         let xOrigin = 210
         let yOrigin = 180
@@ -30,7 +43,7 @@ extension SettingsWindowController {
                     .usingColorSpace(.deviceRGB) else {
                     preconditionFailure("Cannot inspect hanging pig halo")
                 }
-                halo[y * width + x] = color.alphaComponent > 0.999
+                halo[y * width + x] = color.alphaComponent > 0.5
                     && color.redComponent > 245.0 / 255
                     && color.greenComponent > 220.0 / 255
                     && color.blueComponent < 230.0 / 255
