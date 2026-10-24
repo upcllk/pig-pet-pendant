@@ -1,3 +1,5 @@
+[简体中文](README.md) | [English](README.en.md)
+
 > 说明：本 README 不是人工撰写，而是由 AI 生成。
 
 # Pig Pet Pendant（猪猪鼠标挂件）
