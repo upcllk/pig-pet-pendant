@@ -11,6 +11,7 @@ struct SceneSnapshot {
     let mode: DisplayMode
     let isVisible: Bool
     let pigSize: CGFloat
+    let musicScale: CGFloat
     let displayImage: NSImage
     let ropes: [RopeSnapshot]
     let bambooPose: BambooPose?
@@ -19,14 +20,15 @@ struct SceneSnapshot {
 
     var imageAspect: CGFloat { displayImage.size.height / max(displayImage.size.width, 1) }
 
-    init(simulation: PendantSimulation, artwork: ArtworkCatalog, isVisible: Bool) {
+    init(simulation: PendantSimulation, artwork: ArtworkCatalog, isVisible: Bool, musicScale: CGFloat = 1) {
         mode = simulation.settings.mode
         self.isVisible = isVisible
-        pigSize = CGFloat(simulation.settings[.size])
+        self.musicScale = musicScale
+        pigSize = CGFloat(simulation.settings[.size]) * musicScale
         displayImage = artwork.image(mode: mode, frameIndex: simulation.timeline.frameIndex)
         ropes = simulation.activeRopes.enumerated().map { index, rope in
             RopeSnapshot(nodes: rope.nodes, endPoint: rope.endPoint, endAngle: rope.endAngle,
-                         width: simulation.balloonWidth(at: index))
+                         width: simulation.balloonWidth(at: index) * musicScale)
         }
         bambooPose = mode == .bamboo ? simulation.bambooPose : nil
         ghostPosition = mode == .ghost ? simulation.ghostPosition : nil

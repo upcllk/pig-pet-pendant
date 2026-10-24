@@ -31,6 +31,7 @@ final class SettingsTests {
     func testDefaultsAndOriginalStorageKeys() throws {
         let settings = store.load()
         try expectEqual(settings.mode, .rope)
+        try expectEqual(settings.musicReactiveEnabled, false)
         try expectEqual(settings.balloonCount, 2)
         try expectEqual(ParameterID.allCases.map(\.storageKey),
                        ["RopeLength", "PigSize", "Weight", "Elasticity", "DampingRate", "Gravity"])
@@ -47,6 +48,16 @@ final class SettingsTests {
                 try expectEqual(defaults.double(forKey: parameter.storageKey(for: mode)), parameter.defaultValue)
             }
         }
+    }
+
+    func testMusicReactiveSettingRoundTrip() throws {
+        var settings = store.load()
+        try expectEqual(settings.musicReactiveEnabled, false)
+        settings.musicReactiveEnabled = true
+        store.saveMusicReactiveEnabled(settings.musicReactiveEnabled)
+        try expectEqual(store.load().musicReactiveEnabled, true)
+        store.saveMusicReactiveEnabled(false)
+        try expectEqual(store.load().musicReactiveEnabled, false)
     }
 
     func testFiniteValuesClampAtBothBounds() throws {

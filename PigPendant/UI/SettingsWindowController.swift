@@ -12,6 +12,9 @@ final class SettingsBackgroundView: NSView {
 final class SettingsWindowController: NSWindowController {
     let model: PendantCoordinator
     let visibility = NSButton(checkboxWithTitle: "显示小猪", target: nil, action: nil)
+    let musicReactive = NSButton(checkboxWithTitle: "音乐律动（麦克风）", target: nil, action: nil)
+    let audioStatus = NSTextField(labelWithString: "")
+    let audioRow = NSStackView()
     let countStepper = NSStepper()
     let countReadout = NSTextField(labelWithString: "")
     let countRow = NSStackView()
@@ -69,6 +72,17 @@ final class SettingsWindowController: NSWindowController {
         header.spacing = 12
         visibility.target = self
         visibility.action = #selector(toggleVisibility)
+        musicReactive.target = self
+        musicReactive.action = #selector(toggleMusicReactive)
+        musicReactive.setAccessibilityLabel("开启麦克风音乐律动")
+        musicReactive.toolTip = "仅实时分析麦克风音量来缩放小猪；不会录制或保存音频"
+        audioStatus.font = .systemFont(ofSize: 11)
+        audioStatus.textColor = .secondaryLabelColor
+        audioStatus.alignment = .right
+        audioRow.addArrangedSubview(musicReactive)
+        audioRow.addArrangedSubview(audioStatus)
+        audioRow.spacing = 12
+        audioRow.heightAnchor.constraint(equalToConstant: 28).isActive = true
         modeControl.target = self
         modeControl.action = #selector(changeDisplayMode)
         modeControl.setAccessibilityLabel("挂件模式")
@@ -173,7 +187,7 @@ final class SettingsWindowController: NSWindowController {
         let spacer = NSView()
         let footer = NSStackView(views: [restore, spacer, done])
         footer.distribution = .fill
-        let stack = NSStackView(views: [header, modeControl, visibility, form, footer])
+        let stack = NSStackView(views: [header, modeControl, visibility, audioRow, form, footer])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 18
@@ -218,17 +232,20 @@ final class SettingsWindowController: NSWindowController {
         bambooPositionSlider.doubleValue = model.settings.bambooPosition
         bambooPositionReadout.stringValue = String(format: "%.0f%%", model.settings.bambooPosition)
         countReadout.textColor = isBalloon ? .labelColor : .secondaryLabelColor
+        countStepper.integerValue = model.balloonCount
+        countReadout.stringValue = "\(model.balloonCount) 只"
+        visibility.state = model.isVisible ? .on : .off
+        musicReactive.state = model.settings.musicReactiveEnabled ? .on : .off
+        musicReactive.isEnabled = !model.isAudioPermissionPending
+        audioStatus.stringValue = model.audioStatus
         if let window = window {
-            let height: CGFloat = isBalloon || isBamboo ? 550 : isGhost ? 390 : 510
+            let height: CGFloat = isBalloon || isBamboo ? 590 : isGhost ? 430 : 550
             if window.contentView?.frame.height != height {
                 let topLeft = NSPoint(x: window.frame.minX, y: window.frame.maxY)
                 window.setContentSize(NSSize(width: 480, height: height))
                 window.setFrameTopLeftPoint(topLeft)
             }
         }
-        countStepper.integerValue = model.balloonCount
-        countReadout.stringValue = "\(model.balloonCount) 只"
-        visibility.state = model.isVisible ? .on : .off
     }
 
     @objc private func changeDisplayMode() {
@@ -268,6 +285,11 @@ final class SettingsWindowController: NSWindowController {
 
     @objc func toggleVisibility() {
         model.toggleVisible()
+        refresh()
+    }
+
+    @objc private func toggleMusicReactive() {
+        model.setMusicReactiveEnabled(musicReactive.state == .on)
         refresh()
     }
 

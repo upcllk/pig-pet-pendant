@@ -10,6 +10,7 @@ final class SettingsStore {
     func load() -> PendantSettings {
         var settings = PendantSettings()
         loadBambooPosition(into: &settings)
+        settings.musicReactiveEnabled = defaults.bool(forKey: "MusicReactiveEnabled")
         if let raw = defaults.string(forKey: "DisplayMode") {
             if let mode = DisplayMode(rawValue: raw) {
                 settings.mode = mode
@@ -73,6 +74,10 @@ final class SettingsStore {
 
     func saveMode(_ mode: DisplayMode) {
         defaults.set(mode.rawValue, forKey: "DisplayMode")
+    }
+
+    func saveMusicReactiveEnabled(_ enabled: Bool) {
+        defaults.set(enabled, forKey: "MusicReactiveEnabled")
     }
 
     func saveCount(_ count: Int) {

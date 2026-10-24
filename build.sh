@@ -41,7 +41,7 @@ SOURCES=()
 while IFS= read -r -d '' source; do
   SOURCES+=("$source")
 done < <(find PigPendant -name '*.swift' -type f -print0)
-swiftc -O -target "$TARGET" -framework AppKit -framework Foundation -framework ImageIO "${SOURCES[@]}" -o "$BUILD_DIR/PigPendant"
+swiftc -O -target "$TARGET" -framework AppKit -framework AVFoundation -framework Foundation -framework ImageIO "${SOURCES[@]}" -o "$BUILD_DIR/PigPendant"
 plutil -lint PigPendant/Info.plist
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp PigPendant/Info.plist "$APP/Contents/Info.plist"
@@ -89,7 +89,7 @@ if [[ "${1:-}" == "--test" ]]; then
   done < <(find Tests/Smoke -name '*.swift' -type f -print0)
   VALIDATION_APP="$PWD/dist/PigPendantValidation.app"
   ditto "$APP" "$VALIDATION_APP"
-  swiftc -O -D TESTING -target "$TARGET" -framework AppKit -framework Foundation -framework ImageIO \
+  swiftc -O -D TESTING -target "$TARGET" -framework AppKit -framework AVFoundation -framework Foundation -framework ImageIO \
     "${SOURCES[@]}" "${TEST_SOURCES[@]}" Tests/Core/PhysicsTests.swift -o "$BUILD_DIR/PigPendantValidation"
   mv "$BUILD_DIR/PigPendantValidation" "$VALIDATION_APP/Contents/MacOS/PigPendant"
   codesign --force --sign - "$VALIDATION_APP"

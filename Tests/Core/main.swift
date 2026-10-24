@@ -1,10 +1,17 @@
 import Foundation
+@testable import PigPendantCore
 
 typealias Check = (name: String, run: () throws -> Void)
 let settings = SettingsTests()
 let simulation = SimulationTests()
 let settingsChecks: [Check] = [
     ("settings.defaults-and-storage-keys", settings.testDefaultsAndOriginalStorageKeys),
+    ("settings.music-reactive-setting-roundtrip", settings.testMusicReactiveSettingRoundTrip),
+    ("settings.audio-reactive-scale-bounds", {
+        try expectEqual(AudioReactiveScale.scale(forRMS: 0), CGFloat(0.55))
+        try expectEqual(AudioReactiveScale.scale(forRMS: 1), CGFloat(1.8))
+        try expectGreaterThan(AudioReactiveScale.scale(forRMS: 0.1), AudioReactiveScale.scale(forRMS: 0.001))
+    }),
     ("settings.finite-bounds", settings.testFiniteValuesClampAtBothBounds),
     ("settings.nonfinite-rejection", settings.testNonFiniteValuesAreRejectedWithoutChangingState),
     ("settings.mode-specific-parameter-roundtrip", settings.testRoundTripAndModeChangesPreserveIndependentParameters),

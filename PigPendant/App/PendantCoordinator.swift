@@ -4,6 +4,11 @@ final class PendantCoordinator {
     private(set) var settings: PendantSettings
     private(set) var isVisible = true
     private var isSuspended = false
+    private let audioMonitor = AudioLevelMonitor()
+    private var targetMusicScale: CGFloat = 1
+    private(set) var musicScale: CGFloat = 1
+    private(set) var isAudioPermissionPending = false
+    private(set) var audioStatus = "关闭（点击后请求麦克风权限）"
     private let store: SettingsStore
     let simulation: PendantSimulation
     let artwork: ArtworkCatalog
@@ -25,8 +30,14 @@ final class PendantCoordinator {
         store = SettingsStore(defaults: defaults)
         settings = store.load()
         simulation = PendantSimulation(settings: settings, frameDurations: artwork.net.frameDurations)
+        audioMonitor.onLevel = { [weak self] rms in
+            guard let self = self, self.settings.musicReactiveEnabled,
+                  self.isVisible, !self.isSuspended else { return }
+            self.targetMusicScale = AudioReactiveScale.scale(forRMS: rms)
+        }
         driver.onTick = { [weak self] time in self?.tick(at: time) }
         rebuildWindows()
+        if settings.musicReactiveEnabled { startAudioMonitoring() }
     }
 
     func ropeAnchor() -> V2 {
@@ -39,7 +50,7 @@ final class PendantCoordinator {
     }
 
     func sceneSnapshot() -> SceneSnapshot {
-        SceneSnapshot(simulation: simulation, artwork: artwork, isVisible: isVisible)
+        SceneSnapshot(simulation: simulation, artwork: artwork, isVisible: isVisible, musicScale: musicScale)
     }
 
     private func redraw() { presenter.present(sceneSnapshot()) }
@@ -52,7 +63,14 @@ final class PendantCoordinator {
     func tick(at time: TimeInterval = ProcessInfo.processInfo.systemUptime) {
         let elapsed = driver.elapsed(at: time)
         guard isVisible, !isSuspended else { return }
-        if simulation.advance(anchor: ropeAnchor(), elapsed: elapsed) { redraw() }
+        var needsRedraw = simulation.advance(anchor: ropeAnchor(), elapsed: elapsed)
+        let scaleTarget = settings.musicReactiveEnabled ? targetMusicScale : 1
+        let response: CGFloat = scaleTarget > musicScale ? 12 : 5
+        let step = elapsed.isFinite && elapsed > 0 ? min(0.1, CGFloat(elapsed)) : 0
+        let previousScale = musicScale
+        musicScale += (scaleTarget - musicScale) * (1 - CGFloat(exp(Double(-response * step))))
+        needsRedraw = needsRedraw || abs(musicScale - previousScale) > 0.002
+        if needsRedraw { redraw() }
         schedule()
     }
 
@@ -70,7 +88,15 @@ final class PendantCoordinator {
 
     func toggleVisible() {
         isVisible.toggle()
-        if isVisible { reset() } else { driver.stop() }
+        if isVisible {
+            reset()
+            if settings.musicReactiveEnabled { startAudioMonitoring() }
+        } else {
+            driver.stop()
+            audioMonitor.stop()
+            targetMusicScale = 1
+            musicScale = 1
+        }
         presenter.setVisible(isVisible)
         onChange?()
     }
@@ -78,11 +104,69 @@ final class PendantCoordinator {
     func suspend() {
         isSuspended = true
         driver.stop()
+        audioMonitor.stop()
+        targetMusicScale = 1
+        musicScale = 1
     }
 
     func resume() {
         isSuspended = false
         reset()
+        if settings.musicReactiveEnabled { startAudioMonitoring() }
+    }
+
+    func setMusicReactiveEnabled(_ enabled: Bool) {
+        guard !isAudioPermissionPending else { return }
+        guard enabled else {
+            settings.musicReactiveEnabled = false
+            store.saveMusicReactiveEnabled(false)
+            audioMonitor.stop()
+            targetMusicScale = 1
+            audioStatus = "关闭（点击后请求麦克风权限）"
+            schedule()
+            onChange?()
+            return
+        }
+        settings.musicReactiveEnabled = true
+        store.saveMusicReactiveEnabled(true)
+        if isVisible && !isSuspended {
+            startAudioMonitoring()
+        } else {
+            audioStatus = "已开启；挂件显示时监听麦克风"
+            onChange?()
+        }
+    }
+
+    private func startAudioMonitoring() {
+        guard settings.musicReactiveEnabled, isVisible, !isSuspended,
+              !isAudioPermissionPending else { return }
+        isAudioPermissionPending = true
+        audioStatus = "正在连接麦克风…"
+        onChange?()
+        audioMonitor.start { [weak self] result in
+            guard let self = self else { return }
+            self.isAudioPermissionPending = false
+            guard self.settings.musicReactiveEnabled, self.isVisible, !self.isSuspended else {
+                self.audioMonitor.stop()
+                self.audioStatus = self.settings.musicReactiveEnabled
+                    ? "已开启；挂件显示时监听麦克风" : "关闭（点击后请求麦克风权限）"
+                self.onChange?()
+                return
+            }
+            switch result {
+            case .success:
+                self.audioStatus = "正在监听麦克风（仅实时分析，不录制）"
+                self.schedule()
+            case .failure(let error):
+                self.settings.musicReactiveEnabled = false
+                self.store.saveMusicReactiveEnabled(false)
+                self.audioMonitor.stop()
+                self.targetMusicScale = 1
+                self.audioStatus = error.localizedDescription
+                NSLog("Audio-reactive mode could not start: %@", error.localizedDescription)
+            }
+            self.onChange?()
+        }
     }
 
     func changeParameter(_ parameter: ParameterID, value: Double) {
@@ -156,6 +240,12 @@ final class PendantCoordinator {
 
     func restoreDefaults() {
         settings = PendantSettings()
+        audioMonitor.stop()
+        targetMusicScale = 1
+        musicScale = 1
+        audioStatus = "关闭（点击后请求麦克风权限）"
+        isAudioPermissionPending = false
+        store.saveMusicReactiveEnabled(false)
         for mode in DisplayMode.allCases {
             for parameter in ParameterID.allCases {
                 store.save(settings, parameter: parameter, mode: mode)

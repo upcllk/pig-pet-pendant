@@ -2,6 +2,14 @@ import AppKit
 
 extension PendantCoordinator {
     func smokeCheckSceneIsolation() {
+        let scale = CGFloat(1.5)
+        let baseScene = SceneSnapshot(simulation: simulation, artwork: artwork, isVisible: isVisible)
+        let scaledScene = SceneSnapshot(simulation: simulation, artwork: artwork,
+                                        isVisible: isVisible, musicScale: scale)
+        precondition(scaledScene.pigSize == baseScene.pigSize * scale)
+        precondition(scaledScene.ropes.map(\.width) == baseScene.ropes.map { $0.width * scale })
+        precondition(scaledScene.bounds.width > baseScene.bounds.width
+                     && scaledScene.bounds.height > baseScene.bounds.height)
         let snapshot = sceneSnapshot()
         let heldNodes = snapshot.ropes.map(\.nodes)
         let heldBounds = snapshot.bounds
