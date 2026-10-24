@@ -12,7 +12,7 @@ final class SettingsBackgroundView: NSView {
 final class SettingsWindowController: NSWindowController {
     let model: PendantCoordinator
     let visibility = NSButton(checkboxWithTitle: "显示小猪", target: nil, action: nil)
-    let musicReactive = NSButton(checkboxWithTitle: "音乐律动（麦克风）", target: nil, action: nil)
+    let musicReactive = NSButton(checkboxWithTitle: "音乐律动（系统音频）", target: nil, action: nil)
     let audioStatus = NSTextField(labelWithString: "")
     let audioRow = NSStackView()
     let countStepper = NSStepper()
@@ -74,8 +74,8 @@ final class SettingsWindowController: NSWindowController {
         visibility.action = #selector(toggleVisibility)
         musicReactive.target = self
         musicReactive.action = #selector(toggleMusicReactive)
-        musicReactive.setAccessibilityLabel("开启麦克风音乐律动")
-        musicReactive.toolTip = "仅实时分析麦克风音量来缩放小猪；不会录制或保存音频"
+        musicReactive.setAccessibilityLabel("开启系统音频音乐律动")
+        musicReactive.toolTip = "实时分析系统播放音频的音量来缩放小猪；不会录制或保存音频"
         audioStatus.font = .systemFont(ofSize: 11)
         audioStatus.textColor = .secondaryLabelColor
         audioStatus.alignment = .right

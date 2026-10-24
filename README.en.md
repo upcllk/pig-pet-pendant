@@ -19,6 +19,10 @@ A small desktop pig pendant that follows your mouse. The macOS version is availa
 - **Hanging Pig**: The pig hangs from a rope. The pig stays clear, with the same soft, closed halo effect used by Ghost Pig.
 - **Ghost Pig**: Follows the mouse smoothly without a rope.
 
+## Music Reactive Experiment
+
+Enable **Music Reactive (System Audio)** in Settings to scale the pig with the live level of system playback audio. It uses Core Audio taps on macOS 14.2 or later and requests the separate System Audio Recording permission on first use; it does not request Screen Recording permission. Audio is analyzed in memory and is not recorded, saved, or uploaded. The system master-volume slider adjusts output loudness but is not itself used as the reactive signal.
+
 ## Usage
 
 Click the pig icon in the menu bar to switch modes or open **Settings**. Settings are saved automatically. Closing the Settings window does not quit the app; select **Quit Pig Pet Pendant** to exit.

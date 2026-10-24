@@ -55,6 +55,7 @@ final class SettingsTests {
         try expectEqual(settings.musicReactiveEnabled, false)
         settings.musicReactiveEnabled = true
         store.saveMusicReactiveEnabled(settings.musicReactiveEnabled)
+        try expectEqual(defaults.bool(forKey: "SystemAudioReactiveEnabled"), true)
         try expectEqual(store.load().musicReactiveEnabled, true)
         store.saveMusicReactiveEnabled(false)
         try expectEqual(store.load().musicReactiveEnabled, false)

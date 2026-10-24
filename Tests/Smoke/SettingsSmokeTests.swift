@@ -118,7 +118,7 @@ extension SettingsWindowController {
         let modeParameterKeys = DisplayMode.allCases.flatMap { mode in
             ParameterID.allCases.map { $0.storageKey(for: mode) }
         }
-        let keys = legacyKeys + ["BalloonCount", "DisplayMode", "BambooPigPosition", "GhostOffsetX", "GhostOffsetY", "MusicReactiveEnabled"] + modeParameterKeys
+        let keys = legacyKeys + ["BalloonCount", "DisplayMode", "BambooPigPosition", "GhostOffsetX", "GhostOffsetY", "SystemAudioReactiveEnabled"] + modeParameterKeys
         let saved = keys.map { defaults.object(forKey: $0) }
         let originalCount = model.balloonCount
         let originalMode = model.mode

@@ -8,7 +8,7 @@ final class PendantCoordinator {
     private var targetMusicScale: CGFloat = 1
     private(set) var musicScale: CGFloat = 1
     private(set) var isAudioPermissionPending = false
-    private(set) var audioStatus = "关闭（点击后请求麦克风权限）"
+    private(set) var audioStatus = "关闭（开启后请求系统音频权限）"
     private let store: SettingsStore
     let simulation: PendantSimulation
     let artwork: ArtworkCatalog
@@ -122,7 +122,7 @@ final class PendantCoordinator {
             store.saveMusicReactiveEnabled(false)
             audioMonitor.stop()
             targetMusicScale = 1
-            audioStatus = "关闭（点击后请求麦克风权限）"
+            audioStatus = "关闭（开启后请求系统音频权限）"
             schedule()
             onChange?()
             return
@@ -132,7 +132,7 @@ final class PendantCoordinator {
         if isVisible && !isSuspended {
             startAudioMonitoring()
         } else {
-            audioStatus = "已开启；挂件显示时监听麦克风"
+            audioStatus = "已开启；挂件显示时分析系统播放音频"
             onChange?()
         }
     }
@@ -141,7 +141,7 @@ final class PendantCoordinator {
         guard settings.musicReactiveEnabled, isVisible, !isSuspended,
               !isAudioPermissionPending else { return }
         isAudioPermissionPending = true
-        audioStatus = "正在连接麦克风…"
+        audioStatus = "正在请求系统音频权限…"
         onChange?()
         audioMonitor.start { [weak self] result in
             guard let self = self else { return }
@@ -149,13 +149,13 @@ final class PendantCoordinator {
             guard self.settings.musicReactiveEnabled, self.isVisible, !self.isSuspended else {
                 self.audioMonitor.stop()
                 self.audioStatus = self.settings.musicReactiveEnabled
-                    ? "已开启；挂件显示时监听麦克风" : "关闭（点击后请求麦克风权限）"
+                    ? "已开启；挂件显示时分析系统播放音频" : "关闭（开启后请求系统音频权限）"
                 self.onChange?()
                 return
             }
             switch result {
             case .success:
-                self.audioStatus = "正在监听麦克风（仅实时分析，不录制）"
+                self.audioStatus = "正在分析系统播放音频（仅实时，不录制）"
                 self.schedule()
             case .failure(let error):
                 self.settings.musicReactiveEnabled = false
@@ -243,7 +243,7 @@ final class PendantCoordinator {
         audioMonitor.stop()
         targetMusicScale = 1
         musicScale = 1
-        audioStatus = "关闭（点击后请求麦克风权限）"
+        audioStatus = "关闭（开启后请求系统音频权限）"
         isAudioPermissionPending = false
         store.saveMusicReactiveEnabled(false)
         for mode in DisplayMode.allCases {
