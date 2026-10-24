@@ -2,7 +2,7 @@
 
 # Pig Pet Pendant（猪猪鼠标挂件）
 
-一款跟随鼠标移动的桌面小猪挂件。当前提供 macOS 版本；Windows 版仍在规划中，暂不可用。
+一款跟随鼠标移动的桌面小猪挂件。提供 macOS 客户端，并新增 Windows 原生客户端源码。
 
 ![六种模式预览](docs/media/modes.gif)
 
@@ -19,7 +19,7 @@
 
 ## 使用
 
-点击菜单栏的小猪图标，在菜单中切换模式或打开“设置”。设置会自动保存；关闭设置窗口不会退出挂件。选择“退出猪猪挂件”才会结束应用。
+macOS 点击菜单栏图标，Windows 点击系统托盘图标，在菜单中切换模式或打开“设置”。设置会自动保存；关闭设置窗口不会退出挂件。选择“退出猪猪挂件”才会结束应用。
 
 ## 构建
 
@@ -40,9 +40,28 @@ open dist/PigPendant.app
 
 GUI 检查需要已登录的桌面会话，会短暂显示测试挂件后自动退出。
 
+### Windows
+
+需要 Windows 上的 .NET 10 SDK；工程使用 WPF。在仓库根目录运行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\windows\scripts\build.ps1 -Test
+& .\windows\src\PigPendant.Windows\bin\Release\net10.0-windows\PigPendant.Windows.exe
+```
+
+托盘菜单可切换六种模式、显示/隐藏、重置姿态、打开设置和退出。设置保存在 `%LOCALAPPDATA%\PigPendant\settings.json`。再次启动会通知已运行实例打开设置。
+
+自包含发布使用：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\windows\scripts\build.ps1 -Test -Publish
+```
+
+发布结果位于 `dist/windows/win-x64/`，ZIP 位于 `dist/PigPendant-Windows-win-x64.zip`。ZIP 是自包含目录包，用户解压后双击其中的 EXE，不需要安装 .NET SDK。
+
 ## 已知限制
 
-- 目前没有 Windows 可执行版本。
+- Windows 版的多屏混合 DPI、真实跨进程点击穿透、焦点、睡眠恢复、Explorer 重启以及长期性能尚待实机验收。
 - 气球之间没有碰撞检测，也没有屏幕边界限制。
 - 应用不申请辅助功能或屏幕录制权限，不向网络发送请求。
 

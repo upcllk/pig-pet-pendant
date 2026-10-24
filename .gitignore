@@ -3,3 +3,5 @@ dist/
 *.log
 .build/
 .swiftpm/
+windows/**/bin/
+windows/**/obj/
