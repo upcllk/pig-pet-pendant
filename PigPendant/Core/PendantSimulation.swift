@@ -6,6 +6,7 @@ final class PendantSimulation {
     var bambooBend = BambooBend()
     private var bambooSway: CGFloat = 0
     private var bambooMotionAnchor: V2?
+    private(set) var ropeAnimationTime: TimeInterval = 0
     private(set) var ghostPosition = V2(0, 0)
     private(set) var balloons: [RopePhysics] = []
     private(set) var settings: PendantSettings
@@ -41,7 +42,10 @@ final class PendantSimulation {
         if balloons.count != settings.balloonCount {
             balloons = [physics] + (1..<settings.balloonCount).map { _ in RopePhysics() }
         }
-        if modeChanged { timeline.reset() }
+        if modeChanged {
+            timeline.reset()
+            ropeAnimationTime = 0
+        }
     }
 
     func balloonWidth(at index: Int) -> CGFloat {
@@ -78,6 +82,7 @@ final class PendantSimulation {
         bambooBend = BambooBend()
         bambooSway = 0
         bambooMotionAnchor = anchor
+        ropeAnimationTime = 0
         ghostPosition = ghostTarget(anchor)
         updateBalloonParameters()
         for rope in activeRopes { rope.reset(anchor: anchor) }
@@ -89,6 +94,10 @@ final class PendantSimulation {
     @discardableResult
     func advance(anchor: V2, elapsed: TimeInterval) -> Bool {
         let previousFrame = timeline.frameIndex
+        let advancesRopeAnimation = settings.mode == .rope && elapsed.isFinite && elapsed > 0
+        if advancesRopeAnimation {
+            ropeAnimationTime += min(0.1, elapsed)
+        }
         if settings.mode == .net { timeline.advance(elapsed: elapsed) }
         if settings.mode == .ghost {
             let delta = ghostTarget(anchor) - ghostPosition
@@ -124,7 +133,7 @@ final class PendantSimulation {
         let bambooSettled = settings.mode != .bamboo || bambooBend.isSettled
         let swaySettled = settings.mode != .bamboo || abs(physics.endAngle * -0.70 - bambooSway) < 0.01
         if isIdle && anchorUnchanged && bambooSettled && swaySettled {
-            return timeline.frameIndex != previousFrame
+            return advancesRopeAnimation || timeline.frameIndex != previousFrame
         }
         isIdle = false
         updateBalloonParameters()

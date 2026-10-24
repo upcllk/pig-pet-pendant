@@ -61,6 +61,28 @@ final class SimulationTests {
         try expectEqual(simulation.updateInterval, 0.04)
     }
 
+    func testRopePendantKeepsSubtleAnimationAfterPhysicsSleeps() throws {
+        let simulation = PendantSimulation(settings: PendantSettings(), frameDurations: durations)
+        simulation.reset(anchor: anchor)
+        simulation.advance(anchor: anchor, elapsed: 1.0 / 60.0)
+        try expect(simulation.isIdle)
+        let nodes = simulation.physics.nodes
+        let previousTime = simulation.ropeAnimationTime
+
+        try expect(simulation.advance(anchor: anchor, elapsed: simulation.idleInterval))
+        try expect(simulation.isIdle)
+        try expectGreaterThan(simulation.ropeAnimationTime, previousTime)
+        try expectEqual(simulation.updateInterval, simulation.idleInterval)
+        for (before, after) in zip(nodes, simulation.physics.nodes) {
+            try expectEqual((after - before).magnitude, 0)
+        }
+
+        var otherMode = simulation.settings
+        otherMode.mode = .balloon
+        simulation.apply(otherMode)
+        try expectEqual(simulation.ropeAnimationTime, 0)
+    }
+
     func testGhostFollowsNearbyWithoutUsingRopeMotion() throws {
         var settings = PendantSettings()
         settings.mode = .ghost

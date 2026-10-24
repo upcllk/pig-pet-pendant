@@ -15,6 +15,7 @@ struct SceneSnapshot {
     let ropes: [RopeSnapshot]
     let bambooPose: BambooPose?
     let ghostPosition: V2?
+    let ropeAnimationTime: TimeInterval
     let bounds: NSRect
 
     var imageAspect: CGFloat { displayImage.size.height / max(displayImage.size.width, 1) }
@@ -30,6 +31,7 @@ struct SceneSnapshot {
         }
         bambooPose = mode == .bamboo ? simulation.bambooPose : nil
         ghostPosition = mode == .ghost ? simulation.ghostPosition : nil
+        ropeAnimationTime = simulation.ropeAnimationTime
         let nodes = bambooPose?.points ?? ghostPosition.map { [$0] } ?? ropes.flatMap(\.nodes)
         let padding = max(pigSize * (mode == .bamboo ? 3 : 1.2)
                           * max(1, displayImage.size.height / max(displayImage.size.width, 1)), 48) + 16

@@ -12,7 +12,7 @@ A small desktop pig pendant that follows your mouse. The macOS version is availa
 
 ## Modes
 
-- **Rope Pendant**: The default mode. The pig swings as you move the mouse.
+- **Rope Pendant**: The default mode. The pig swings as you move the mouse and continues to bob gently at rest.
 - **Pig Balloons**: Shows 1–8 pig-shaped balloons floating upward; the default is 2.
 - **Pig in a Net**: A pig in a net with a looping animation.
 - **Pig on Bamboo**: The pig hugs a bamboo stalk that bends with mouse movement.

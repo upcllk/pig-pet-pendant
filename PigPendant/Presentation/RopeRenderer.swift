@@ -36,14 +36,21 @@ enum RopeRenderer {
         context.restoreGState()
 
         for balloon in scene.ropes {
-            let bob = local(balloon.endPoint)
+            let phase = scene.ropeAnimationTime
+            let bobOffset = scene.mode == .rope
+                ? CGFloat(sin(phase * 1.9)) * 1.4 + CGFloat(sin(phase * 0.8)) * 0.45
+                : 0
+            let bob = local(balloon.endPoint + V2(0, bobOffset))
             let width = balloon.width
             let height = width * scene.imageAspect
             let knot = max(2, min(7, width * 0.07))
             context.saveGState()
             context.translateBy(x: bob.x, y: bob.y)
             if scene.mode != .balloon {
-                context.rotate(by: balloon.endAngle * -0.70)
+                let idleSway = scene.mode == .rope
+                    ? CGFloat(sin(phase * 1.4)) * 0.035 + CGFloat(sin(phase * 2.6)) * 0.01
+                    : 0
+                context.rotate(by: balloon.endAngle * -0.70 + idleSway)
                 let rect = scene.mode == .net
                     ? NSRect(x: -width * 140 / 207, y: -height, width: width, height: height)
                     : scene.mode == .hanging
