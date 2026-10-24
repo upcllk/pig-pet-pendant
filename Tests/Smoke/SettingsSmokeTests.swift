@@ -30,7 +30,7 @@ extension SettingsWindowController {
                 }
             }
         }
-        precondition(translucentHaloPixels > 0 && opaqueHaloPixels > 0, "Hanging pig halo must retain soft edges")
+        precondition(translucentHaloPixels > 100 && opaqueHaloPixels > 0, "Hanging pig halo must retain soft edges")
 
         let xOrigin = 210
         let yOrigin = 180
