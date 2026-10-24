@@ -1,0 +1,21 @@
+name: macOS build and checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build app
+        run: ./build.sh
+      - name: Run core checks
+        run: swift run --scratch-path "$PWD/dist/swiftpm" -c release -Xswiftc -enable-testing PigPendantCoreChecks

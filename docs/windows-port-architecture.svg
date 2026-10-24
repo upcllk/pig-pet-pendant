@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 680" width="100%" role="img" aria-labelledby="title desc">
+  <title id="title">Proposed Windows port</title>
+  <desc id="desc">Planning only. Native Windows presentation and adapters surround a pure C# simulation core. Assets and behavior specifications remain shared with the existing macOS client. No Windows implementation is included yet.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#999999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <style>
+    .bg { fill: #ffffff; }
+    .c-teal { color: #1D9E75; }
+    .c-purple { color: #7F77DD; }
+    .c-blue { color: #378ADD; }
+    .c-gray { color: #888780; }
+    .node rect { fill: currentColor; fill-opacity: 0.12; stroke: currentColor; stroke-width: 0.7; rx: 10; }
+    .th { font: bold 14px sans-serif; fill: #1a1a2e; }
+    .ts { font: 12px sans-serif; fill: #666666; }
+    .heading { font: bold 20px sans-serif; fill: #1a1a2e; }
+    .link { fill: none; stroke: #999999; stroke-width: 1.2; marker-end: url(#arrow); }
+  </style>
+  <rect class="bg" width="680" height="680"/>
+  <text class="heading" x="36" y="38">Windows port / Proposed boundaries</text>
+  <text class="ts" x="36" y="61">Plan only / Same repository / Existing macOS app unchanged</text>
+  <g class="node c-teal">
+    <rect x="36" y="84" width="608" height="66"/>
+    <text class="th" x="340" y="111" text-anchor="middle">WPF Settings / Windows Tray / Lifecycle</text>
+    <text class="ts" x="340" y="134" text-anchor="middle">Commands, visibility, single instance and system events</text>
+  </g>
+  <path class="link" d="M340 150V180"/>
+  <g class="node c-purple">
+    <rect x="160" y="182" width="360" height="66"/>
+    <text class="th" x="340" y="209" text-anchor="middle">PendantCoordinator</text>
+    <text class="ts" x="340" y="232" text-anchor="middle">Settings changes and component orchestration</text>
+  </g>
+  <path class="link" d="M240 248V270H132V292"/>
+  <path class="link" d="M340 248V292"/>
+  <path class="link" d="M440 248V270H548V292"/>
+  <g class="node c-blue">
+    <rect x="36" y="294" width="192" height="80"/>
+    <text class="th" x="132" y="321" text-anchor="middle">SettingsStore</text>
+    <text class="ts" x="132" y="344" text-anchor="middle">Versioned local JSON</text>
+    <text class="ts" x="132" y="362" text-anchor="middle">Atomic writes / test isolation</text>
+  </g>
+  <g class="node c-purple">
+    <rect x="244" y="294" width="192" height="80"/>
+    <text class="th" x="340" y="321" text-anchor="middle">C# Simulation Core</text>
+    <text class="ts" x="340" y="344" text-anchor="middle">Explicit anchor and time</text>
+    <text class="ts" x="340" y="362" text-anchor="middle">No WPF / Win32 / file I/O</text>
+  </g>
+  <g class="node c-gray">
+    <rect x="452" y="294" width="192" height="80"/>
+    <text class="th" x="548" y="321" text-anchor="middle">Platform Adapters</text>
+    <text class="ts" x="548" y="344" text-anchor="middle">Clock / mouse / DPI</text>
+    <text class="ts" x="548" y="362" text-anchor="middle">Screens / suspend / IPC</text>
+  </g>
+  <path class="link" d="M340 374V404"/>
+  <g class="node c-purple">
+    <rect x="160" y="406" width="360" height="66"/>
+    <text class="th" x="340" y="433" text-anchor="middle">SceneSnapshot</text>
+    <text class="ts" x="340" y="456" text-anchor="middle">Read-only geometry, frame index and bounds</text>
+  </g>
+  <path class="link" d="M340 472V502"/>
+  <g class="node c-teal">
+    <rect x="36" y="504" width="608" height="66"/>
+    <text class="th" x="340" y="531" text-anchor="middle">OverlayPresenter / Renderer / Artwork</text>
+    <text class="ts" x="340" y="554" text-anchor="middle">Per-screen non-activating windows and verified click-through</text>
+  </g>
+  <g class="node c-gray">
+    <rect x="36" y="594" width="608" height="46"/>
+    <text class="ts" x="340" y="622" text-anchor="middle">Shared assets + behavior specs + test vectors / Native UI remains separate</text>
+  </g>
+</svg>
