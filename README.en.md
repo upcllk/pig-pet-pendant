@@ -50,6 +50,7 @@ GUI checks require a logged-in desktop session. The test pendant appears briefly
 
 - A Windows executable is not currently available.
 - Balloons do not collide with each other and are not constrained by screen boundaries.
+- macOS has no supported API for reading another app's global cursor visibility, so the pendant may remain visible over fullscreen video after the cursor is hidden.
 - The app does not request Accessibility or Screen Recording permissions and does not send network requests.
 
 ## License
