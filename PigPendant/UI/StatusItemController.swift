@@ -11,8 +11,8 @@ final class StatusItemController: NSObject {
     private var previousIconElapsed: TimeInterval = 0
     private let iconRotationPeriod: TimeInterval = 2.4
     private let iconAnimationStartTime = ProcessInfo.processInfo.systemUptime
-    private let iconCanvasSize: CGFloat = 42
-    private let iconFrameSize: CGFloat = 28
+    private let iconCanvasSize: CGFloat = 54.6
+    private let iconFrameSize: CGFloat = 36.4
 
     init(controller: PendantCoordinator, statusFrames: [NSImage], openSettings: @escaping () -> Void) {
         self.controller = controller

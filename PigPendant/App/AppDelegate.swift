@@ -3,7 +3,7 @@ import Foundation
 import ImageIO
 
 final class PigAppDelegate: NSObject, NSApplicationDelegate {
-    private let statusIconSize: CGFloat = 28
+    private let statusIconSize: CGFloat = 36.4
     private let statusIconHorizontalNudge: CGFloat = 1
     private(set) var controller: PendantCoordinator?
     private(set) var menuController: StatusItemController?
