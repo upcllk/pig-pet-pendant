@@ -52,49 +52,73 @@ extension PendantCoordinator {
         let previewSimulation = PendantSimulation(settings: previewSettings,
                                                   frameDurations: netAnimation.frameDurations,
                                                   ropeFrameDurations: ropeAnimation.frameDurations)
-        let anchor = V2(230, 310)
+        let anchor = V2(230, 450)
         previewSimulation.reset(anchor: anchor)
-        previewSimulation.advance(anchor: anchor, elapsed: 0.02)
-        let endPoint = previewSimulation.physics.endPoint
-        let preview = PigOverlayView(frame: NSRect(x: 0, y: 0, width: 460, height: 360))
-        for index in 0..<75 {
-            precondition(previewSimulation.timeline.frameIndex == index)
-            precondition(previewSimulation.isIdle)
-            precondition((previewSimulation.physics.endPoint - endPoint).magnitude == 0)
+        let preview = PigOverlayView(frame: NSRect(x: 0, y: 0, width: 460, height: 500))
+        var sawWaiting = false
+        var sawMoving = false
+        var sawFalling = false
+        var blendedFrames = 0
+        for index in 0..<(14 * 60) {
+            let time = Double(index + 1) / 60
+            let position = anchor + V2(min(45, max(0, CGFloat(time - 4) * 300)),
+                                       -min(60, max(0, CGFloat(time - 7) * 400)))
+            previewSimulation.advance(anchor: position, elapsed: 1.0 / 60)
+            let animation = previewSimulation.ropeAnimation
+            sawWaiting = sawWaiting || !animation.isAnimating
+            sawMoving = sawMoving || animation.action == .moving
+            sawFalling = sawFalling || animation.action == .falling
             let scene = SceneSnapshot(simulation: previewSimulation, artwork: artwork, isVisible: true)
-            precondition(scene.displayImage === ropeAnimation.frames[index])
+            let sample = animation.sample
+            precondition(!(sample.firstIndex == 51 && sample.secondIndex == 0),
+                         "A turned face must return through neighboring poses before blending to rest")
+            precondition(scene.displayImage === ropeAnimation.frames[sample.firstIndex])
+            precondition(scene.imageBlend == CGFloat(sample.fraction))
+            if let next = scene.nextDisplayImage { precondition(next === ropeAnimation.frames[sample.secondIndex]) }
             preview.scene = scene
             guard let bitmap = preview.bitmapImageRepForCachingDisplay(in: preview.bounds) else {
                 preconditionFailure("Cannot render rope animation frame")
             }
             preview.cacheDisplay(in: preview.bounds, to: bitmap)
-            if index % 5 == 0 {
+            if scene.nextDisplayImage != nil && scene.imageBlend > 0 && scene.imageBlend < 1 {
+                let rope = scene.ropes[0]
+                let angle = rope.endAngle * -0.70
+                let offsetY = (29 - CGFloat(120)) * rope.width / 297
+                let point = rope.endPoint + V2(-offsetY * sin(angle), offsetY * cos(angle))
+                let scale = CGFloat(bitmap.pixelsWide) / preview.bounds.width
+                let x = Int((point.x * scale).rounded())
+                let y = Int(((preview.bounds.height - point.y) * scale).rounded())
+                precondition((bitmap.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.98,
+                             "Frame mixing must not fade the opaque body or expose the rope underneath")
+                blendedFrames += 1
+            }
+            if index % 4 == 0 {
                 guard let png = bitmap.representation(using: .png, properties: [:]) else {
                     preconditionFailure("Cannot encode rope animation preview")
                 }
                 let url = Bundle.main.bundleURL.deletingLastPathComponent()
-                    .appendingPathComponent(String(format: "rope-animation-%02d.png", index))
+                    .appendingPathComponent(String(format: "rope-state-%04d.png", index))
                 do { try png.write(to: url) } catch { preconditionFailure("Rope animation snapshot: \(error)") }
             }
-            precondition(previewSimulation.advance(anchor: anchor, elapsed: 0.04))
         }
-        precondition(previewSimulation.timeline.frameIndex == 0)
+        precondition(sawWaiting && sawMoving && sawFalling && blendedFrames > 30)
 
         tick(at: lastTick + 0.085)
-        let heldTime = simulation.timeline.elapsed
+        let heldTime = simulation.ropeAnimation.elapsed
+        let heldSample = simulation.ropeAnimation.sample
         toggleVisible()
         tick(at: lastTick + 1)
-        precondition(simulation.timeline.elapsed == heldTime && timer == nil)
+        precondition(simulation.ropeAnimation.elapsed == heldTime && simulation.ropeAnimation.sample == heldSample && timer == nil)
         toggleVisible()
-        precondition(simulation.timeline.elapsed == heldTime)
+        precondition(simulation.ropeAnimation.elapsed == heldTime && simulation.ropeAnimation.sample == heldSample)
         suspend()
         tick(at: lastTick + 1)
-        precondition(simulation.timeline.elapsed == heldTime && timer == nil)
+        precondition(simulation.ropeAnimation.elapsed == heldTime && simulation.ropeAnimation.sample == heldSample && timer == nil)
         resume()
         tick(at: lastTick + 0.04)
-        precondition(simulation.timeline.elapsed > heldTime && timer != nil)
+        precondition(simulation.ropeAnimation.elapsed > heldTime && timer != nil)
         reset()
-        NSLog("PASS: 75 original rope character frames, 3-second loop, real blink shape, fixed attachment, all-frame idle rendering, hidden/sleep pause and resume")
+        NSLog("PASS: 75 original source frames, real blink shape, fixed attachment, random idle, movement/falling reactions, opaque frame blending, hidden/sleep pause and resume")
     }
 
     func smokeCheckSceneIsolation() {

@@ -53,7 +53,15 @@ enum RopeRenderer {
                                  y: -height * (1 - ArtworkCatalog.ropeAttachment.y),
                                  width: width, height: height)
                     : NSRect(x: -width * 0.5, y: -height * 0.5, width: width, height: height)
-                scene.displayImage.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1.0)
+                if let nextImage = scene.nextDisplayImage, scene.imageBlend > 0 {
+                    context.beginTransparencyLayer(auxiliaryInfo: nil)
+                    scene.displayImage.draw(in: rect, from: .zero, operation: .sourceOver,
+                                            fraction: 1 - scene.imageBlend)
+                    nextImage.draw(in: rect, from: .zero, operation: .plusLighter, fraction: scene.imageBlend)
+                    context.endTransparencyLayer()
+                } else {
+                    scene.displayImage.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
+                }
                 context.restoreGState()
                 continue
             }

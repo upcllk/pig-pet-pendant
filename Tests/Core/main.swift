@@ -5,6 +5,7 @@ typealias Check = (name: String, run: () throws -> Void)
 let settings = SettingsTests()
 let simulation = SimulationTests()
 let audio = AudioReactiveTests()
+let character = RopeCharacterAnimationTests()
 let settingsChecks: [Check] = [
     ("settings.defaults-and-storage-keys", settings.testDefaultsAndOriginalStorageKeys),
     ("settings.audio-reactive-scale-bounds", {
@@ -45,7 +46,12 @@ let simulationChecks: [Check] = [
     ("simulation.count-extremes-and-mode-directions", simulation.testBalloonCountExtremesAndNonBalloonModesUseOneRope),
     ("simulation.net-idle-animation", simulation.testNetAnimationContinuesWithoutIntegratingSettledRope),
     ("simulation.rope-idle-animation", simulation.testRopeCharacterAnimationContinuesWithoutIntegratingSettledRope),
-    ("simulation.rope-original-animation-speed", simulation.testRopeAnimationRunsAtOriginalSpeedAcrossFrameRates),
+    ("simulation.rope-animation-clock-and-physics", simulation.testRopeAnimationClockAndPhysicsAcrossFrameRates),
+    ("character.random-idle-gaps-and-actions", character.testIdleActionsHaveRandomGapsAndDoNotRepeat),
+    ("character.movement-and-falling-reactions", character.testMouseMovementAndBobFallingTriggerDifferentActions),
+    ("character.continuous-seam-weights", character.testTransitionsHaveContinuousWeightsAndNeverWrapLastToFirst),
+    ("character.seeded-scheduling-and-frame-rates", character.testSchedulingIsSeededAndFrameRateIndependent),
+    ("character.invalid-clock-and-reset", character.testInvalidClockDoesNotChangePlaybackAndResetReturnsToRest),
     ("simulation.ghost-nearby-follow", simulation.testGhostFollowsNearbyWithoutUsingRopeMotion),
     ("simulation.bamboo-transition-before-idle", simulation.testBambooBendMustCompleteBeforeIdleAndMovementWakesIt),
     ("simulation.bamboo-large-vertical-shakes", simulation.testBambooVerticalShakesHaveNoPoseCuts),

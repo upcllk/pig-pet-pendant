@@ -29,7 +29,11 @@ struct ArtworkCatalog {
         hanging = try image("hanging-pig.png")
         ghost = try image("ghost-pig.png")
         net = try animation("net-pig.png")
-        rope = try animation("rope-pig.png")
+        let ropeAnimation = try animation("rope-pig.png")
+        guard ropeAnimation.frames.count == 75 else {
+            throw ArtworkError.unreadable(directory.appendingPathComponent("rope-pig.png"))
+        }
+        rope = ropeAnimation
     }
 
     func image(mode: DisplayMode, frameIndex: Int) -> NSImage {

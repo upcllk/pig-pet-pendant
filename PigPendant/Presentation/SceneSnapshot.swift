@@ -12,6 +12,8 @@ struct SceneSnapshot {
     let isVisible: Bool
     let pigSize: CGFloat
     let displayImage: NSImage
+    let nextDisplayImage: NSImage?
+    let imageBlend: CGFloat
     let ropes: [RopeSnapshot]
     let bambooPose: BambooPose?
     let ghostPosition: V2?
@@ -23,7 +25,11 @@ struct SceneSnapshot {
         mode = simulation.settings.mode
         self.isVisible = isVisible
         pigSize = CGFloat(simulation.settings[.size])
-        displayImage = artwork.image(mode: mode, frameIndex: simulation.timeline.frameIndex)
+        displayImage = artwork.image(mode: mode, frameIndex: simulation.artworkFrameIndex)
+        let sample = simulation.ropeAnimation.sample
+        nextDisplayImage = mode == .rope && sample.firstIndex != sample.secondIndex
+            ? artwork.rope.frames[sample.secondIndex] : nil
+        imageBlend = mode == .rope ? CGFloat(sample.fraction) : 0
         ropes = simulation.activeRopes.enumerated().map { index, rope in
             RopeSnapshot(nodes: rope.nodes, endPoint: rope.endPoint, endAngle: rope.endAngle,
                          width: simulation.balloonWidth(at: index))

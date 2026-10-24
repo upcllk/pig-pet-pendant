@@ -6,19 +6,17 @@ final class PendantSimulation {
     var bambooBend = BambooBend()
     private var bambooSway: CGFloat = 0
     private var bambooMotionAnchor: V2?
-    private let netFrameDurations: [TimeInterval]
-    private let ropeFrameDurations: [TimeInterval]
     private(set) var ghostPosition = V2(0, 0)
     private(set) var balloons: [RopePhysics] = []
     private(set) var settings: PendantSettings
     private(set) var timeline: AnimationTimeline
+    private(set) var ropeAnimation: RopeCharacterAnimation
     private(set) var isIdle = false
 
     init(settings: PendantSettings, frameDurations: [TimeInterval], ropeFrameDurations: [TimeInterval]) {
         self.settings = settings
-        netFrameDurations = frameDurations
-        self.ropeFrameDurations = ropeFrameDurations
-        timeline = AnimationTimeline(frameDurations: settings.mode == .rope ? ropeFrameDurations : frameDurations)
+        timeline = AnimationTimeline(frameDurations: frameDurations)
+        ropeAnimation = RopeCharacterAnimation(frameDurations: ropeFrameDurations)
         apply(settings)
     }
 
@@ -30,10 +28,12 @@ final class PendantSimulation {
                    initialPosition: CGFloat(settings.bambooPosition / 100))
     }
     var idleInterval: TimeInterval {
-        settings.mode == .net || settings.mode == .rope
-            ? min(1.0 / 15.0, timeline.frameDurations.min()!) : 1.0 / 15.0
+        if settings.mode == .net { return min(1.0 / 15.0, timeline.frameDurations.min()!) }
+        if settings.mode == .rope && ropeAnimation.isAnimating { return 1.0 / 60.0 }
+        return 1.0 / 15.0
     }
     var updateInterval: TimeInterval { isIdle ? idleInterval : 1.0 / 60.0 }
+    var artworkFrameIndex: Int { settings.mode == .rope ? ropeAnimation.sample.firstIndex : timeline.frameIndex }
 
     func apply(_ settings: PendantSettings) {
         let modeChanged = self.settings.mode != settings.mode
@@ -47,7 +47,7 @@ final class PendantSimulation {
             balloons = [physics] + (1..<settings.balloonCount).map { _ in RopePhysics() }
         }
         if modeChanged {
-            timeline = AnimationTimeline(frameDurations: settings.mode == .rope ? ropeFrameDurations : netFrameDurations)
+            restartAnimation()
         }
     }
 
@@ -60,7 +60,10 @@ final class PendantSimulation {
         balloons = [physics] + (1..<settings.balloonCount).map { _ in RopePhysics() }
     }
 
-    func restartAnimation() { timeline.reset() }
+    func restartAnimation() {
+        timeline.reset()
+        ropeAnimation.reset()
+    }
 
     private func updateBalloonParameters() {
         guard settings.mode == .balloon else {
@@ -86,6 +89,7 @@ final class PendantSimulation {
         bambooSway = 0
         bambooMotionAnchor = anchor
         ghostPosition = ghostTarget(anchor)
+        ropeAnimation.resetMotion()
         updateBalloonParameters()
         for rope in activeRopes { rope.reset(anchor: anchor) }
         isIdle = false
@@ -96,7 +100,9 @@ final class PendantSimulation {
     @discardableResult
     func advance(anchor: V2, elapsed: TimeInterval) -> Bool {
         let previousFrame = timeline.frameIndex
-        if settings.mode == .net || settings.mode == .rope { timeline.advance(elapsed: elapsed) }
+        let previousAnchor = physics.nodes.first ?? anchor
+        let previousEndPoint = physics.endPoint
+        if settings.mode == .net { timeline.advance(elapsed: elapsed) }
         if settings.mode == .ghost {
             let delta = ghostTarget(anchor) - ghostPosition
             guard delta.x.isFinite, delta.y.isFinite, elapsed.isFinite, elapsed > 0 else { return false }
@@ -131,11 +137,15 @@ final class PendantSimulation {
         let bambooSettled = settings.mode != .bamboo || bambooBend.isSettled
         let swaySettled = settings.mode != .bamboo || abs(physics.endAngle * -0.70 - bambooSway) < 0.01
         if isIdle && anchorUnchanged && bambooSettled && swaySettled {
-            return timeline.frameIndex != previousFrame
+            let artworkChanged = advanceRopeAnimation(anchor: anchor, previousAnchor: previousAnchor,
+                                                      previousEndPoint: previousEndPoint, elapsed: elapsed)
+            return artworkChanged || timeline.frameIndex != previousFrame
         }
         isIdle = false
         updateBalloonParameters()
         for rope in activeRopes { rope.advance(anchor: anchor, timeStep: CGFloat(elapsed)) }
+        advanceRopeAnimation(anchor: anchor, previousAnchor: previousAnchor,
+                             previousEndPoint: previousEndPoint, elapsed: elapsed)
         if settings.mode == .bamboo, elapsed.isFinite, elapsed > 0 {
             let response = CGFloat(12)
             let step = min(0.1, CGFloat(elapsed))
@@ -154,5 +164,14 @@ final class PendantSimulation {
 
     private func ghostTarget(_ anchor: V2) -> V2 {
         anchor + V2(CGFloat(settings[.horizontal]), CGFloat(settings[.vertical]))
+    }
+
+    @discardableResult
+    private func advanceRopeAnimation(anchor: V2, previousAnchor: V2, previousEndPoint: V2,
+                                      elapsed: TimeInterval) -> Bool {
+        guard settings.mode == .rope, elapsed.isFinite, elapsed > 0 else { return false }
+        let anchorVelocity = elapsed > 0.25 ? V2(0, 0) : (anchor - previousAnchor) / CGFloat(elapsed)
+        let bobVelocity = elapsed > 0.25 ? V2(0, 0) : (physics.endPoint - previousEndPoint) / CGFloat(elapsed)
+        return ropeAnimation.advance(elapsed: elapsed, anchorVelocity: anchorVelocity, bobVelocity: bobVelocity)
     }
 }

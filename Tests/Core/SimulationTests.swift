@@ -68,13 +68,18 @@ final class SimulationTests {
         simulation.advance(anchor: anchor, elapsed: 1.0 / 60.0)
         try expect(simulation.isIdle)
         let nodes = simulation.physics.nodes
-        let frame = simulation.timeline.frameIndex
-
-        try expect(simulation.advance(anchor: anchor, elapsed: simulation.idleInterval))
+        try expectEqual(simulation.ropeAnimation.sample, .rest)
+        try expectEqual(simulation.updateInterval, 1.0 / 15)
+        for _ in 0..<300 {
+            simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
+            if simulation.ropeAnimation.isAnimating { break }
+        }
+        try expect(simulation.ropeAnimation.isAnimating)
+        let sample = simulation.ropeAnimation.sample
+        try expect(simulation.advance(anchor: anchor, elapsed: 1.0 / 60))
         try expect(simulation.isIdle)
-        try expectNotEqual(simulation.timeline.frameIndex, frame)
-        try expectEqual(simulation.timeline.frameDurations.count, 75)
-        try expectEqual(simulation.updateInterval, 0.04)
+        try expectNotEqual(simulation.ropeAnimation.sample, sample)
+        try expectEqual(simulation.updateInterval, 1.0 / 60)
         for (before, after) in zip(nodes, simulation.physics.nodes) {
             try expectEqual((after - before).magnitude, 0)
         }
@@ -89,8 +94,8 @@ final class SimulationTests {
         try expectEqual(simulation.timeline.frameDurations.count, 62)
         otherMode.mode = .rope
         simulation.apply(otherMode)
-        try expectEqual(simulation.timeline.frameDurations.count, 75)
-        try expectEqual(simulation.timeline.frameIndex, 0)
+        try expectEqual(simulation.ropeAnimation.sample, .rest)
+        try expect(!simulation.ropeAnimation.isAnimating)
     }
 
     func testGhostFollowsNearbyWithoutUsingRopeMotion() throws {
@@ -129,7 +134,7 @@ final class SimulationTests {
         try expectEqual(simulation.ghostPosition.y, movedAnchor.y + 96)
     }
 
-    func testRopeAnimationRunsAtOriginalSpeedAcrossFrameRates() throws {
+    func testRopeAnimationClockAndPhysicsAcrossFrameRates() throws {
         for rate in [25, 30, 60, 120, 144] {
             let simulation = PendantSimulation(settings: PendantSettings(), frameDurations: durations,
                                                ropeFrameDurations: ropeDurations)
@@ -141,8 +146,7 @@ final class SimulationTests {
                 simulation.advance(anchor: anchor, elapsed: 1.0 / Double(rate))
             }
             let elapsed = 0.01 + Double(rate * 3 + rate / 2) / Double(rate)
-            try expectEqual(simulation.timeline.elapsed, elapsed, accuracy: 0.000001)
-            try expectEqual(simulation.timeline.frameIndex, Int((elapsed - 3) / 0.04))
+            try expectEqual(simulation.ropeAnimation.elapsed, elapsed, accuracy: 0.000001)
             try expect(simulation.isIdle)
             for (before, after) in zip(nodes, simulation.physics.nodes) {
                 try expectEqual((after - before).magnitude, 0)

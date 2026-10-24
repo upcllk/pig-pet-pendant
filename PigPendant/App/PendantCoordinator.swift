@@ -31,7 +31,7 @@ final class PendantCoordinator {
             elapsed: ProcessInfo.processInfo.systemUptime - lastBeatTime
         )
     }
-    var displayImage: NSImage { artwork.image(mode: mode, frameIndex: simulation.timeline.frameIndex) }
+    var displayImage: NSImage { artwork.image(mode: mode, frameIndex: simulation.artworkFrameIndex) }
 
     init(resourceURL: URL, defaults: UserDefaults = .standard) throws {
         artwork = try ArtworkCatalog(resourceURL: resourceURL)
