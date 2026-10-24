@@ -7,15 +7,23 @@ let simulation = SimulationTests()
 let settingsChecks: [Check] = [
     ("settings.defaults-and-storage-keys", settings.testDefaultsAndOriginalStorageKeys),
     ("settings.audio-reactive-scale-bounds", {
-        try expectEqual(AudioReactiveScale.scale(forRMS: 0), CGFloat(0.55))
-        try expectEqual(AudioReactiveScale.scale(forRMS: 1), CGFloat(1.4))
-        try expectGreaterThan(AudioReactiveScale.scale(forRMS: 0.1), AudioReactiveScale.scale(forRMS: 0.001))
-        let rising = AudioReactiveScale.smoothed(current: 1, target: 1.4, elapsed: 1.0 / 60.0)
-        let falling = AudioReactiveScale.smoothed(current: 1.4, target: 0.55, elapsed: 1.0 / 60.0)
+        try expectEqual(AudioReactiveScale.scale(forRMS: 0, relativeTo: 0.1),
+                        AudioReactiveScale.minimumScale)
+        try expectEqual(AudioReactiveScale.scale(forRMS: 0.1, relativeTo: 0.1), CGFloat(1))
+        let peak = AudioReactiveScale.scale(forRMS: 0.2, relativeTo: 0.1)
+        let lull = AudioReactiveScale.scale(forRMS: 0.05, relativeTo: 0.1)
+        try expectGreaterThan(peak, CGFloat(1))
+        try expectLessThan(peak, AudioReactiveScale.maximumScale)
+        try expectLessThan(lull, CGFloat(1))
+        let rising = AudioReactiveScale.smoothed(current: 1, target: AudioReactiveScale.maximumScale,
+                                                 elapsed: 1.0 / 60.0)
+        let falling = AudioReactiveScale.smoothed(current: AudioReactiveScale.maximumScale,
+                                                  target: AudioReactiveScale.minimumScale,
+                                                  elapsed: 1.0 / 60.0)
         try expectGreaterThan(rising, CGFloat(1))
-        try expectLessThan(rising, CGFloat(1.4))
-        try expectGreaterThan(falling, CGFloat(0.55))
-        try expectLessThan(falling, CGFloat(1.4))
+        try expectLessThan(rising, AudioReactiveScale.maximumScale)
+        try expectGreaterThan(falling, AudioReactiveScale.minimumScale)
+        try expectLessThan(falling, AudioReactiveScale.maximumScale)
     }),
     ("settings.finite-bounds", settings.testFiniteValuesClampAtBothBounds),
     ("settings.nonfinite-rejection", settings.testNonFiniteValuesAreRejectedWithoutChangingState),

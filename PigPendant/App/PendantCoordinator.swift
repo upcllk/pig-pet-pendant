@@ -6,6 +6,8 @@ final class PendantCoordinator {
     private var isSuspended = false
     private let audioMonitor = AudioLevelMonitor()
     private var targetMusicScale: CGFloat = 1
+    private var audioAverageRMS: Double?
+    private var lastAudioLevelTime: TimeInterval?
     private var isAudioPermissionPending = false
     private var audioMonitoringGeneration = 0
     private(set) var audioStatus = "正在启动系统音频律动…"
@@ -33,7 +35,27 @@ final class PendantCoordinator {
         simulation = PendantSimulation(settings: settings, frameDurations: artwork.net.frameDurations)
         audioMonitor.onLevel = { [weak self] rms in
             guard let self = self, !self.isSuspended else { return }
-            self.targetMusicScale = AudioReactiveScale.scale(forRMS: rms)
+            let now = ProcessInfo.processInfo.systemUptime
+            if let average = self.audioAverageRMS {
+                if average < 0.002 {
+                    if rms < 0.002 {
+                        self.targetMusicScale = AudioReactiveScale.minimumScale
+                    } else {
+                        self.audioAverageRMS = rms
+                        self.targetMusicScale = 1
+                    }
+                } else {
+                    self.targetMusicScale = AudioReactiveScale.scale(forRMS: rms, relativeTo: average)
+                    let elapsed = self.lastAudioLevelTime.map { now - $0 } ?? 0
+                    self.audioAverageRMS = AudioReactiveScale.average(
+                        current: average, sample: rms, elapsed: elapsed
+                    )
+                }
+            } else {
+                self.audioAverageRMS = rms
+                self.targetMusicScale = 1
+            }
+            self.lastAudioLevelTime = now
         }
         driver.onTick = { [weak self] time in self?.tick(at: time) }
         rebuildWindows()
@@ -93,6 +115,8 @@ final class PendantCoordinator {
         isAudioPermissionPending = false
         audioMonitor.stop()
         targetMusicScale = 1
+        audioAverageRMS = nil
+        lastAudioLevelTime = nil
     }
 
     func resume() {
@@ -128,6 +152,8 @@ final class PendantCoordinator {
             case .failure(let error):
                 self.audioMonitor.stop()
                 self.targetMusicScale = 1
+                self.audioAverageRMS = nil
+                self.lastAudioLevelTime = nil
                 self.audioStatus = error.localizedDescription
                 NSLog("Audio-reactive mode could not start: %@", error.localizedDescription)
             }
@@ -208,6 +234,8 @@ final class PendantCoordinator {
     func restoreDefaults() {
         settings = PendantSettings()
         targetMusicScale = 1
+        audioAverageRMS = nil
+        lastAudioLevelTime = nil
         for mode in DisplayMode.allCases {
             for parameter in ParameterID.allCases {
                 store.save(settings, parameter: parameter, mode: mode)
