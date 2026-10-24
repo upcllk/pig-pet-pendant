@@ -21,7 +21,7 @@ A small desktop pig pendant that follows your mouse. The macOS version is availa
 
 ## Music Reactive Experiment
 
-Enable **Music Reactive (System Audio)** in Settings to scale the pig with the live level of system playback audio. It uses Core Audio taps on macOS 14.2 or later and requests the separate System Audio Recording permission on first use; it does not request Screen Recording permission. Audio is analyzed in memory and is not recorded, saved, or uploaded. The system master-volume slider adjusts output loudness but is not itself used as the reactive signal.
+At launch, the app attempts to read system playback audio and smoothly scales the menu-bar status icon with its live level; the desktop pendant itself is unaffected. This uses Core Audio taps on macOS 14.2 or later and requests the separate System Audio Recording permission on first launch; it does not request Screen Recording permission. Audio is analyzed in memory and is not recorded, saved, or uploaded. The system master-volume slider adjusts output loudness but is not itself used as the reactive signal. The current permission or capture status is available in the status-item menu.
 
 ## Usage
 

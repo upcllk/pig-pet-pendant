@@ -6,11 +6,16 @@ let settings = SettingsTests()
 let simulation = SimulationTests()
 let settingsChecks: [Check] = [
     ("settings.defaults-and-storage-keys", settings.testDefaultsAndOriginalStorageKeys),
-    ("settings.music-reactive-setting-roundtrip", settings.testMusicReactiveSettingRoundTrip),
     ("settings.audio-reactive-scale-bounds", {
         try expectEqual(AudioReactiveScale.scale(forRMS: 0), CGFloat(0.55))
-        try expectEqual(AudioReactiveScale.scale(forRMS: 1), CGFloat(1.8))
+        try expectEqual(AudioReactiveScale.scale(forRMS: 1), CGFloat(1.4))
         try expectGreaterThan(AudioReactiveScale.scale(forRMS: 0.1), AudioReactiveScale.scale(forRMS: 0.001))
+        let rising = AudioReactiveScale.smoothed(current: 1, target: 1.4, elapsed: 1.0 / 60.0)
+        let falling = AudioReactiveScale.smoothed(current: 1.4, target: 0.55, elapsed: 1.0 / 60.0)
+        try expectGreaterThan(rising, CGFloat(1))
+        try expectLessThan(rising, CGFloat(1.4))
+        try expectGreaterThan(falling, CGFloat(0.55))
+        try expectLessThan(falling, CGFloat(1.4))
     }),
     ("settings.finite-bounds", settings.testFiniteValuesClampAtBothBounds),
     ("settings.nonfinite-rejection", settings.testNonFiniteValuesAreRejectedWithoutChangingState),

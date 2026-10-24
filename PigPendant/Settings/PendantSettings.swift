@@ -126,7 +126,6 @@ struct PendantSettings {
     static let countRange = 1...8
     static let defaultCount = 2
     var mode: DisplayMode = .rope
-    var musicReactiveEnabled = false
     private(set) var balloonCount = defaultCount
     private var values: [DisplayMode: [ParameterID: Double]] = [:]
     private var ghostOffsets: [GhostOffsetAxis: Double] = [:]

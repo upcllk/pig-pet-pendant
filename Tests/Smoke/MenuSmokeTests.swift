@@ -38,6 +38,10 @@ extension PigAppDelegate {
             precondition(visibility.state == .on && size.submenu != nil && reset.isEnabled)
             precondition((length?.submenu != nil) == (mode != .ghost))
             precondition(detail.isEnabled == false)
+            guard let audioStatus = menu.items.first(where: { $0.title.hasPrefix("音乐律动：") }) else {
+                preconditionFailure("Missing system audio status menu item")
+            }
+            precondition(!audioStatus.isEnabled)
             let countItem = menu.items.first(where: { $0.title == "气球数量" })
             precondition((countItem != nil) == (mode == .balloon))
             if mode == .balloon {

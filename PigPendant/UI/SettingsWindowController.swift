@@ -12,9 +12,6 @@ final class SettingsBackgroundView: NSView {
 final class SettingsWindowController: NSWindowController {
     let model: PendantCoordinator
     let visibility = NSButton(checkboxWithTitle: "显示小猪", target: nil, action: nil)
-    let musicReactive = NSButton(checkboxWithTitle: "音乐律动（系统音频）", target: nil, action: nil)
-    let audioStatus = NSTextField(labelWithString: "")
-    let audioRow = NSStackView()
     let countStepper = NSStepper()
     let countReadout = NSTextField(labelWithString: "")
     let countRow = NSStackView()
@@ -46,11 +43,11 @@ final class SettingsWindowController: NSWindowController {
 
     init(model: PendantCoordinator) {
         self.model = model
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 550),
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 510),
                               styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
         window.title = "猪猪挂件设置"
         window.isReleasedWhenClosed = false
-        window.contentView = SettingsBackgroundView(frame: NSRect(x: 0, y: 0, width: 480, height: 550))
+        window.contentView = SettingsBackgroundView(frame: NSRect(x: 0, y: 0, width: 480, height: 510))
         super.init(window: window)
         window.center()
         buildContent()
@@ -72,17 +69,6 @@ final class SettingsWindowController: NSWindowController {
         header.spacing = 12
         visibility.target = self
         visibility.action = #selector(toggleVisibility)
-        musicReactive.target = self
-        musicReactive.action = #selector(toggleMusicReactive)
-        musicReactive.setAccessibilityLabel("开启系统音频音乐律动")
-        musicReactive.toolTip = "实时分析系统播放音频的音量来缩放小猪；不会录制或保存音频"
-        audioStatus.font = .systemFont(ofSize: 11)
-        audioStatus.textColor = .secondaryLabelColor
-        audioStatus.alignment = .right
-        audioRow.addArrangedSubview(musicReactive)
-        audioRow.addArrangedSubview(audioStatus)
-        audioRow.spacing = 12
-        audioRow.heightAnchor.constraint(equalToConstant: 28).isActive = true
         modeControl.target = self
         modeControl.action = #selector(changeDisplayMode)
         modeControl.setAccessibilityLabel("挂件模式")
@@ -187,7 +173,7 @@ final class SettingsWindowController: NSWindowController {
         let spacer = NSView()
         let footer = NSStackView(views: [restore, spacer, done])
         footer.distribution = .fill
-        let stack = NSStackView(views: [header, modeControl, visibility, audioRow, form, footer])
+        let stack = NSStackView(views: [header, modeControl, visibility, form, footer])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 18
@@ -235,11 +221,8 @@ final class SettingsWindowController: NSWindowController {
         countStepper.integerValue = model.balloonCount
         countReadout.stringValue = "\(model.balloonCount) 只"
         visibility.state = model.isVisible ? .on : .off
-        musicReactive.state = model.settings.musicReactiveEnabled ? .on : .off
-        musicReactive.isEnabled = !model.isAudioPermissionPending
-        audioStatus.stringValue = model.audioStatus
         if let window = window {
-            let height: CGFloat = isBalloon || isBamboo ? 590 : isGhost ? 430 : 550
+            let height: CGFloat = isBalloon || isBamboo ? 550 : isGhost ? 390 : 510
             if window.contentView?.frame.height != height {
                 let topLeft = NSPoint(x: window.frame.minX, y: window.frame.maxY)
                 window.setContentSize(NSSize(width: 480, height: height))
@@ -285,11 +268,6 @@ final class SettingsWindowController: NSWindowController {
 
     @objc func toggleVisibility() {
         model.toggleVisible()
-        refresh()
-    }
-
-    @objc private func toggleMusicReactive() {
-        model.setMusicReactiveEnabled(musicReactive.state == .on)
         refresh()
     }
 

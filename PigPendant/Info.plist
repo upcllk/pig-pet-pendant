@@ -14,7 +14,7 @@
     <key>LSMinimumSystemVersion</key><string>12.0</string>
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
-    <key>NSAudioCaptureUsageDescription</key><string>用于实时分析系统播放音量，让小猪随音乐节奏缩放；音频不会被录制或保存。</string>
+    <key>NSAudioCaptureUsageDescription</key><string>用于实时分析系统播放音量，让菜单栏小猪图标随音乐节奏缩放；音频不会被录制或保存。</string>
     <key>NSPrincipalClass</key><string>NSApplication</string>
 </dict>
 </plist>

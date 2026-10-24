@@ -87,10 +87,9 @@ extension SettingsWindowController {
             preconditionFailure("Cannot render settings window")
         }
         content.layoutSubtreeIfNeeded()
-        for control in sliders + [bambooPositionSlider, visibility, musicReactive, audioStatus, countStepper, countReadout, modeControl] where !control.isHiddenOrHasHiddenAncestor {
+        for control in sliders + [bambooPositionSlider, visibility, countStepper, countReadout, modeControl] where !control.isHiddenOrHasHiddenAncestor {
             precondition(content.bounds.contains(control.convert(control.bounds, to: content)))
         }
-        precondition(content.bounds.contains(audioRow.convert(audioRow.bounds, to: content)))
         for row in ghostOffsetRows where !row.slider.isHiddenOrHasHiddenAncestor {
             precondition(content.bounds.contains(row.slider.convert(row.slider.bounds, to: content)))
             precondition((row.readout.cell?.cellSize.width ?? 0) <= row.readout.bounds.width)
@@ -99,7 +98,6 @@ extension SettingsWindowController {
             precondition(content.bounds.contains(row.readout.convert(row.readout.bounds, to: content)))
             precondition((row.readout.cell?.cellSize.width ?? 0) <= row.readout.bounds.width)
         }
-        precondition(musicReactive.state == .off && musicReactive.isEnabled)
         precondition(countRow.isHidden == (model.mode != .balloon))
         precondition(bambooPositionRow.isHidden == (model.mode != .bamboo))
         precondition(ghostOffsetRows.allSatisfy { $0.row.isHidden == (model.mode != .ghost) })
@@ -118,7 +116,7 @@ extension SettingsWindowController {
         let modeParameterKeys = DisplayMode.allCases.flatMap { mode in
             ParameterID.allCases.map { $0.storageKey(for: mode) }
         }
-        let keys = legacyKeys + ["BalloonCount", "DisplayMode", "BambooPigPosition", "GhostOffsetX", "GhostOffsetY", "SystemAudioReactiveEnabled"] + modeParameterKeys
+        let keys = legacyKeys + ["BalloonCount", "DisplayMode", "BambooPigPosition", "GhostOffsetX", "GhostOffsetY"] + modeParameterKeys
         let saved = keys.map { defaults.object(forKey: $0) }
         let originalCount = model.balloonCount
         let originalMode = model.mode
@@ -154,7 +152,7 @@ extension SettingsWindowController {
         precondition(model.activeRopes.count == 1 && model.physics.endPoint.y < model.physics.nodes[0].y)
         precondition(model.displayImage === model.pigImage && image.image === model.pigImage)
         precondition(!countStepper.isEnabled && parameterLabels[5].stringValue == "重力")
-        precondition(countRow.isHidden && window?.contentView?.frame.height == 550)
+        precondition(countRow.isHidden && window?.contentView?.frame.height == 510)
         precondition(bambooPositionRow.isHidden)
         precondition(ghostOffsetRows.allSatisfy(\.row.isHidden))
         precondition(parameterRows.allSatisfy { !$0.row.isHidden })
@@ -165,7 +163,7 @@ extension SettingsWindowController {
         precondition(model.physics.endPoint.y < model.physics.nodes[0].y)
         precondition(model.displayImage === model.netAnimation.frames[0])
         precondition(image.image === model.displayImage && !countStepper.isEnabled)
-        precondition(countRow.isHidden && window?.contentView?.frame.height == 550)
+        precondition(countRow.isHidden && window?.contentView?.frame.height == 510)
         precondition(bambooPositionRow.isHidden)
         precondition(ghostOffsetRows.allSatisfy(\.row.isHidden))
         precondition(parameterLabels[5].stringValue == "重力")
@@ -178,8 +176,8 @@ extension SettingsWindowController {
         precondition(model.mode == .bamboo && model.activeRopes.count == 1)
         precondition(model.displayImage === model.bambooImage && image.image === model.bambooImage)
         precondition(defaults.string(forKey: "DisplayMode") == "bamboo")
-        precondition(countRow.isHidden && window?.contentView?.frame.height == 590)
-        precondition(!bambooPositionRow.isHidden && window?.contentView?.frame.height == 590)
+        precondition(countRow.isHidden && window?.contentView?.frame.height == 550)
+        precondition(!bambooPositionRow.isHidden && window?.contentView?.frame.height == 550)
         precondition(bambooPositionSlider.minValue == 0 && bambooPositionSlider.maxValue == 100)
         precondition(model.settings.bambooPosition == 50 && bambooPositionSlider.doubleValue == 50)
         bambooPositionSlider.doubleValue = 73
@@ -200,12 +198,12 @@ extension SettingsWindowController {
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.mode == .hanging && model.displayImage === model.hangingImage)
         precondition(visibility.title == "显示上吊猪" && countRow.isHidden && bambooPositionRow.isHidden)
-        precondition(window?.contentView?.frame.height == 550 && model.physics.endPoint.y < model.physics.nodes[0].y)
+        precondition(window?.contentView?.frame.height == 510 && model.physics.endPoint.y < model.physics.nodes[0].y)
         modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .ghost)!
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.mode == .ghost && model.displayImage === model.ghostImage)
         precondition(visibility.title == "显示幽灵猪" && countRow.isHidden && bambooPositionRow.isHidden)
-        precondition(window?.contentView?.frame.height == 430)
+        precondition(window?.contentView?.frame.height == 390)
         precondition(ghostOffsetRows.allSatisfy { !$0.row.isHidden })
         precondition(ghostOffsetRows.allSatisfy { $0.slider.minValue == -300 && $0.slider.maxValue == 300 })
         precondition(ghostOffsetRows[0].axis == .horizontal && ghostOffsetRows[1].axis == .vertical)
@@ -239,7 +237,7 @@ extension SettingsWindowController {
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.displayImage === model.balloonImage && image.image === model.balloonImage)
         precondition(countStepper.isEnabled && parameterLabels[5].stringValue == "浮力")
-        precondition(!countRow.isHidden && window?.contentView?.frame.height == 590)
+        precondition(!countRow.isHidden && window?.contentView?.frame.height == 550)
         precondition(model.settings[.size] == originalModeParameters[.balloon]![.size]!)
         precondition(defaults.string(forKey: "DisplayMode") == "balloon")
         for count in 1...8 {
