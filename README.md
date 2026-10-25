@@ -62,3 +62,4 @@ GUI 检查需要已登录的桌面会话，会短暂显示测试挂件后自动�
 ## 相关文档
 
 - [Windows 移植计划](docs/WINDOWS_PORT_PLAN.md)
+- [开发经验与踩坑记录](docs/DEVELOPMENT_LEARNINGS.md)
