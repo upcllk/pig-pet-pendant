@@ -173,6 +173,51 @@ extension PendantCoordinator {
         }
         NSLog("Halo split pixel count=%d soft=%d", count, soft)
         precondition(count == 4814 && soft > 100)
+        func renderedHalo(_ pose: HaloPose) -> NSBitmapImageRep {
+            guard let result = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 160, pixelsHigh: 160,
+                                               bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true,
+                                               isPlanar: false, colorSpaceName: .deviceRGB,
+                                               bytesPerRow: 0, bitsPerPixel: 0),
+                  let context = NSGraphicsContext(bitmapImageRep: result) else {
+                preconditionFailure("Cannot render normal-size halo")
+            }
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = context
+            let rect = NSRect(x: 32, y: 29, width: 96, height: 102.4)
+            let center = artwork.hangingLayers.center
+            let pivot = CGPoint(x: rect.minX + rect.width * center.x, y: rect.minY + rect.height * center.y)
+            context.cgContext.translateBy(x: pivot.x + pose.offset.x * 96, y: pivot.y + pose.offset.y * 96)
+            context.cgContext.rotate(by: pose.angle)
+            artwork.hangingLayers.halo.draw(in: rect.offsetBy(dx: -pivot.x, dy: -pivot.y))
+            NSGraphicsContext.restoreGraphicsState()
+            return result
+        }
+        func alphaCentroid(_ image: NSBitmapImageRep) -> (V2, CGFloat) {
+            var sum = V2(0, 0)
+            var total: CGFloat = 0
+            for y in 0..<image.pixelsHigh {
+                for x in 0..<image.pixelsWide {
+                    let alpha = image.colorAt(x: x, y: y)?.alphaComponent ?? 0
+                    if alpha > 0 {
+                        precondition(x > 0 && x < 159 && y > 0 && y < 159, "Halo must not clip at normal size")
+                    }
+                    sum = sum + V2(CGFloat(x), CGFloat(y)) * alpha
+                    total += alpha
+                }
+            }
+            precondition(total > 0)
+            return (sum / total, total)
+        }
+        var movement = HaloAnimation(seed: 17)
+        for _ in 0..<30 {
+            movement.advance(elapsed: 1.0 / 60, localVelocity: V2(700, -500), characterActive: true)
+        }
+        let restHalo = alphaCentroid(renderedHalo(HaloPose()))
+        let movedHalo = alphaCentroid(renderedHalo(movement.pose))
+        let displacement = (movedHalo.0 - restHalo.0).magnitude
+        precondition(displacement > 5, "Halo displacement must exceed 2.5 pt at normal 48 pt pendant size")
+        precondition(abs(movedHalo.1 / restHalo.1 - 1) < 0.08, "Halo motion must not fade or clip the original ring")
+        NSLog("PASS: halo normal-size movement %.2f px at 2x, full alpha and uncropped contour", displacement)
         var settings = self.settings
         do {
             try settings.set(140, for: .size)
@@ -194,7 +239,7 @@ extension PendantCoordinator {
             let scene = SceneSnapshot(simulation: preview, artwork: artwork, isVisible: true)
             precondition(scene.haloImage === artwork.hangingLayers.halo)
             precondition(scene.haloPose == preview.haloAnimation.pose)
-            precondition(abs(scene.haloPose.angle) < 0.15 && scene.haloPose.offset.magnitude < 0.06)
+            precondition(abs(scene.haloPose.angle) < 0.24 && scene.haloPose.offset.magnitude < 0.096)
             if let previous = previous {
                 if scene.haloPose != previous { changed += 1 }
                 precondition(abs(scene.haloPose.angle - previous.angle) < 0.05)

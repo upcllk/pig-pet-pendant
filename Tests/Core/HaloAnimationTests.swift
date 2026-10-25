@@ -9,7 +9,7 @@ final class HaloAnimationTests {
             for _ in 0..<(rate / 2) {
                 halo.advance(elapsed: 1.0 / Double(rate), localVelocity: V2(700, -500), characterActive: true)
             }
-            try expect(halo.pose.offset.x < -0.015 && halo.pose.offset.y > 0.02 && halo.pose.angle < -0.06)
+            try expect(halo.pose.offset.x * 48 < -2 && halo.pose.offset.y * 48 > 2 && halo.pose.angle < -0.14)
             try expect(halo.isAnimating)
             results.append(halo.pose)
             var rebounded = false
@@ -24,7 +24,7 @@ final class HaloAnimationTests {
             try expect(rebounded)
             try expect(!halo.isAnimating)
             try expectEqual(halo.pose, HaloPose())
-            try expect(maxAngle < 0.14 && maxOffset < 0.06)
+            try expect(maxAngle < 0.224 && maxOffset < 0.096)
         }
         for pose in results.dropFirst() {
             try expectEqual(Double(pose.angle), Double(results[0].angle), accuracy: 0.002)
@@ -101,7 +101,7 @@ final class HaloAnimationTests {
             let direction: CGFloat = (frame / 15).isMultiple(of: 2) ? 1 : -1
             let velocity = frame < 600 ? V2(0, 0) : V2(2000 * direction, -2000 * direction)
             halo.advance(elapsed: 1.0 / 60, localVelocity: velocity, characterActive: false)
-            try expect(abs(halo.pose.angle) < 0.15 && halo.pose.offset.magnitude < 0.06)
+            try expect(abs(halo.pose.angle) < 0.24 && halo.pose.offset.magnitude < 0.096)
         }
     }
 }

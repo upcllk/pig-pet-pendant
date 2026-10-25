@@ -63,8 +63,8 @@ struct HaloAnimation {
             let horizontal = CGFloat(tanh(Double(localVelocity.x / 450)))
             let vertical = CGFloat(tanh(Double(localVelocity.y / 450)))
             let idleWeight = idle * (1 - max(abs(horizontal), abs(vertical)))
-            let targetAngle = max(-0.105, min(0.105, -horizontal * 0.105 + idleWeight * idleDirection * 0.08))
-            let targetOffset = V2(-horizontal * 0.03, -vertical * 0.035 + idleWeight * 0.012)
+            let targetAngle = max(-0.168, min(0.168, -horizontal * 0.168 + idleWeight * idleDirection * 0.128))
+            let targetOffset = V2(-horizontal * 0.048, -vertical * 0.056 + idleWeight * 0.0192)
             // A damped visual follower, independent of rope forces.
             angularVelocity += ((targetAngle - pose.angle) * 100 - angularVelocity * 12) * step
             velocity = velocity + ((targetOffset - pose.offset) * 100 - velocity * 12) * step

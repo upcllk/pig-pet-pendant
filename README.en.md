@@ -56,6 +56,8 @@ Hanging Pig maps blink actions to ear twitches, preserving its cross eyes. Ear/n
 
 GUI checks cover normal-size gestures, protected cross eyes/band/attachment, disjoint halo/body pixels, and color/alpha preservation. Core checks cover halo-only scheduling, 30/60/120/144 Hz inputs, rapid reversals, settling, resume, and mode switching. The light-background pose atlas is exported to `dist/hanging-local-poses.png`; halo scene frames use `dist/hanging-halo-*.png`, with a contact sheet at `dist/hanging-halo-contact.png`. These use automated rendering and synthetic input, not screen recording or confirmation of subjective naturalness.
 
+Halo angle and displacement targets are 60% larger than the initial version, without changing idle gaps, timing, or damping. Movement targets are capped at about 9.6 degrees, with an idle target peak of about 7.3 degrees; rebound may slightly overshoot. A fixed-input render check at 48 pt / 2x requires more than 2.5 pt of halo-center displacement without clipping or alpha loss. Displacement still depends on movement speed.
+
 ## Known Limitations
 
 - A Windows executable is not currently available.
