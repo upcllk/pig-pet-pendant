@@ -7,8 +7,32 @@ enum RopeRenderer {
         let height = width * scene.imageAspect
         context.saveGState()
         let rect = NSRect(x: point.x - width * 0.5, y: point.y - height * 0.5, width: width, height: height)
+        if scene.mode == .ghostWave {
+            drawWaveHalo(scene: scene, rect: rect, width: width, context: context)
+            drawCharacter(scene: scene, rect: rect, context: context)
+            context.restoreGState()
+            return
+        }
         drawCharacter(scene: scene, rect: rect, context: context)
         drawHalo(scene: scene, rect: rect, width: width, context: context)
+        context.restoreGState()
+    }
+
+    private static func drawWaveHalo(scene: SceneSnapshot, rect: NSRect, width: CGFloat, context: CGContext) {
+        guard let halo = scene.haloImage else { return }
+        let haloRect = NSRect(x: rect.minX, y: rect.minY - width * 0.21,
+                              width: width, height: width * 1.5)
+        let pivot = CGPoint(x: haloRect.minX + haloRect.width * scene.haloCenter.x,
+                            y: haloRect.minY + haloRect.height * scene.haloCenter.y)
+        let drawRect = NSRect(x: -haloRect.width * scene.haloCenter.x * scene.haloScale,
+                              y: -haloRect.height * scene.haloCenter.y * scene.haloScale,
+                              width: haloRect.width * scene.haloScale,
+                              height: haloRect.height * scene.haloScale)
+        context.saveGState()
+        context.translateBy(x: pivot.x + scene.haloPose.offset.x * width * 1.3,
+                            y: pivot.y + scene.haloSpacing + scene.haloPose.offset.y * width * 1.3)
+        context.rotate(by: scene.haloPose.angle * 1.3)
+        halo.draw(in: drawRect, from: .zero, operation: .sourceOver, fraction: 1)
         context.restoreGState()
     }
 
@@ -27,12 +51,15 @@ enum RopeRenderer {
         guard let halo = scene.haloImage else { return }
         let pivot = CGPoint(x: rect.minX + rect.width * scene.haloCenter.x,
                             y: rect.minY + rect.height * scene.haloCenter.y)
+        let drawRect = NSRect(x: -rect.width * scene.haloCenter.x * scene.haloScale,
+                              y: -rect.height * scene.haloCenter.y * scene.haloScale,
+                              width: rect.width * scene.haloScale,
+                              height: rect.height * scene.haloScale)
         context.saveGState()
         context.translateBy(x: pivot.x + scene.haloPose.offset.x * width,
-                            y: pivot.y + scene.haloPose.offset.y * width)
+                            y: pivot.y + scene.haloSpacing + scene.haloPose.offset.y * width)
         context.rotate(by: scene.haloPose.angle)
-        halo.draw(in: rect.offsetBy(dx: -pivot.x, dy: -pivot.y),
-                  from: .zero, operation: .sourceOver, fraction: 1)
+        halo.draw(in: drawRect, from: .zero, operation: .sourceOver, fraction: 1)
         context.restoreGState()
     }
 

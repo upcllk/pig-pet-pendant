@@ -146,6 +146,34 @@ enum GhostOffsetAxis: Int, CaseIterable {
     }
 }
 
+enum HaloSpacing {
+    static let modes: [DisplayMode] = [.ghost, .ghostWave, .hanging]
+    static let range: ClosedRange<Double> = -120...120
+    static let defaultValue = 0.0
+
+    static func storageKey(for mode: DisplayMode) -> String {
+        "HaloSpacing.\(mode.rawValue)"
+    }
+
+    static func readout(_ value: Double) -> String {
+        String(format: "%+.0f 点", value)
+    }
+}
+
+enum HaloSize {
+    static let modes = HaloSpacing.modes
+    static let range: ClosedRange<Double> = 25...300
+    static let defaultValue = 100.0
+
+    static func storageKey(for mode: DisplayMode) -> String {
+        "HaloSize.\(mode.rawValue)"
+    }
+
+    static func readout(_ value: Double) -> String {
+        String(format: "%.0f%%", value)
+    }
+}
+
 struct PendantSettings {
     static let countRange = 1...8
     static let defaultCount = 2
@@ -153,6 +181,8 @@ struct PendantSettings {
     private(set) var balloonCount = defaultCount
     private var values: [DisplayMode: [ParameterID: Double]] = [:]
     private var ghostOffsets: [GhostOffsetAxis: Double] = [:]
+    private var haloSpacings: [DisplayMode: Double] = [:]
+    private var haloSizes: [DisplayMode: Double] = [:]
     var bambooPosition = BambooPigPosition.defaultValue
 
     subscript(parameter: ParameterID) -> Double {
@@ -165,6 +195,14 @@ struct PendantSettings {
 
     subscript(axis: GhostOffsetAxis) -> Double {
         ghostOffsets[axis] ?? axis.defaultValue
+    }
+
+    subscript(haloSpacingFor mode: DisplayMode) -> Double {
+        haloSpacings[mode] ?? HaloSpacing.defaultValue
+    }
+
+    subscript(haloSizeFor mode: DisplayMode) -> Double {
+        haloSizes[mode] ?? HaloSize.defaultValue
     }
 
     mutating func set(_ value: Double, for parameter: ParameterID) throws {
@@ -183,6 +221,27 @@ struct PendantSettings {
         ghostOffsets[axis] = clamped
     }
 
+    mutating func setHaloSpacing(_ value: Double, for mode: DisplayMode) throws {
+        guard HaloSpacing.modes.contains(mode) else {
+            throw SettingsError.unsupportedHaloSpacingMode(mode)
+        }
+        guard value.isFinite else {
+            throw SettingsError.nonFiniteHaloSpacing(mode)
+        }
+        haloSpacings[mode] = min(HaloSpacing.range.upperBound,
+                                 max(HaloSpacing.range.lowerBound, value))
+    }
+
+    mutating func setHaloSize(_ value: Double, for mode: DisplayMode) throws {
+        guard HaloSize.modes.contains(mode) else {
+            throw SettingsError.unsupportedHaloSizeMode(mode)
+        }
+        guard value.isFinite else {
+            throw SettingsError.nonFiniteHaloSize(mode)
+        }
+        haloSizes[mode] = min(HaloSize.range.upperBound, max(HaloSize.range.lowerBound, value))
+    }
+
     mutating func setCount(_ count: Int) {
         balloonCount = min(Self.countRange.upperBound, max(Self.countRange.lowerBound, count))
     }
@@ -191,4 +250,8 @@ struct PendantSettings {
 enum SettingsError: Error {
     case nonFinite(ParameterID)
     case nonFiniteGhostOffset(GhostOffsetAxis)
+    case unsupportedHaloSpacingMode(DisplayMode)
+    case nonFiniteHaloSpacing(DisplayMode)
+    case unsupportedHaloSizeMode(DisplayMode)
+    case nonFiniteHaloSize(DisplayMode)
 }

@@ -6,18 +6,19 @@
 
 A small desktop pig pendant that follows your mouse. Native macOS and Windows clients are available. The Windows client now includes the six current character modes, layered artwork, motion, editable defaults, and system-audio-reactive tray icon in a self-contained single-file EXE.
 
-![Preview of six modes](docs/media/modes.gif)
+![Preview of the original six modes](docs/media/modes.gif)
 
-*The preview shows all six modes in sequence. The images were rendered by the app and combined automatically; they are not a screen recording.*
+*This preview does not yet include the newly added Little Ghost Pig mode. It uses app artwork and is not a screen recording.*
 
 ## Modes
 
 - **Rope Pendant**: The default mode. The pig reacts to movement and falling, with randomly spaced blinks, ear movements, and body gestures at rest. After the rope settles, a body gesture can nudge the pig into a short swing; its amplitude is adjustable from 0–200% in Settings. Actions return smoothly to rest instead of looping the entire GIF.
-- **Ghost Pig**: The second mode in the mode list. Follows the mouse without a rope, with random progressive blinks and ear/hand gestures, continuously flowing rounded ghost feet and an independently drifting, tilting, rebounding halo.
+- **Ghost Pig**: The second mode in the mode list. Follows the mouse without a rope, with random progressive blinks and ear/hand gestures, continuously flowing rounded ghost feet and an independently drifting, tilting, rebounding halo. Halo spacing and size are adjustable independently.
+- **Little Ghost Pig**: A separately saved mode with a default size of 96 pt that keeps the original Ghost Pig. Uses the user's square transparent artwork, reuses and independently positions the original halo, and adds random blinks, more visible ear motion, and a continuously moving wavy hem. Its halo spacing and size are saved independently.
 - **Pig Balloons**: Shows 1–8 pig-shaped balloons floating upward; the default is 2. Each has independently timed blinks, gentle ear movements and nose gestures, with movement reactions.
 - **Pig in a Net**: Uses the user's manually cleaned transparent image, removing only the arrowed extra foot's pink and dark pixels in the display copy. The original PNG, other facial features, blue mesh, and transparent holes remain unchanged; the old 62-frame loop is no longer used.
 - **Pig on Bamboo**: The pig hugs a bamboo stalk that bends with mouse movement, with random blinks, ear movements and nose gestures that preserve its grip.
-- **Hanging Pig**: Hangs from a rope with randomly timed ear twitches and nose gestures. Its halo lags during movement, rebounds after stopping, and occasionally tilts at rest. Cross eyes do not blink; the band's shape is preserved with the same brown hue as Rope Pendant's binding, alongside the original attachment and halo.
+- **Hanging Pig**: Hangs from a rope with randomly timed ear twitches and nose gestures. Its halo lags during movement, rebounds after stopping, and occasionally tilts at rest; halo spacing and size are adjustable independently. Cross eyes do not blink; the band's shape is preserved with the same brown hue as Rope Pendant's binding, alongside the original attachment and halo.
 
 ## Music Reactive Experiment
 
@@ -25,9 +26,9 @@ At launch, the app detects drum onsets from changes in low- and mid-frequency en
 
 ## Usage
 
-Click the pig icon in the menu bar to switch modes or open **Settings**. Ghost Pig is second in the mode list. The menu keeps only actionable mode, visibility, adjustment, reset, and quit items; it omits mode descriptions and audio status. Settings are saved automatically. Closing the Settings window does not quit the app; select **Quit Pig Pet Pendant** to exit.
+Click the pig icon in the menu bar to switch modes or open **Settings**. The original Ghost Pig is second in the mode list, followed by Little Ghost Pig. The menu keeps only actionable mode, visibility, adjustment, reset, and quit items; it omits mode descriptions and audio status. Settings are saved automatically. Closing the Settings window does not quit the app; select **Quit Pig Pet Pendant** to exit.
 
-Initial parameters for each mode, balloon count, bamboo position, and ghost offsets are stored in `~/Library/Application Support/PigPendant/default-settings.json`. The file is copied from the app bundle on first launch. Edit the JSON manually, then click **Restore Defaults** in Settings to apply the new values. Existing saved adjustments are not overwritten by editing the file or updating the app; restoring defaults applies the file values. All seven parameters for every mode are required and must be within the ranges shown in Settings.
+Initial parameters for each mode, balloon count, bamboo position, ghost offsets, and default halo spacing and size for the three halo modes are stored in `~/Library/Application Support/PigPendant/default-settings.json`. Halo spacing is saved per mode: positive values move the halo up and farther from the body, negative values move it down and closer, within -120 to +120 pt; zero preserves its original position. Halo size is also saved per mode, ranges from 25% to 300% of the original, and scales around the halo center without changing spacing; 100% preserves the original size. Legacy configurations without the spacing or size fields use 0 pt or 100%, respectively. The file is copied from the app bundle on first launch. When an upgrade adds a mode, a complete legacy configuration is migrated by adding that mode's bundled defaults without replacing existing mode values or other settings; other invalid configurations still report an error. Edit the JSON manually, then click **Restore Defaults** in Settings to apply the new values. Existing saved adjustments are not overwritten by editing the file or updating the app; restoring defaults applies the file values. All seven parameters for every mode are required and must be within the ranges shown in Settings.
 
 ## Build
 
@@ -38,7 +39,7 @@ Requires macOS 12 or later and Xcode Command Line Tools. From the repository roo
 open dist/PigPendant.app
 ```
 
-The app bundle, ZIP archive, and DMG installer for the current architecture are created in `dist/`. Open `PigPendant-macOS-<architecture>.dmg`, then drag `PigPendant.app` onto the `Applications` shortcut to install it. The app uses an ad hoc signature and is not notarized by Apple. When opened on another Mac for the first time, macOS may show a security warning.
+The app bundle, ZIP archive, and DMG installer for the current architecture are created in `dist/`. Open `PigPendant-macOS-<architecture>.dmg`, then drag `PigPendant.app` onto the `Applications` shortcut to install it. The app icon uses the white-background pig pendant artwork in `PigPendant/Resources/AppIcon.png`; the original `pig.png` is unchanged. The app uses an ad hoc signature and is not notarized by Apple. When opened on another Mac for the first time, macOS may show a security warning.
 
 To run the build, physics, and GUI smoke checks:
 
@@ -68,6 +69,8 @@ With user approval, the new net image has locally generated ear/nose gestures in
 
 Hanging Pig's purple band is tinted only in the display copy, matching the rendered sRGB brown binding sampled from original rope frame 0 while retaining shading. Source PNGs remain unchanged. GUI checks verify only band RGB changes, with alpha, other body pixels, and the halo preserved; Settings and the pendant share the same colors.
 
+Little Ghost Pig uses `PigPendant/Resources/ghost-wave.png` as an unchanged bundled source, with a default size of 96 pt. Its local-motion coordinates are measured for this silhouette rather than reused from the original ghost. The original `ghost-halo.png` remains an independent layer; Little Ghost Pig adjusts only its drawing anchor and display amplitude, leaving the source and original mode untouched. Progressive eye closure, local ear movement, and a continuous traveling hem wave are checked at 48 pt; the snout is protected, and motion pauses/resumes with hide and system sleep. The four-panel GPT action reference defines motion limits only; it is not used as an animation frame sequence.
+
 ### Layered Ghost Pig blinks
 
 `ghost-body.png` and `ghost-halo.png` are the user's independent 768x1152 transparent layers, imported unchanged; the checkerboard composite is not an asset. `ghost-blink.png` transfers only eye differences from eight supplied 1024x1536 keys to the new body. It has no baked-in halo or old full-body glow. Non-eye pixels and body alpha remain fixed, and endpoints match the body master. There is no redrawing or automatic white removal. Alignment error for these inputs was below 0.01 source pixels; this is not guaranteed for replacement images.
@@ -75,6 +78,8 @@ Hanging Pig's purple band is tinted only in the display copy, matching the rende
 Each blink lasts about 0.91 seconds, with two closed-eye poses totaling 0.28 seconds and gradual frame blending. Initial waiting is approximately 1.2–2.5 seconds, followed by random 3–6-second gaps rather than a fixed loop. Each blink starts a roughly 2.4-second ear/hand gesture: ear tips twitch around fixed roots and the original U-shaped hands sway with a delay. The rounded ghost feet use an independent, continuous traveling wave with a roughly 3.2-second period, even without blinking or mouse movement. Individual lobes rise and fall out of phase instead of bobbing the entire body. Horizontal movement slightly increases the wave amplitude and adds lag; stopping returns to gentle continuous flow. These are local pixel warps of the supplied body, not new source frames or whole-body stretching. Eyes, nose and the original blink APNG are protected. Working copies are 384 pixels wide, with a combined pose-cache budget of 24 MiB across all eight keys, plus each key's most recent result retained for stable reuse.
 
 The halo remains separately rendered using damped following and random plane travel. Ghost mode stays at 60 Hz while stationary to draw its continuous hem; other modes retain their existing waiting/active refresh rules. All ghost clocks pause while hidden/asleep and retain their phase on resume without fast-forwarding.
+
+Both ghost modes smoothly speed up their hem waves as the mouse moves faster, using two-dimensional cursor speed in screen points per second rather than the lagging body's velocity. Horizontal, vertical, and diagonal movement all count. The idle period remains about 3.2 seconds; playback approaches a 4x limit (about 0.8 seconds per cycle) at high speeds and smoothly returns to idle flow after stopping. Only the hem clock accelerates, preserving its phase, artwork, wave shape, and independent blink/ear/hand/halo timing. Hide/sleep resume preserves the phase and resets the speed reference to avoid acceleration from cursor travel during the pause. Core checks cover 15/30/60/120/144 Hz inputs, speeds, directions, rapid reversals, stopping, and long gaps; GUI checks cover both actual render paths and hide/sleep recovery.
 
 The reproducible preparation command requires the user's original key directory and does not modify it:
 

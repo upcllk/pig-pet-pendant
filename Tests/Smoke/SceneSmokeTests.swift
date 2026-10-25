@@ -126,7 +126,7 @@ extension PendantCoordinator {
         let snapshot = sceneSnapshot()
         let heldNodes = snapshot.ropes.map(\.nodes)
         let heldBounds = snapshot.bounds
-        if mode == .ghost {
+        if simulation.isGhostMode {
             guard let heldPosition = snapshot.ghostPosition else {
                 preconditionFailure("Ghost scene is missing its follow position")
             }

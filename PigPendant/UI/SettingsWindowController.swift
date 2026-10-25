@@ -22,6 +22,18 @@ final class SettingsWindowController: NSWindowController {
                                         maxValue: BambooPigPosition.range.upperBound,
                                         target: nil, action: nil)
     let bambooPositionReadout = NSTextField(labelWithString: "")
+    let haloSpacingRow = NSStackView()
+    let haloSpacingSlider = NSSlider(value: HaloSpacing.defaultValue,
+                                     minValue: HaloSpacing.range.lowerBound,
+                                     maxValue: HaloSpacing.range.upperBound,
+                                     target: nil, action: nil)
+    let haloSpacingReadout = NSTextField(labelWithString: "")
+    let haloSizeRow = NSStackView()
+    let haloSizeSlider = NSSlider(value: HaloSize.defaultValue,
+                                  minValue: HaloSize.range.lowerBound,
+                                  maxValue: HaloSize.range.upperBound,
+                                  target: nil, action: nil)
+    let haloSizeReadout = NSTextField(labelWithString: "")
     let modeControl = NSSegmentedControl(labels: DisplayMode.allCases.map(\.title),
                                                 trackingMode: .selectOne, target: nil, action: nil)
     let image = NSImageView()
@@ -115,6 +127,42 @@ final class SettingsWindowController: NSWindowController {
             rows.append(row)
             ghostOffsetRows.append(GhostOffsetRow(axis: axis, row: row, slider: slider, readout: readout))
         }
+        let haloSpacingLabel = NSTextField(labelWithString: "光环间距")
+        haloSpacingLabel.alignment = .right
+        haloSpacingLabel.widthAnchor.constraint(equalToConstant: 64).isActive = true
+        haloSpacingSlider.isContinuous = true
+        haloSpacingSlider.target = self
+        haloSpacingSlider.action = #selector(changeHaloSpacing(_:))
+        haloSpacingSlider.setAccessibilityLabel("光环与猪本体的竖直间距；正值向上远离，负值向下靠近，单位点")
+        haloSpacingSlider.toolTip = "相对当前默认位置上下调整；正值向上远离猪本体，负值向下靠近，单位点"
+        haloSpacingSlider.widthAnchor.constraint(equalToConstant: 224).isActive = true
+        haloSpacingReadout.font = .monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+        haloSpacingReadout.alignment = .right
+        haloSpacingReadout.widthAnchor.constraint(equalToConstant: 78).isActive = true
+        haloSpacingRow.addArrangedSubview(haloSpacingLabel)
+        haloSpacingRow.addArrangedSubview(haloSpacingSlider)
+        haloSpacingRow.addArrangedSubview(haloSpacingReadout)
+        haloSpacingRow.spacing = 10
+        haloSpacingRow.heightAnchor.constraint(equalToConstant: 28).isActive = true
+        rows.append(haloSpacingRow)
+        let haloSizeLabel = NSTextField(labelWithString: "光环大小")
+        haloSizeLabel.alignment = .right
+        haloSizeLabel.widthAnchor.constraint(equalToConstant: 64).isActive = true
+        haloSizeSlider.isContinuous = true
+        haloSizeSlider.target = self
+        haloSizeSlider.action = #selector(changeHaloSize(_:))
+        haloSizeSlider.setAccessibilityLabel("光环相对原始大小的比例，百分比；以光环中心缩放")
+        haloSizeSlider.toolTip = "按百分比缩放光环，不改变光环与猪本体的间距"
+        haloSizeSlider.widthAnchor.constraint(equalToConstant: 224).isActive = true
+        haloSizeReadout.font = .monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+        haloSizeReadout.alignment = .right
+        haloSizeReadout.widthAnchor.constraint(equalToConstant: 78).isActive = true
+        haloSizeRow.addArrangedSubview(haloSizeLabel)
+        haloSizeRow.addArrangedSubview(haloSizeSlider)
+        haloSizeRow.addArrangedSubview(haloSizeReadout)
+        haloSizeRow.spacing = 10
+        haloSizeRow.heightAnchor.constraint(equalToConstant: 28).isActive = true
+        rows.append(haloSizeRow)
         for parameter in ParameterID.allCases {
             if parameter == .gravity {
                 let advanced = NSTextField(labelWithString: "高级")
@@ -191,7 +239,8 @@ final class SettingsWindowController: NSWindowController {
     func refresh() {
         let isBalloon = model.mode == .balloon
         let isBamboo = model.mode == .bamboo
-        let isGhost = model.mode == .ghost
+        let isGhost = model.mode == .ghost || model.mode == .ghostWave
+        let hasHaloSpacing = HaloSpacing.modes.contains(model.mode)
         let isRope = model.mode == .rope
         modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: model.mode) ?? 0
         visibility.title = model.mode.visibilityCheckboxTitle
@@ -216,6 +265,12 @@ final class SettingsWindowController: NSWindowController {
             row.slider.doubleValue = value
             row.readout.stringValue = row.axis.readout(value)
         }
+        haloSpacingRow.isHidden = !hasHaloSpacing
+        haloSpacingSlider.doubleValue = model.settings[haloSpacingFor: model.mode]
+        haloSpacingReadout.stringValue = HaloSpacing.readout(model.settings[haloSpacingFor: model.mode])
+        haloSizeRow.isHidden = !hasHaloSpacing
+        haloSizeSlider.doubleValue = model.settings[haloSizeFor: model.mode]
+        haloSizeReadout.stringValue = HaloSize.readout(model.settings[haloSizeFor: model.mode])
         bambooPositionRow.isHidden = !isBamboo
         bambooPositionSlider.doubleValue = model.settings.bambooPosition
         bambooPositionReadout.stringValue = String(format: "%.0f%%", model.settings.bambooPosition)
@@ -224,7 +279,8 @@ final class SettingsWindowController: NSWindowController {
         countReadout.stringValue = "\(model.balloonCount) 只"
         visibility.state = model.isVisible ? .on : .off
         if let window = window {
-            let height: CGFloat = isBalloon || isBamboo || isRope ? 550 : isGhost ? 390 : 510
+            let height: CGFloat = isBalloon || isBamboo || isRope ? 550
+                : model.mode == .hanging ? 590 : isGhost ? 470 : 510
             if window.contentView?.frame.height != height {
                 let topLeft = NSPoint(x: window.frame.minX, y: window.frame.maxY)
                 window.setContentSize(NSSize(width: 480, height: height))
@@ -255,6 +311,16 @@ final class SettingsWindowController: NSWindowController {
             return
         }
         model.changeGhostOffset(axis, value: sender.doubleValue.rounded())
+        refresh()
+    }
+
+    @objc private func changeHaloSpacing(_ sender: NSSlider) {
+        model.changeHaloSpacing(sender.doubleValue.rounded())
+        refresh()
+    }
+
+    @objc private func changeHaloSize(_ sender: NSSlider) {
+        model.changeHaloSize(sender.doubleValue.rounded())
         refresh()
     }
 

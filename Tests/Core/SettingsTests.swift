@@ -31,7 +31,7 @@ final class SettingsTests {
     func testDefaultsAndOriginalStorageKeys() throws {
         let settings = store.load()
         try expectEqual(settings.mode, .rope)
-        try expectEqual(Array(DisplayMode.allCases.prefix(2)), [.rope, .ghost])
+        try expectEqual(Array(DisplayMode.allCases.prefix(3)), [.rope, .ghost, .ghostWave])
         try expectEqual(settings.balloonCount, 2)
         try expectEqual(ParameterID.allCases.map(\.storageKey),
                        ["RopeLength", "PigSize", "Weight", "Elasticity", "NudgeSwingAmplitude", "DampingRate", "Gravity"])
@@ -42,6 +42,22 @@ final class SettingsTests {
         try expectEqual(settings[.horizontal], 44)
         try expectEqual(settings[.vertical], 32)
         try expectEqual(GhostOffsetAxis.range, -300...300)
+        try expectEqual(HaloSpacing.modes, [.ghost, .ghostWave, .hanging])
+        try expectEqual(HaloSpacing.range, -120...120)
+        for mode in HaloSpacing.modes {
+            try expectEqual(settings[haloSpacingFor: mode], HaloSpacing.defaultValue)
+        }
+        try expectEqual(HaloSize.modes, HaloSpacing.modes)
+        try expectEqual(HaloSize.range, 25...300)
+        for mode in HaloSize.modes {
+            try expectEqual(settings[haloSizeFor: mode], HaloSize.defaultValue)
+        }
+        try expectEqual(DisplayMode.ghostWave.title, "小小幽灵猪")
+        try expectEqual(DisplayMode.ghostWave.visibilityMenuTitle, "显示 / 隐藏小小幽灵猪")
+        let bundledDefaultsURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent("PigPendant/Resources/default-settings.json")
+        let bundledDefaults = try SettingsConfiguration.load(from: bundledDefaultsURL)
+        try expectEqual(bundledDefaults[.size, mode: .ghostWave], 96)
         for mode in DisplayMode.allCases {
             for parameter in ParameterID.allCases {
                 try expectEqual(settings[parameter, mode: mode], parameter.defaultValue)
@@ -63,7 +79,9 @@ final class SettingsTests {
             "parameters": parameters,
             "balloonCount": 5,
             "bambooPosition": 67,
-            "ghostOffsets": ["horizontal": 81, "vertical": -45]
+            "ghostOffsets": ["horizontal": 81, "vertical": -45],
+            "haloSpacing": ["ghost": -30, "ghostWave": 45, "hanging": 100],
+            "haloSize": ["ghost": 75, "ghostWave": 125, "hanging": 200]
         ]
         try JSONSerialization.data(withJSONObject: configuration, options: [.sortedKeys]).write(to: url)
         let configuredStore = try SettingsStore(defaults: defaults, configurationURL: url)
@@ -74,9 +92,104 @@ final class SettingsTests {
         try expectEqual(configured.bambooPosition, 67)
         try expectEqual(configured[.horizontal], 81)
         try expectEqual(configured[.vertical], -45)
+        try expectEqual(configured[haloSpacingFor: .ghost], -30)
+        try expectEqual(configured[haloSpacingFor: .ghostWave], 45)
+        try expectEqual(configured[haloSpacingFor: .hanging], 100)
+        try expectEqual(configured[haloSizeFor: .ghost], 75)
+        try expectEqual(configured[haloSizeFor: .ghostWave], 125)
+        try expectEqual(configured[haloSizeFor: .hanging], 200)
         defaults.set(222, forKey: ParameterID.length.storageKey(for: .net))
         try expectEqual(configuredStore.load()[.length, mode: .net], 222)
         try expectEqual(configuredStore.defaultSettings[.length, mode: .net], 141)
+    }
+
+    func testHaloSpacingPersistsIndependentlyByModeAndClampsToRange() throws {
+        let values: [DisplayMode: Double] = [.ghost: -72, .ghostWave: 48, .hanging: 120]
+        var settings = store.load()
+        for (mode, value) in values {
+            try settings.setHaloSpacing(value, for: mode)
+            store.saveHaloSpacing(settings, mode: mode)
+        }
+        let loaded = store.load()
+        for (mode, value) in values {
+            try expectEqual(loaded[haloSpacingFor: mode], value)
+            try expectEqual(defaults.double(forKey: HaloSpacing.storageKey(for: mode)), value)
+        }
+        try settings.setHaloSpacing(-Double.greatestFiniteMagnitude, for: .ghost)
+        try expectEqual(settings[haloSpacingFor: .ghost], HaloSpacing.range.lowerBound)
+        try settings.setHaloSpacing(Double.greatestFiniteMagnitude, for: .hanging)
+        try expectEqual(settings[haloSpacingFor: .hanging], HaloSpacing.range.upperBound)
+        try expectThrows(try settings.setHaloSpacing(.nan, for: .ghostWave))
+        try expectThrows(try settings.setHaloSpacing(10, for: .rope))
+    }
+
+    func testHaloSizePersistsIndependentlyByModeAndClampsToRange() throws {
+        let values: [DisplayMode: Double] = [.ghost: 75, .ghostWave: 150, .hanging: 300]
+        var settings = store.load()
+        for (mode, value) in values {
+            try settings.setHaloSize(value, for: mode)
+            store.saveHaloSize(settings, mode: mode)
+        }
+        try settings.setHaloSpacing(42, for: .ghost)
+        try settings.setHaloSize(125, for: .ghost)
+        try expectEqual(settings[haloSpacingFor: .ghost], 42)
+        let loaded = store.load()
+        for (mode, value) in values {
+            try expectEqual(loaded[haloSizeFor: mode], value)
+            try expectEqual(defaults.double(forKey: HaloSize.storageKey(for: mode)), value)
+        }
+        try settings.setHaloSize(-Double.greatestFiniteMagnitude, for: .ghost)
+        try expectEqual(settings[haloSizeFor: .ghost], HaloSize.range.lowerBound)
+        try settings.setHaloSize(Double.greatestFiniteMagnitude, for: .hanging)
+        try expectEqual(settings[haloSizeFor: .hanging], HaloSize.range.upperBound)
+        try expectThrows(try settings.setHaloSize(.nan, for: .ghostWave))
+        try expectThrows(try settings.setHaloSize(100, for: .rope))
+    }
+
+    func testLegacyConfigurationAddsWaveGhostDefaultsWithoutReplacingCustomValues() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("pig-pendant-settings-migration-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let legacyURL = directory.appendingPathComponent("legacy.json")
+        let bundledURL = directory.appendingPathComponent("bundled.json")
+
+        var parameters = Dictionary(uniqueKeysWithValues: DisplayMode.allCases.map { mode in
+            (mode.rawValue, Dictionary(uniqueKeysWithValues: ParameterID.allCases.map {
+                ($0.configurationKey, $0.defaultValue)
+            }))
+        })
+        parameters[DisplayMode.ghostWave.rawValue]?[ParameterID.length.configurationKey] = 180
+        parameters[DisplayMode.rope.rawValue]?[ParameterID.length.configurationKey] = 175
+
+        func writeConfiguration(_ parameters: [String: [String: Double]], to url: URL) throws {
+            let configuration: [String: Any] = [
+                "parameters": parameters,
+                "balloonCount": 5,
+                "bambooPosition": 67,
+                "ghostOffsets": ["horizontal": 81, "vertical": -45]
+            ]
+            try JSONSerialization.data(withJSONObject: configuration).write(to: url)
+        }
+
+        var legacyParameters = parameters
+        legacyParameters.removeValue(forKey: DisplayMode.ghostWave.rawValue)
+        try writeConfiguration(legacyParameters, to: legacyURL)
+        try writeConfiguration(parameters, to: bundledURL)
+
+        try SettingsConfiguration.migrateMissingWaveGhostDefaults(
+            at: legacyURL, bundledDefaultsURL: bundledURL
+        )
+        let migrated = try SettingsConfiguration.load(from: legacyURL)
+        try expectEqual(migrated[.length, mode: .rope], 175)
+        try expectEqual(migrated[.length, mode: .ghostWave], 180)
+        try expectEqual(migrated.balloonCount, 5)
+        try expectEqual(migrated.bambooPosition, 67)
+        try expectEqual(migrated[.horizontal], 81)
+        try expectEqual(migrated[.vertical], -45)
+        for mode in HaloSize.modes {
+            try expectEqual(migrated[haloSizeFor: mode], HaloSize.defaultValue)
+        }
     }
 
     func testInvalidEditableConfigurationIsRejected() throws {
@@ -84,6 +197,20 @@ final class SettingsTests {
             .appendingPathComponent("pig-pendant-settings-\(UUID().uuidString).json")
         defer { try? FileManager.default.removeItem(at: url) }
         try Data("{}".utf8).write(to: url)
+        try expectThrows(try SettingsStore(defaults: defaults, configurationURL: url))
+        let parameters = Dictionary(uniqueKeysWithValues: DisplayMode.allCases.map { mode in
+            (mode.rawValue, Dictionary(uniqueKeysWithValues: ParameterID.allCases.map {
+                ($0.configurationKey, $0.defaultValue)
+            }))
+        })
+        let configuration: [String: Any] = [
+            "parameters": parameters,
+            "balloonCount": 2,
+            "bambooPosition": 50,
+            "ghostOffsets": ["horizontal": 44, "vertical": 32],
+            "haloSize": ["ghost": 24, "ghostWave": 100, "hanging": 100]
+        ]
+        try JSONSerialization.data(withJSONObject: configuration).write(to: url)
         try expectThrows(try SettingsStore(defaults: defaults, configurationURL: url))
     }
 
@@ -164,7 +291,9 @@ final class SettingsTests {
         let settings = store.load()
         for mode in DisplayMode.allCases {
             for parameter in ParameterID.allCases {
-                let expected = legacyValues[parameter] ?? parameter.defaultValue
+                let expected = mode == .ghostWave
+                    ? parameter.defaultValue
+                    : legacyValues[parameter] ?? parameter.defaultValue
                 try expectEqual(settings[parameter, mode: mode], expected)
                 try expectEqual(defaults.double(forKey: parameter.storageKey(for: mode)), expected)
             }
@@ -176,7 +305,28 @@ final class SettingsTests {
         let reloaded = store.load()
         try expectEqual(reloaded[.length, mode: .rope], 555)
         for mode in DisplayMode.allCases where mode != .rope {
-            try expectEqual(reloaded[.length, mode: mode], legacyValues[.length]!)
+            let expected = mode == .ghostWave ? ParameterID.length.defaultValue : legacyValues[.length]!
+            try expectEqual(reloaded[.length, mode: mode], expected)
+        }
+    }
+
+    func testNewWaveModeDefaultsDoNotTriggerLegacyMigrationForSavedModes() throws {
+        for mode in DisplayMode.allCases where mode != .ghostWave {
+            for parameter in ParameterID.allCases {
+                defaults.set(parameter.defaultValue + 1, forKey: parameter.storageKey(for: mode))
+            }
+        }
+        for parameter in ParameterID.allCases {
+            defaults.set(parameter.defaultValue + 2, forKey: parameter.storageKey)
+        }
+        let loaded = store.load()
+        for mode in DisplayMode.allCases where mode != .ghostWave {
+            for parameter in ParameterID.allCases {
+                try expectEqual(loaded[parameter, mode: mode], parameter.defaultValue + 1)
+            }
+        }
+        for parameter in ParameterID.allCases {
+            try expectEqual(loaded[parameter, mode: .ghostWave], parameter.defaultValue)
         }
     }
 

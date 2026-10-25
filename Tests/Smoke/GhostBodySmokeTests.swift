@@ -3,6 +3,63 @@ import ImageIO
 import UniformTypeIdentifiers
 
 extension PendantCoordinator {
+    func smokeCheckGhostMouseSpeed() {
+        let originalAnchor = ropeAnchor()
+        defer {
+            validationAnchor = originalAnchor
+            reset()
+        }
+        var cycles: [Double] = []
+        for speed in [0.0, 150, 600, 1800] {
+            simulation.restartAnimation()
+            validationAnchor = originalAnchor
+            reset()
+            var total = 0.0
+            for frame in 1...30 {
+                let previous = simulation.ghostBody.pose
+                validationAnchor = originalAnchor + V2(0, speed * Double(frame) / 30)
+                tick(at: lastTick + 1.0 / 30)
+                total += (simulation.ghostBody.pose.hemPhase - previous.hemPhase + 1)
+                    .truncatingRemainder(dividingBy: 1)
+            }
+            cycles.append(total)
+            let pose = simulation.ghostBody.pose
+            let scene = sceneSnapshot()
+            if mode == .ghost {
+                precondition(scene.displayImage === artwork.ghostCharacters[simulation.ghostBlink.sample.firstIndex].image(for: pose))
+            } else {
+                precondition(scene.displayImage === artwork.ghostWaveCharacter.image(for: pose, blinkSample: simulation.ghostBlink.sample))
+            }
+            precondition(timerInterval == 1.0 / 60)
+        }
+        precondition(zip(cycles, cycles.dropFirst()).allSatisfy { $0 < $1 },
+                     "Both ghost render paths must receive progressively faster hem phases")
+        precondition(cycles[3] > cycles[0] * 2.9)
+        let held = simulation.ghostBody.pose
+        toggleVisible()
+        tick(at: lastTick + 5)
+        precondition(timer == nil && simulation.ghostBody.pose == held)
+        validationAnchor = originalAnchor + V2(5000, -5000)
+        toggleVisible()
+        precondition(simulation.ghostBody.pose == held && simulation.ghostBody.hemPlaybackRate == 1)
+        tick(at: lastTick + 1.0 / 60)
+        precondition(simulation.ghostBody.hemPlaybackRate == 1)
+        validationAnchor = ropeAnchor() + V2(60, 0)
+        tick(at: lastTick + 1.0 / 60)
+        precondition(simulation.ghostBody.hemPlaybackRate > 1)
+        let sleepPose = simulation.ghostBody.pose
+        suspend()
+        tick(at: lastTick + 5)
+        precondition(timer == nil && simulation.ghostBody.pose == sleepPose)
+        validationAnchor = originalAnchor
+        resume()
+        precondition(simulation.ghostBody.pose == sleepPose && simulation.ghostBody.hemPlaybackRate == 1)
+        tick(at: lastTick + 1.0 / 60)
+        precondition(simulation.ghostBody.hemPlaybackRate == 1)
+        NSLog("PASS: %@ mouse-speed hem clocks reach actual rendered scenes, vertical acceleration, hidden/sleep phase preservation and no resume speed spike",
+              mode.rawValue)
+    }
+
     func smokeCheckGhostBody() {
         let character = artwork.ghostCharacters[0]
         func raster(_ image: NSImage, width: Int) -> NSBitmapImageRep {

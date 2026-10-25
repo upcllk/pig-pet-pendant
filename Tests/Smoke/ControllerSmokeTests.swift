@@ -42,6 +42,8 @@ extension PendantCoordinator {
         if mode == .balloon || mode == .bamboo { smokeCheckLocalCharacters() }
         if mode == .hanging || mode == .net { smokeCheckCustomCharacter() }
         if mode == .ghost { smokeCheckGhostAnimation() }
+        if mode == .ghostWave { smokeCheckWaveGhostAnimation() }
+        if simulation.isGhostMode { smokeCheckGhostMouseSpeed() }
         if mode == .bamboo {
             let savedLength = physics.length
             physics.length = 180
@@ -109,7 +111,7 @@ extension PendantCoordinator {
             tick()
             precondition(!isIdle && timerInterval == 1.0 / 60.0)
         }
-        if mode == .ghost {
+        if simulation.isGhostMode {
             let previousAnchor = ropeAnchor()
             let previousPosition = simulation.ghostPosition
             validationAnchor = previousAnchor + V2(100, 0)

@@ -9,6 +9,8 @@ struct ArtworkCatalog {
     let hanging: NSImage
     let netImage: NSImage
     let ghost: NSImage
+    let ghostWave: NSImage
+    let ghostWaveCharacter: WaveGhostArtwork
     let ghostBlink: AnimatedArtwork
     let ghostCharacters: [LocalCharacterArtwork]
     let ghostHalo: NSImage
@@ -53,6 +55,11 @@ struct ArtworkCatalog {
         }
         ghostBlink = ghostAnimation
         ghostCharacters = try ghostAnimation.frames.map { try LocalCharacterArtwork(image: $0, mode: .ghost) }
+        ghostWave = try image("ghost-wave.png")
+        guard ghostWave.size == NSSize(width: 768, height: 768) else {
+            throw ArtworkError.unreadable(directory.appendingPathComponent("ghost-wave.png"))
+        }
+        ghostWaveCharacter = try WaveGhostArtwork(image: ghostWave)
         let haloImage = try image("ghost-halo.png")
         guard let haloCG = haloImage.cgImage(forProposedRect: nil, context: nil, hints: nil),
               haloCG.width == 768 && haloCG.height == 1152 else {
@@ -103,6 +110,7 @@ struct ArtworkCatalog {
         case .bamboo: return bamboo
         case .hanging: return hanging
         case .ghost: return ghost
+        case .ghostWave: return ghostWave
         }
     }
 }

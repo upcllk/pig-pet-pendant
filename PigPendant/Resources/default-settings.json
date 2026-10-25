@@ -18,6 +18,15 @@
       "damping": 0.906818268602891,
       "gravity": 1350
     },
+    "ghostWave": {
+      "length": 140,
+      "size": 96,
+      "weight": 65,
+      "elasticity": 55,
+      "sway": 100,
+      "damping": 0.906818268602891,
+      "gravity": 1350
+    },
     "balloon": {
       "length": 140,
       "size": 48,
@@ -60,5 +69,15 @@
   "ghostOffsets": {
     "horizontal": 44,
     "vertical": 32
+  },
+  "haloSpacing": {
+    "ghost": 0,
+    "ghostWave": 0,
+    "hanging": 0
+  },
+  "haloSize": {
+    "ghost": 100,
+    "ghostWave": 100,
+    "hanging": 100
   }
 }

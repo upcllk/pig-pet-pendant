@@ -113,7 +113,38 @@ final class StatusItemController: NSObject {
         sizeParent.submenu = sizeMenu
         menu.addItem(sizeParent)
 
-        if controller.mode != .ghost {
+        if HaloSpacing.modes.contains(controller.mode) {
+            let spacingMenu = NSMenu(title: "光环间距")
+            for value in stride(from: Int(HaloSpacing.range.lowerBound),
+                               through: Int(HaloSpacing.range.upperBound), by: 40) {
+                let item = NSMenuItem(title: HaloSpacing.readout(Double(value)),
+                                      action: #selector(setHaloSpacing(_:)), keyEquivalent: "")
+                item.target = self
+                item.tag = value
+                item.state = abs(controller.settings[haloSpacingFor: controller.mode] - Double(value)) < 0.1
+                    ? .on : .off
+                spacingMenu.addItem(item)
+            }
+            let spacingParent = NSMenuItem(title: "光环间距", action: nil, keyEquivalent: "")
+            spacingParent.submenu = spacingMenu
+            menu.addItem(spacingParent)
+
+            let haloSizeMenu = NSMenu(title: "光环大小")
+            for value in [25, 50, 75, 100, 125, 150, 200, 250, 300] {
+                let item = NSMenuItem(title: HaloSize.readout(Double(value)),
+                                      action: #selector(setHaloSize(_:)), keyEquivalent: "")
+                item.target = self
+                item.tag = value
+                item.state = abs(controller.settings[haloSizeFor: controller.mode] - Double(value)) < 0.1
+                    ? .on : .off
+                haloSizeMenu.addItem(item)
+            }
+            let haloSizeParent = NSMenuItem(title: "光环大小", action: nil, keyEquivalent: "")
+            haloSizeParent.submenu = haloSizeMenu
+            menu.addItem(haloSizeParent)
+        }
+
+        if controller.mode != .ghost && controller.mode != .ghostWave {
             let lengthTitle = ParameterID.length.title(mode: controller.mode)
             let lengthMenu = NSMenu(title: lengthTitle)
             for n in [20, 60, 100, 140, 220, 320, 440, 600, 900, 1200] {
@@ -147,6 +178,12 @@ final class StatusItemController: NSObject {
     }
     @objc private func setSize(_ sender: NSMenuItem) { controller.changeSize(CGFloat(sender.tag)) }
     @objc private func setLength(_ sender: NSMenuItem) { controller.changeLength(CGFloat(sender.tag)) }
+    @objc private func setHaloSpacing(_ sender: NSMenuItem) {
+        controller.changeHaloSpacing(Double(sender.tag))
+    }
+    @objc private func setHaloSize(_ sender: NSMenuItem) {
+        controller.changeHaloSize(Double(sender.tag))
+    }
     @objc private func setBalloonCount(_ sender: NSMenuItem) { controller.changeCount(sender.tag) }
     @objc private func resetPig() { controller.reset() }
     @objc private func quitApp() { NSApp.terminate(nil) }

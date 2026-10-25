@@ -6,6 +6,7 @@ final class PendantSimulation {
     var bambooBend = BambooBend()
     private var bambooSway: CGFloat = 0
     private var bambooMotionAnchor: V2?
+    private var ghostMotionAnchor: V2?
     private(set) var ghostPosition = V2(0, 0)
     private(set) var balloons: [RopePhysics] = []
     private(set) var settings: PendantSettings
@@ -44,10 +45,11 @@ final class PendantSimulation {
             return 1.0 / 60.0
         }
         if settings.mode == .balloon && balloonAnimations.contains(where: \.isAnimating) { return 1.0 / 60.0 }
-        if settings.mode == .ghost { return 1.0 / 60.0 }
-        if [.hanging, .ghost].contains(settings.mode) && haloAnimation.isAnimating { return 1.0 / 60.0 }
+        if isGhostMode { return 1.0 / 60.0 }
+        if [.hanging, .ghost, .ghostWave].contains(settings.mode) && haloAnimation.isAnimating { return 1.0 / 60.0 }
         return 1.0 / 15.0
     }
+    var isGhostMode: Bool { settings.mode == .ghost || settings.mode == .ghostWave }
     var updateInterval: TimeInterval { isIdle ? idleInterval : 1.0 / 60.0 }
     var artworkFrameIndex: Int {
         settings.mode == .ghost ? ghostBlink.sample.firstIndex :
@@ -118,6 +120,8 @@ final class PendantSimulation {
         bambooSway = 0
         bambooMotionAnchor = anchor
         ghostPosition = ghostTarget(anchor)
+        ghostMotionAnchor = anchor
+        ghostBody.resetMotion()
         ropeAnimation.resetMotion()
         for index in balloonAnimations.indices { balloonAnimations[index].resetMotion() }
         updateBalloonParameters()
@@ -132,10 +136,12 @@ final class PendantSimulation {
         let previousFrame = timeline.frameIndex
         let previousAnchor = physics.nodes.first ?? anchor
         let previousEndPoints = activeRopes.map(\.endPoint)
-        if settings.mode == .ghost {
+        if isGhostMode {
             let delta = ghostTarget(anchor) - ghostPosition
             guard delta.x.isFinite, delta.y.isFinite, elapsed.isFinite, elapsed > 0 else { return false }
             let previousPosition = ghostPosition
+            let mouseSpeed = elapsed > 0.25 ? 0 : (anchor - (ghostMotionAnchor ?? anchor)).magnitude / CGFloat(elapsed)
+            ghostMotionAnchor = anchor
             let step = min(0.1, CGFloat(elapsed))
             let blend = 1 - CGFloat(exp(Double(-14 * step)))
             ghostPosition = ghostPosition + delta * blend
@@ -148,9 +154,12 @@ final class PendantSimulation {
             let blinkChanged = ghostBlink.advance(elapsed: elapsed)
             let velocity = elapsed > 0.25 ? V2(0, 0) : (ghostPosition - previousPosition) / CGFloat(elapsed)
             let bodyChanged = ghostBody.advance(elapsed: elapsed, blinking: ghostBlink.isAnimating,
-                                                horizontalVelocity: Double(velocity.x))
+                                                horizontalVelocity: Double(velocity.x), mouseSpeed: Double(mouseSpeed))
+            let characterActive = settings.mode == .ghostWave
+                ? ghostBlink.isAnimating || ghostBody.isGesturing
+                : ghostBlink.isAnimating
             let haloChanged = haloAnimation.advance(elapsed: elapsed, localVelocity: velocity,
-                                                      characterActive: ghostBlink.isAnimating)
+                                                     characterActive: characterActive)
             return (ghostPosition - previousPosition).magnitude > 0 || blinkChanged || bodyChanged || haloChanged
         }
         let movementTolerance: CGFloat = settings.mode == .bamboo ? 1 : 0.01

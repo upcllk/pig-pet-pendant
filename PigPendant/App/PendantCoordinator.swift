@@ -61,7 +61,7 @@ final class PendantCoordinator {
         if let validationAnchor = validationAnchor { return validationAnchor }
         #endif
         let point = NSEvent.mouseLocation
-        if mode == .ghost { return V2(point.x, point.y) }
+        if simulation.isGhostMode { return V2(point.x, point.y) }
         return V2(point.x + 4, point.y + (mode == .balloon ? 6 : -6))
     }
 
@@ -221,6 +221,36 @@ final class PendantCoordinator {
         onChange?()
     }
 
+    func changeHaloSpacing(_ value: Double) {
+        let mode = settings.mode
+        do {
+            try settings.setHaloSpacing(value, for: mode)
+        } catch {
+            NSLog("Rejected %@=%@: %@", HaloSpacing.storageKey(for: mode), String(value),
+                  String(describing: error))
+            return
+        }
+        store.saveHaloSpacing(settings, mode: mode)
+        simulation.apply(settings)
+        redraw()
+        onChange?()
+    }
+
+    func changeHaloSize(_ value: Double) {
+        let mode = settings.mode
+        do {
+            try settings.setHaloSize(value, for: mode)
+        } catch {
+            NSLog("Rejected %@=%@: %@", HaloSize.storageKey(for: mode), String(value),
+                  String(describing: error))
+            return
+        }
+        store.saveHaloSize(settings, mode: mode)
+        simulation.apply(settings)
+        redraw()
+        onChange?()
+    }
+
     func changeSize(_ value: CGFloat) { changeParameter(.size, value: Double(value)) }
     func changeLength(_ value: CGFloat) { changeParameter(.length, value: Double(value)) }
 
@@ -236,6 +266,8 @@ final class PendantCoordinator {
         store.saveCount(settings.balloonCount)
         store.saveBambooPosition(settings)
         for axis in GhostOffsetAxis.allCases { store.saveGhostOffset(settings, axis: axis) }
+        for mode in HaloSpacing.modes { store.saveHaloSpacing(settings, mode: mode) }
+        for mode in HaloSize.modes { store.saveHaloSize(settings, mode: mode) }
         store.saveMode(settings.mode)
         simulation.apply(settings)
         simulation.rebuildBalloons()

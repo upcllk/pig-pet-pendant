@@ -11,6 +11,12 @@ let ghost = GhostBlinkTests()
 let settingsChecks: [Check] = [
     ("settings.defaults-and-storage-keys", settings.testDefaultsAndOriginalStorageKeys),
     ("settings.editable-mode-defaults", settings.testEditableConfigurationProvidesModeSpecificRestoreDefaults),
+    ("settings.legacy-configuration-wave-mode-migration",
+     settings.testLegacyConfigurationAddsWaveGhostDefaultsWithoutReplacingCustomValues),
+    ("settings.halo-spacing-independent-persistence",
+     settings.testHaloSpacingPersistsIndependentlyByModeAndClampsToRange),
+    ("settings.halo-size-independent-persistence",
+     settings.testHaloSizePersistsIndependentlyByModeAndClampsToRange),
     ("settings.invalid-editable-defaults", settings.testInvalidEditableConfigurationIsRejected),
     ("settings.audio-reactive-scale-bounds", {
         try expectEqual(AudioReactiveScale.minimumScale, CGFloat(0.73))
@@ -36,6 +42,7 @@ let settingsChecks: [Check] = [
     ("settings.nonfinite-rejection", settings.testNonFiniteValuesAreRejectedWithoutChangingState),
     ("settings.mode-specific-parameter-roundtrip", settings.testRoundTripAndModeChangesPreserveIndependentParameters),
     ("settings.legacy-parameter-migration", settings.testLegacySharedParametersMigrateToEachMode),
+    ("settings.new-mode-defaults-preserve-saved-values", settings.testNewWaveModeDefaultsDoNotTriggerLegacyMigrationForSavedModes),
     ("settings.ghost-offset-roundtrip", settings.testGhostOffsetsRoundTripIndependentlyOfMode),
     ("settings.single-key-save", settings.testSavingOneParameterDoesNotPopulateOtherKeys),
     ("settings.corrupt-saved-values", settings.testCorruptSavedValuesUseDefaultsAndFiniteValuesClamp),
@@ -50,7 +57,10 @@ let simulationChecks: [Check] = [
     ("ghost.seed-frame-rates-invalid-clock", ghost.testSeedFrameRatesAndInvalidClock),
     ("ghost.body-lag-continuity-settling", ghost.testBodyLagContinuityAndSettling),
     ("ghost.continuous-hem-frame-rates-loop-seam", ghost.testHemFlowsWithoutBlinksAcrossFrameRatesAndLoopSeam),
+    ("ghost.hem-speed-response-frame-rates-recovery", ghost.testHemSpeedResponseContinuityFrameRatesAndRecovery),
+    ("ghost.both-modes-mouse-speed-directions-resume", ghost.testBothGhostModesUseMouseSpeedInAllDirectionsAndResetMotion),
     ("ghost.independent-blink-halo-idle-resume", ghost.testGhostIdleUpdatesBlinkAndHaloWithoutRopeIntegration),
+    ("ghost.wave-mode-independent-blink-halo-idle", ghost.testWaveGhostIdleUpdatesBlinkAndHaloWithoutRopeIntegration),
     ("halo.lag-rebound-settling-frame-rates", halo.testLagReboundAndSettlingAcrossFrameRates),
     ("halo.idle-spacing-invalid-input", halo.testIdleSpacingAndInvalidInput),
     ("halo.random-head-plane-directions", halo.testRandomIdleTravelsAcrossHeadPlane),
