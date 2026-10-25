@@ -60,6 +60,16 @@ cp PigPendant/Resources/ghost-halo.png "$APP/Contents/Resources/ghost-halo.png"
 cp PigPendant/Resources/ghost-blink.png "$APP/Contents/Resources/ghost-blink.png"
 cp PigPendant/Resources/status-pig.png "$APP/Contents/Resources/status-pig.png"
 cp PigPendant/Resources/status-pig-spin.gif "$APP/Contents/Resources/status-pig-spin.gif"
+ICON_SOURCE="$PWD/PigPendant/Resources/AppIcon.png"
+ICONSET="$BUILD_DIR/AppIcon.iconset"
+mkdir -p "$ICONSET"
+for size in 16 32 128 256 512; do
+  sips -z "$size" "$size" "$ICON_SOURCE" --out "$ICONSET/icon_${size}x${size}.png" >/dev/null
+  double_size=$((size * 2))
+  sips -z "$double_size" "$double_size" "$ICON_SOURCE" --out "$ICONSET/icon_${size}x${size}@2x.png" >/dev/null
+done
+iconutil -c icns -o "$APP/Contents/Resources/AppIcon.icns" "$ICONSET"
+test -s "$APP/Contents/Resources/AppIcon.icns"
 mv "$BUILD_DIR/PigPendant" "$APP/Contents/MacOS/PigPendant"
 chmod +x "$APP/Contents/MacOS/PigPendant"
 # 使用 ad-hoc 本地签名；没有 Apple Developer 账号也可以自用。

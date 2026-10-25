@@ -38,7 +38,7 @@
 open dist/PigPendant.app
 ```
 
-构建产物和对应架构的 ZIP 包生成在 `dist/`。应用使用本地临时签名，未经过 Apple 公证；首次在其他 Mac 打开时，系统可能显示安全提示。
+构建产物和对应架构的 ZIP 包生成在 `dist/`。App 图标采用白底绳子猪猪主体，源图为 `PigPendant/Resources/AppIcon.png`；原始 `pig.png` 保持不变。应用使用本地临时签名，未经过 Apple 公证；首次在其他 Mac 打开时，系统可能显示安全提示。
 同时生成 DMG 安装镜像。打开 `PigPendant-macOS-<架构>.dmg` 后，将 `PigPendant.app` 拖到旁边的 `Applications` 快捷入口即可安装。
 
 可运行构建、物理与 GUI 冒烟检查：
