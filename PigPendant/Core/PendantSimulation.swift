@@ -165,7 +165,7 @@ final class PendantSimulation {
                previousAction != .stretch, ropeAnimation.action == .stretch,
                settings[.sway] > 0 {
                 let forward = V2(-physics.direction.y, physics.direction.x)
-                physics.applyEndImpulse(forward * (150 * CGFloat(settings[.sway] / 100)))
+                physics.applySwingImpulse(forward * (150 * CGFloat(settings[.sway] / 100)))
                 isIdle = false
                 return true
             }

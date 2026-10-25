@@ -86,14 +86,22 @@ final class SimulationTests {
             throw CheckFailure(description: "No settled-rope nudge was triggered by the seeded stretch actions")
         }
 
-        let restingEnd = V2(anchor.x, simulation.physics.endPoint.y)
-        var maximumHorizontalDisplacement: CGFloat = 0
+        let restingNodes = simulation.physics.nodes
+        var maximumHorizontalDisplacement = Array(repeating: CGFloat(0), count: restingNodes.count)
         for _ in 0..<60 {
             simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
-            maximumHorizontalDisplacement = max(maximumHorizontalDisplacement,
-                                                abs(simulation.physics.endPoint.x - restingEnd.x))
+            for index in simulation.physics.nodes.indices {
+                maximumHorizontalDisplacement[index] = max(
+                    maximumHorizontalDisplacement[index],
+                    abs(simulation.physics.nodes[index].x - restingNodes[index].x)
+                )
+            }
         }
-        try expectGreaterThan(maximumHorizontalDisplacement, 5)
+        try expectGreaterThan(maximumHorizontalDisplacement[3], 1)
+        try expectGreaterThan(maximumHorizontalDisplacement[6], 3)
+        try expectGreaterThan(maximumHorizontalDisplacement[9], 4)
+        try expectGreaterThan(maximumHorizontalDisplacement[12], 5)
+        try expectEqual(simulation.physics.nodes[0].x, anchor.x)
 
         for _ in 0..<720 {
             simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
