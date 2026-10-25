@@ -162,9 +162,10 @@ final class PendantSimulation {
             let artworkChanged = advanceCharacterAnimations(anchor: anchor, previousAnchor: previousAnchor,
                                                              previousEndPoints: previousEndPoints, elapsed: elapsed)
             if settings.mode == .rope, physics.isSettled,
-               previousAction != .stretch, ropeAnimation.action == .stretch {
+               previousAction != .stretch, ropeAnimation.action == .stretch,
+               settings[.sway] > 0 {
                 let forward = V2(-physics.direction.y, physics.direction.x)
-                physics.applyEndImpulse(forward * 150)
+                physics.applyEndImpulse(forward * (150 * CGFloat(settings[.sway] / 100)))
                 isIdle = false
                 return true
             }

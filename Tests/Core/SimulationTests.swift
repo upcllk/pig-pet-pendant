@@ -102,6 +102,60 @@ final class SimulationTests {
         try expect(simulation.isIdle)
     }
 
+    func testSettledRopeSwingAmplitudeScalesAndCanBeDisabled() throws {
+        func peakDisplacement(amplitude: Double, seed: UInt64) throws -> CGFloat? {
+            var settings = PendantSettings()
+            try settings.set(amplitude, for: .sway)
+            let simulation = PendantSimulation(settings: settings, frameDurations: durations,
+                                               ropeFrameDurations: ropeDurations, animationSeed: seed)
+            simulation.reset(anchor: anchor)
+            simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
+            let restingX = simulation.physics.endPoint.x
+            for _ in 0..<1200 {
+                let wasIdle = simulation.isIdle
+                simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
+                if wasIdle && !simulation.isIdle {
+                    guard simulation.ropeAnimation.action == .stretch else { continue }
+                    var peak: CGFloat = 0
+                    for _ in 0..<60 {
+                        simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
+                        peak = max(peak, abs(simulation.physics.endPoint.x - restingX))
+                    }
+                    return peak
+                }
+            }
+            return nil
+        }
+
+        var comparison: (seed: UInt64, defaultPeak: CGFloat)?
+        for seed in 0..<32 {
+            if let peak = try peakDisplacement(amplitude: 100, seed: UInt64(seed)) {
+                comparison = (UInt64(seed), peak)
+                break
+            }
+        }
+        guard let comparison,
+              let amplifiedPeak = try peakDisplacement(amplitude: 200, seed: comparison.seed) else {
+            throw CheckFailure(description: "No seeded stretch action could compare nudge amplitudes")
+        }
+        let defaultPeak = comparison.defaultPeak
+        try expectGreaterThan(defaultPeak, 5)
+        try expectGreaterThan(amplifiedPeak, defaultPeak * 1.5)
+
+        var disabledSettings = PendantSettings()
+        try disabledSettings.set(0, for: .sway)
+        let disabled = PendantSimulation(settings: disabledSettings, frameDurations: durations,
+                                         ropeFrameDurations: ropeDurations, animationSeed: 2026)
+        disabled.reset(anchor: anchor)
+        disabled.advance(anchor: anchor, elapsed: 1.0 / 60)
+        let restingEnd = disabled.physics.endPoint
+        for _ in 0..<1200 {
+            disabled.advance(anchor: anchor, elapsed: 1.0 / 60)
+        }
+        try expect(disabled.isIdle)
+        try expectEqual((disabled.physics.endPoint - restingEnd).magnitude, 0)
+    }
+
     func testRopeCharacterAnimationContinuesWithoutIntegratingSettledRope() throws {
         var selectedSimulation: PendantSimulation?
         for seed in 0..<32 {

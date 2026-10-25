@@ -121,6 +121,7 @@ extension SettingsWindowController {
         precondition(countRow.isHidden == (model.mode != .balloon))
         precondition(bambooPositionRow.isHidden == (model.mode != .bamboo))
         precondition(ghostOffsetRows.allSatisfy { $0.row.isHidden == (model.mode != .ghost) })
+        precondition(parameterRows.first { $0.parameter == .sway }?.row.isHidden == (model.mode != .rope))
         content.cacheDisplay(in: content.bounds, to: bitmap)
         guard let png = bitmap.representation(using: .png, properties: [:]) else {
             preconditionFailure("Cannot encode settings snapshot")
@@ -147,7 +148,8 @@ extension SettingsWindowController {
                 (mode, Dictionary(uniqueKeysWithValues: ParameterID.allCases.map { ($0, model.settings[$0, mode: mode]) }))
             })
         let values = [Double(model.physics.length), Double(model.pigSize), Double(model.physics.gravity),
-                  model.dampingRate, Double(model.physics.weight), Double(model.physics.elasticity)]
+                  model.dampingRate, Double(model.physics.weight), Double(model.physics.elasticity),
+                  model.settings[.sway]]
         defer {
             model.changeLength(CGFloat(values[0]))
             model.changeSize(CGFloat(values[1]))
@@ -155,6 +157,7 @@ extension SettingsWindowController {
             model.changeDamping(values[3])
             model.changeWeight(values[4])
             model.changeElasticity(values[5])
+            model.changeParameter(.sway, value: values[6])
             model.changeBambooPosition(originalBambooPosition)
             for axis in GhostOffsetAxis.allCases {
                 model.changeGhostOffset(axis, value: originalGhostOffsets[axis]!)
@@ -171,11 +174,18 @@ extension SettingsWindowController {
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.activeRopes.count == 1 && model.physics.endPoint.y < model.physics.nodes[0].y)
         precondition(model.displayImage === model.ropeAnimation.frames[0] && image.image === model.displayImage)
-        precondition(!countStepper.isEnabled && parameterLabels[5].stringValue == "重力")
-        precondition(countRow.isHidden && window?.contentView?.frame.height == 510)
+        precondition(!countStepper.isEnabled && parameterLabels[6].stringValue == "重力")
+        precondition(countRow.isHidden && window?.contentView?.frame.height == 550)
         precondition(bambooPositionRow.isHidden)
         precondition(ghostOffsetRows.allSatisfy(\.row.isHidden))
         precondition(parameterRows.allSatisfy { !$0.row.isHidden })
+        let swayRow = parameterRows.first { $0.parameter == .sway }!
+        precondition(swayRow.slider.minValue == 0 && swayRow.slider.maxValue == 200)
+        precondition(swayRow.slider.doubleValue == originalModeParameters[.rope]![.sway]!)
+        swayRow.slider.doubleValue = 175
+        swayRow.slider.sendAction(swayRow.slider.action, to: swayRow.slider.target)
+        precondition(model.settings[.sway] == 175 && swayRow.readout.stringValue == "175%")
+        precondition(defaults.double(forKey: ParameterID.sway.storageKey(for: .rope)) == 175)
         precondition(defaults.string(forKey: "DisplayMode") == "rope")
         modeControl.selectedSegment = 2
         modeControl.sendAction(modeControl.action, to: modeControl.target)
@@ -186,7 +196,8 @@ extension SettingsWindowController {
         precondition(countRow.isHidden && window?.contentView?.frame.height == 510)
         precondition(bambooPositionRow.isHidden)
         precondition(ghostOffsetRows.allSatisfy(\.row.isHidden))
-        precondition(parameterLabels[5].stringValue == "重力")
+        precondition(parameterLabels[6].stringValue == "重力")
+        precondition(swayRow.row.isHidden)
         precondition(defaults.string(forKey: "DisplayMode") == "net")
         precondition(model.physics.length == CGFloat(originalModeParameters[.net]![.length]!))
         precondition(model.pigSize == CGFloat(originalModeParameters[.net]![.size]!))
@@ -206,8 +217,11 @@ extension SettingsWindowController {
         model.changeMode(.rope)
         refresh()
         precondition(bambooPositionRow.isHidden)
+        precondition(!swayRow.row.isHidden && swayRow.slider.doubleValue == 175)
         model.changeMode(.bamboo)
         refresh()
+        precondition(swayRow.row.isHidden &&
+                     swayRow.slider.doubleValue == originalModeParameters[.bamboo]![.sway]!)
         precondition(!bambooPositionRow.isHidden && bambooPositionSlider.doubleValue == 73)
         precondition(parameterLabels[0].stringValue == "竹子长度" && parameterLabels[3].stringValue == "竹子弹性")
         precondition(model.physics.length == CGFloat(originalModeParameters[.bamboo]![.length]!))
@@ -219,6 +233,7 @@ extension SettingsWindowController {
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.mode == .hanging && model.displayImage === model.hangingImage)
         precondition(visibility.title == "显示上吊猪" && countRow.isHidden && bambooPositionRow.isHidden)
+        precondition(swayRow.row.isHidden)
         precondition(window?.contentView?.frame.height == 510 && model.physics.endPoint.y < model.physics.nodes[0].y)
         model.smokeCheck()
         modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .ghost)!
@@ -258,7 +273,7 @@ extension SettingsWindowController {
         modeControl.selectedSegment = 1
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.displayImage === model.balloonImage && image.image === model.balloonImage)
-        precondition(countStepper.isEnabled && parameterLabels[5].stringValue == "浮力")
+        precondition(countStepper.isEnabled && parameterLabels[6].stringValue == "浮力")
         precondition(!countRow.isHidden && window?.contentView?.frame.height == 550)
         precondition(model.settings[.size] == originalModeParameters[.balloon]![.size]!)
         precondition(defaults.string(forKey: "DisplayMode") == "balloon")
@@ -279,6 +294,7 @@ extension SettingsWindowController {
             slider.doubleValue = slider.minValue
             slider.sendAction(slider.action, to: slider.target)
         }
+        precondition(model.settings[.sway] == 0)
         precondition(model.physics.length == 20 && model.pigSize == 16 && model.physics.gravity == 100)
         precondition(model.physics.weight == 0 && model.physics.elasticity == 0)
         precondition(abs(model.dampingRate - 0.2) < 0.0001)
@@ -288,7 +304,7 @@ extension SettingsWindowController {
         precondition(defaults.double(forKey: ParameterID.damping.storageKey(for: .balloon)) == 0.2)
         precondition(defaults.double(forKey: ParameterID.weight.storageKey(for: .balloon)) == 0)
         precondition(defaults.double(forKey: ParameterID.elasticity.storageKey(for: .balloon)) == 0)
-        let targets: [Double] = [1200, 256, 200, 200, 8, 10000]
+        let targets: [Double] = [1200, 256, 200, 200, 200, 8, 10000]
         for (index, value) in targets.enumerated() {
             sliders[index].doubleValue = value
             sliders[index].sendAction(sliders[index].action, to: sliders[index].target)
@@ -302,6 +318,7 @@ extension SettingsWindowController {
         precondition(defaults.double(forKey: ParameterID.damping.storageKey(for: .balloon)) == 8)
         precondition(defaults.double(forKey: ParameterID.weight.storageKey(for: .balloon)) == 200)
         precondition(defaults.double(forKey: ParameterID.elasticity.storageKey(for: .balloon)) == 200)
+        precondition(defaults.double(forKey: ParameterID.sway.storageKey(for: .balloon)) == 200)
         toggleVisibility()
         precondition(!model.isVisible)
         toggleVisibility()
@@ -312,6 +329,8 @@ extension SettingsWindowController {
         precondition(model.balloonCount == 2 && model.balloons.count == 2)
         precondition(model.pigSize == 48 && model.physics.length == 140 && model.physics.gravity == 1350)
         precondition(model.physics.weight == 65 && model.physics.elasticity == 55)
+        precondition(model.settings[.sway] == 100 &&
+                     defaults.double(forKey: ParameterID.sway.storageKey(for: .rope)) == 100)
         precondition(abs(Double(model.physics.dampingPerFrame) - 0.985) < 0.0001)
         precondition(model.settings.bambooPosition == 50 && defaults.double(forKey: "BambooPigPosition") == 50)
         precondition(model.settings[.horizontal] == 44 && defaults.double(forKey: "GhostOffsetX") == 44)

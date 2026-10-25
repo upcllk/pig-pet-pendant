@@ -166,6 +166,7 @@ final class PendantCoordinator {
             simulation.wake()
             schedule()
         case .size: redraw()
+        case .sway: break
         case .gravity, .damping, .weight, .elasticity:
             simulation.wake()
             schedule()

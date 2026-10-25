@@ -12,7 +12,7 @@ A small desktop pig pendant that follows your mouse. The macOS version is availa
 
 ## Modes
 
-- **Rope Pendant**: The default mode. The pig reacts to movement and falling, with randomly spaced blinks, ear movements, and body gestures at rest. Actions return smoothly to rest instead of looping the entire GIF.
+- **Rope Pendant**: The default mode. The pig reacts to movement and falling, with randomly spaced blinks, ear movements, and body gestures at rest. After the rope settles, a body gesture can nudge the pig into a short swing; its amplitude is adjustable from 0–200% in Settings. Actions return smoothly to rest instead of looping the entire GIF.
 - **Pig Balloons**: Shows 1–8 pig-shaped balloons floating upward; the default is 2. Each has independently timed blinks, gentle ear movements and nose gestures, with movement reactions.
 - **Pig in a Net**: A pig in a net with a looping animation and local runtime cleanup of white/gray mesh fringes.
 - **Pig on Bamboo**: The pig hugs a bamboo stalk that bends with mouse movement, with random blinks, ear movements and nose gestures that preserve its grip.

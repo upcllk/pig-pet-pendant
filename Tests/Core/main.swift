@@ -51,6 +51,7 @@ let simulationChecks: [Check] = [
     ("simulation.count-extremes-and-mode-directions", simulation.testBalloonCountExtremesAndNonBalloonModesUseOneRope),
     ("simulation.net-idle-animation", simulation.testNetAnimationContinuesWithoutIntegratingSettledRope),
     ("simulation.settled-rope-nudge-swing", simulation.testSettledRopeNudgeTriggersSwingOnlyDuringStretchAction),
+    ("simulation.rope-swing-amplitude", simulation.testSettledRopeSwingAmplitudeScalesAndCanBeDisabled),
     ("simulation.rope-idle-animation", simulation.testRopeCharacterAnimationContinuesWithoutIntegratingSettledRope),
     ("simulation.rope-animation-clock-and-physics", simulation.testRopeAnimationClockAndPhysicsAcrossFrameRates),
     ("simulation.local-characters-independent-of-physics", simulation.testLocalCharactersAnimateWithoutWakingPhysics),

@@ -192,11 +192,13 @@ final class SettingsWindowController: NSWindowController {
         let isBalloon = model.mode == .balloon
         let isBamboo = model.mode == .bamboo
         let isGhost = model.mode == .ghost
+        let isRope = model.mode == .rope
         modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: model.mode) ?? 0
         visibility.title = model.mode.visibilityCheckboxTitle
         image.image = model.displayImage
         for row in parameterRows {
-            row.row.isHidden = isGhost && row.parameter != .size
+            row.row.isHidden = (isGhost && row.parameter != .size) ||
+                (row.parameter == .sway && !isRope)
             row.label.stringValue = row.parameter.title(mode: model.mode)
             let help = row.parameter.help(mode: model.mode)
             row.slider.toolTip = help
@@ -222,7 +224,7 @@ final class SettingsWindowController: NSWindowController {
         countReadout.stringValue = "\(model.balloonCount) 只"
         visibility.state = model.isVisible ? .on : .off
         if let window = window {
-            let height: CGFloat = isBalloon || isBamboo ? 550 : isGhost ? 390 : 510
+            let height: CGFloat = isBalloon || isBamboo || isRope ? 550 : isGhost ? 390 : 510
             if window.contentView?.frame.height != height {
                 let topLeft = NSPoint(x: window.frame.minX, y: window.frame.maxY)
                 window.setContentSize(NSSize(width: 480, height: height))
