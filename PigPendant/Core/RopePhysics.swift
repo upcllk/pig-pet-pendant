@@ -47,6 +47,13 @@ final class RopePhysics {
         lastAnchor = nodes.first
     }
 
+    func applyEndImpulse(_ velocity: V2) {
+        guard nodes.count == segments + 1, previous.count == nodes.count,
+              velocity.x.isFinite, velocity.y.isFinite else { return }
+        previous[segments] = nodes[segments] - velocity * fixedStep
+        accumulator = 0
+    }
+
     func advance(anchor: V2, timeStep: CGFloat) {
         if nodes.count != segments + 1 { reset(anchor: anchor) }
         guard anchor.x.isFinite, anchor.y.isFinite, timeStep.isFinite, timeStep > 0 else { return }

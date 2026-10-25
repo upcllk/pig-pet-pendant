@@ -62,19 +62,66 @@ final class SimulationTests {
         try expectEqual(simulation.updateInterval, 0.04)
     }
 
-    func testRopeCharacterAnimationContinuesWithoutIntegratingSettledRope() throws {
-        let simulation = PendantSimulation(settings: PendantSettings(), frameDurations: durations, ropeFrameDurations: ropeDurations)
-        simulation.reset(anchor: anchor)
-        simulation.advance(anchor: anchor, elapsed: 1.0 / 60.0)
-        try expect(simulation.isIdle)
-        let nodes = simulation.physics.nodes
-        try expectEqual(simulation.ropeAnimation.sample, .rest)
-        try expectEqual(simulation.updateInterval, 1.0 / 15)
-        for _ in 0..<300 {
-            simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
-            if simulation.ropeAnimation.isAnimating { break }
+    func testSettledRopeNudgeTriggersSwingOnlyDuringStretchAction() throws {
+        var nudgedSimulation: PendantSimulation?
+        for seed in 0..<32 {
+            let candidate = PendantSimulation(settings: PendantSettings(), frameDurations: durations,
+                                              ropeFrameDurations: ropeDurations, animationSeed: UInt64(seed))
+            candidate.reset(anchor: anchor)
+            candidate.advance(anchor: anchor, elapsed: 1.0 / 60)
+            try expect(candidate.isIdle)
+            for _ in 0..<1200 {
+                let wasIdle = candidate.isIdle
+                candidate.advance(anchor: anchor, elapsed: 1.0 / 60)
+                if wasIdle && !candidate.isIdle {
+                    if candidate.ropeAnimation.action == .stretch {
+                        nudgedSimulation = candidate
+                    }
+                    break
+                }
+            }
+            if nudgedSimulation != nil { break }
         }
-        try expect(simulation.ropeAnimation.isAnimating)
+        guard let simulation = nudgedSimulation else {
+            throw CheckFailure(description: "No settled-rope nudge was triggered by the seeded stretch actions")
+        }
+
+        let restingEnd = V2(anchor.x, simulation.physics.endPoint.y)
+        var maximumHorizontalDisplacement: CGFloat = 0
+        for _ in 0..<60 {
+            simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
+            maximumHorizontalDisplacement = max(maximumHorizontalDisplacement,
+                                                abs(simulation.physics.endPoint.x - restingEnd.x))
+        }
+        try expectGreaterThan(maximumHorizontalDisplacement, 5)
+
+        for _ in 0..<720 {
+            simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
+            if simulation.isIdle { break }
+        }
+        try expect(simulation.isIdle)
+    }
+
+    func testRopeCharacterAnimationContinuesWithoutIntegratingSettledRope() throws {
+        var selectedSimulation: PendantSimulation?
+        for seed in 0..<32 {
+            let candidate = PendantSimulation(settings: PendantSettings(), frameDurations: durations,
+                                              ropeFrameDurations: ropeDurations, animationSeed: UInt64(seed))
+            candidate.reset(anchor: anchor)
+            candidate.advance(anchor: anchor, elapsed: 1.0 / 60.0)
+            for _ in 0..<300 {
+                candidate.advance(anchor: anchor, elapsed: 1.0 / 60)
+                if candidate.ropeAnimation.isAnimating {
+                    if candidate.ropeAnimation.action != .stretch { selectedSimulation = candidate }
+                    break
+                }
+            }
+            if selectedSimulation != nil { break }
+        }
+        guard let simulation = selectedSimulation else {
+            throw CheckFailure(description: "No seeded non-stretch idle animation was selected")
+        }
+        let nodes = simulation.physics.nodes
         let sample = simulation.ropeAnimation.sample
         try expect(simulation.advance(anchor: anchor, elapsed: 1.0 / 60))
         try expect(simulation.isIdle)
@@ -136,7 +183,9 @@ final class SimulationTests {
 
     func testRopeAnimationClockAndPhysicsAcrossFrameRates() throws {
         for rate in [25, 30, 60, 120, 144] {
-            let simulation = PendantSimulation(settings: PendantSettings(), frameDurations: durations,
+            var settings = PendantSettings()
+            settings.mode = .hanging
+            let simulation = PendantSimulation(settings: settings, frameDurations: durations,
                                                ropeFrameDurations: ropeDurations)
             simulation.reset(anchor: anchor)
             simulation.advance(anchor: anchor, elapsed: 0.01)

@@ -208,3 +208,11 @@ final class PendantSimulation {
         return ropeAnimation.advance(elapsed: elapsed, anchorVelocity: anchorVelocity, bobVelocity: bobVelocity)
     }
 }
+            let previousAction = ropeAnimation.action
+            if settings.mode == .rope, physics.isSettled,
+               previousAction != .stretch, ropeAnimation.action == .stretch {
+                let forward = V2(-physics.direction.y, physics.direction.x)
+                physics.applyEndImpulse(forward * 150)
+                isIdle = false
+                return true
+            }

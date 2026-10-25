@@ -51,7 +51,8 @@ extension PendantCoordinator {
         }
         let previewSimulation = PendantSimulation(settings: previewSettings,
                                                   frameDurations: netAnimation.frameDurations,
-                                                  ropeFrameDurations: ropeAnimation.frameDurations)
+                                                  ropeFrameDurations: ropeAnimation.frameDurations,
+                                                  animationSeed: 2026)
         let anchor = V2(230, 450)
         previewSimulation.reset(anchor: anchor)
         let preview = PigOverlayView(frame: NSRect(x: 0, y: 0, width: 460, height: 500))
