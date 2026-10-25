@@ -14,6 +14,7 @@ final class PendantSimulation {
     private(set) var balloonAnimations: [RopeCharacterAnimation] = []
     private(set) var haloAnimation: HaloAnimation
     private(set) var ghostBlink: GhostBlinkAnimation
+    private(set) var ghostBody = GhostBodyAnimation()
     private let characterFrameDurations: [TimeInterval]
     private let characterSeed: UInt64
     private(set) var isIdle = false
@@ -43,7 +44,7 @@ final class PendantSimulation {
             return 1.0 / 60.0
         }
         if settings.mode == .balloon && balloonAnimations.contains(where: \.isAnimating) { return 1.0 / 60.0 }
-        if settings.mode == .ghost && ghostBlink.isAnimating { return 1.0 / 60.0 }
+        if settings.mode == .ghost && (ghostBlink.isAnimating || ghostBody.isAnimating) { return 1.0 / 60.0 }
         if [.hanging, .ghost].contains(settings.mode) && haloAnimation.isAnimating { return 1.0 / 60.0 }
         return 1.0 / 15.0
     }
@@ -89,6 +90,7 @@ final class PendantSimulation {
         ropeAnimation.reset()
         haloAnimation.reset()
         ghostBlink.reset()
+        ghostBody.reset()
         for index in balloonAnimations.indices { balloonAnimations[index].reset() }
     }
 
@@ -145,9 +147,11 @@ final class PendantSimulation {
             }
             let blinkChanged = ghostBlink.advance(elapsed: elapsed)
             let velocity = elapsed > 0.25 ? V2(0, 0) : (ghostPosition - previousPosition) / CGFloat(elapsed)
+            let bodyChanged = ghostBody.advance(elapsed: elapsed, blinking: ghostBlink.isAnimating,
+                                                horizontalVelocity: Double(velocity.x))
             let haloChanged = haloAnimation.advance(elapsed: elapsed, localVelocity: velocity,
                                                       characterActive: ghostBlink.isAnimating)
-            return (ghostPosition - previousPosition).magnitude > 0 || blinkChanged || haloChanged
+            return (ghostPosition - previousPosition).magnitude > 0 || blinkChanged || bodyChanged || haloChanged
         }
         let movementTolerance: CGFloat = settings.mode == .bamboo ? 1 : 0.01
         let anchorUnchanged = activeRopes.allSatisfy {

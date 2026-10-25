@@ -74,6 +74,7 @@ final class GhostBlinkTests {
         var sawBlink = false
         var sawHalo = false
         var sawRest = false
+        var sawBodyTail = false
         for _ in 0..<3600 {
             simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
             try expect(simulation.isIdle)
@@ -81,21 +82,67 @@ final class GhostBlinkTests {
             try expect(zip(nodes, simulation.physics.nodes).allSatisfy { ($0 - $1).magnitude == 0 })
             sawBlink = sawBlink || simulation.ghostBlink.isAnimating
             sawHalo = sawHalo || simulation.haloAnimation.isAnimating
-            let active = simulation.ghostBlink.isAnimating || simulation.haloAnimation.isAnimating
+            let active = simulation.ghostBlink.isAnimating || simulation.ghostBody.isAnimating || simulation.haloAnimation.isAnimating
             sawRest = sawRest || !active
+            sawBodyTail = sawBodyTail || (simulation.ghostBody.isAnimating && !simulation.ghostBlink.isAnimating)
             try expectEqual(simulation.updateInterval, active ? 1.0 / 60 : 1.0 / 15)
         }
-        try expect(sawBlink && sawHalo && sawRest)
+        try expect(sawBlink && sawHalo && sawRest && sawBodyTail)
         let blink = simulation.ghostBlink.sample
         let halo = simulation.haloAnimation.pose
+        let body = simulation.ghostBody.pose
         simulation.reset(anchor: anchor)
         try expectEqual(simulation.ghostBlink.sample, blink)
         try expectEqual(simulation.haloAnimation.pose, halo)
+        try expectEqual(simulation.ghostBody.pose, body)
         simulation.advance(anchor: anchor + V2(120, -80), elapsed: 0.05)
         try expect(!simulation.isIdle)
         settings.mode = .rope
         simulation.apply(settings)
         try expectEqual(simulation.ghostBlink.sample, .rest)
         try expectEqual(simulation.haloAnimation.pose, HaloPose())
+        try expectEqual(simulation.ghostBody.pose, GhostBodyPose())
+    }
+
+    func testBodyLagContinuityAndSettling() throws {
+        for rate in [15, 30, 60, 120, 144] {
+            var body = GhostBodyAnimation()
+            var steps = Set<Int>()
+            var previous = body.pose
+            for frame in 0..<(rate * 4) {
+                body.advance(elapsed: 1.0 / Double(rate), blinking: frame < rate / 2, horizontalVelocity: 0)
+                steps.insert(body.pose.step)
+                if body.pose.step != 0 {
+                    try expect(abs(body.pose.phase - previous.phase) < 0.04)
+                }
+                previous = body.pose
+                if frame == rate { try expect(body.isAnimating) }
+            }
+            try expectGreaterThan(steps.count, 30)
+            try expectEqual(body.pose, GhostBodyPose())
+            try expect(!body.isAnimating)
+            for direction in [1.0, -1.0] {
+                for _ in 0..<rate {
+                    body.advance(elapsed: 1.0 / Double(rate), blinking: false, horizontalVelocity: direction * 900)
+                }
+                try expect(Double(body.pose.drift) * direction > 14)
+            }
+            let held = body.pose
+            for delta in [0, -1, .nan, .infinity] {
+                try expect(!body.advance(elapsed: delta, blinking: true, horizontalVelocity: 500))
+                try expectEqual(body.pose, held)
+            }
+            for _ in 0..<(rate * 2) {
+                body.advance(elapsed: 1.0 / Double(rate), blinking: false, horizontalVelocity: 0)
+            }
+            try expectEqual(body.pose, GhostBodyPose())
+            try expect(!body.isAnimating)
+            body.advance(elapsed: 1, blinking: false, horizontalVelocity: 10000)
+            try expectEqual(body.pose, GhostBodyPose())
+            body.advance(elapsed: 0.05, blinking: true, horizontalVelocity: 600)
+            body.reset()
+            try expectEqual(body.pose, GhostBodyPose())
+            try expect(!body.isAnimating)
+        }
     }
 }

@@ -10,6 +10,7 @@ struct ArtworkCatalog {
     let netImage: NSImage
     let ghost: NSImage
     let ghostBlink: AnimatedArtwork
+    let ghostCharacters: [LocalCharacterArtwork]
     let ghostHalo: NSImage
     let ghostHaloCenter: CGPoint
     let net: AnimatedArtwork
@@ -49,6 +50,7 @@ struct ArtworkCatalog {
             throw ArtworkError.unreadable(directory.appendingPathComponent("ghost-blink.png"))
         }
         ghostBlink = ghostAnimation
+        ghostCharacters = try ghostAnimation.frames.map { try LocalCharacterArtwork(image: $0, mode: .ghost) }
         let haloImage = try image("ghost-halo.png")
         guard let haloCG = haloImage.cgImage(forProposedRect: nil, context: nil, hints: nil),
               haloCG.width == 768 && haloCG.height == 1152 else {

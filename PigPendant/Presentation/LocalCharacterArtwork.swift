@@ -7,13 +7,14 @@ final class LocalCharacterArtwork {
     private let mode: DisplayMode
     private let restImage: NSImage
     private let cache = NSCache<NSNumber, NSImage>()
+    private var lastRender: (key: NSNumber, image: NSImage)?
 
     init(image: NSImage, mode: DisplayMode) throws {
         self.mode = mode
         guard let source = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             throw ArtworkError.unreadable(URL(fileURLWithPath: "\(mode.rawValue) animation"))
         }
-        width = min(512, source.width)
+        width = min(mode == .ghost ? 384 : 512, source.width)
         height = Int((Double(source.height) * Double(width) / Double(source.width)).rounded())
         var data = [UInt8](repeating: 0, count: width * height * 4)
         let w = width
@@ -32,7 +33,7 @@ final class LocalCharacterArtwork {
         }
         pixels = data
         restImage = NSImage(cgImage: raster, size: image.size)
-        cache.totalCostLimit = 24 * 1024 * 1024
+        cache.totalCostLimit = (mode == .ghost ? 3 : 24) * 1024 * 1024
     }
 
     func image(for pose: LocalCharacterPose) -> NSImage {
@@ -45,13 +46,27 @@ final class LocalCharacterArtwork {
         guard blink > 0 || abs(earAngle) > 0.000001 || nuzzle > 0.000001 else { return restImage }
         let step = pose.gesture == .blink && blink == 1 ? Int((0.4 * Double(LocalCharacterPose.steps)).rounded()) : pose.step
         let key = NSNumber(value: pose.gesture.rawValue * (LocalCharacterPose.steps + 1) + step)
-        if let image = cache.object(forKey: key) { return image }
+        return render(key: key) { self.sourcePoint($0, blink: blink, earAngle: earAngle, nuzzle: nuzzle) }
+    }
+
+    func image(for pose: GhostBodyPose) -> NSImage {
+        precondition(mode == .ghost)
+        guard pose.step != 0 || pose.drift != 0 else { return restImage }
+        return render(key: NSNumber(value: pose.key), sourcePoint: ghostSourceMapping(pose))
+    }
+
+    private func render(key: NSNumber, sourcePoint: (CGPoint) -> CGPoint) -> NSImage {
+        if lastRender?.key == key, let image = lastRender?.image { return image }
+        if let image = cache.object(forKey: key) {
+            lastRender = (key, image)
+            return image
+        }
         var output = pixels
         for y in 0..<height {
             for x in 0..<width {
                 let original = CGPoint(x: (Double(x) + 0.5) / Double(width),
                                        y: (Double(y) + 0.5) / Double(height))
-                let point = sourcePoint(original, blink: blink, earAngle: earAngle, nuzzle: nuzzle)
+                let point = sourcePoint(original)
                 guard point != original else { continue }
                 let sx = point.x * Double(width) - 0.5
                 let sy = point.y * Double(height) - 0.5
@@ -91,10 +106,46 @@ final class LocalCharacterArtwork {
         }
         let result = NSImage(cgImage: image, size: restImage.size)
         cache.setObject(result, forKey: key, cost: output.count)
+        lastRender = (key, result)
         return result
     }
 
     // Coordinates are normalized source pixels, with y increasing downward.
+    private func ghostSourceMapping(_ pose: GhostBodyPose) -> (CGPoint) -> CGPoint {
+        let phase = pose.phase
+        let regions: [(center: CGPoint, radius: CGSize, root: CGPoint, angle: Double)] = [
+            (CGPoint(x: 0.228, y: 0.238), CGSize(width: 0.11, height: 0.074),
+             CGPoint(x: 0.28, y: 0.19), 0.62 * pose.pulse(start: 0, end: 0.52) * sin(phase * .pi * 5)),
+            (CGPoint(x: 0.632, y: 0.320), CGSize(width: 0.107, height: 0.070),
+             CGPoint(x: 0.59, y: 0.27), -0.58 * pose.pulse(start: 0.04, end: 0.56) * sin((phase - 0.04) * .pi * 5)),
+            (CGPoint(x: 0.205, y: 0.621), CGSize(width: 0.13, height: 0.095),
+             CGPoint(x: 0.27, y: 0.57), 0.52 * pose.pulse(start: 0.08, end: 0.72) * sin((phase - 0.08) * .pi * 3)),
+            (CGPoint(x: 0.690, y: 0.626), CGSize(width: 0.14, height: 0.095),
+             CGPoint(x: 0.75, y: 0.57), -0.48 * pose.pulse(start: 0.14, end: 0.78) * sin((phase - 0.14) * .pi * 3))
+        ]
+        let amount = pose.pulse(start: 0.10, end: 1)
+        let drift = Double(pose.drift) / 16
+        return { point in
+            for region in regions where region.angle != 0 {
+                let radius = hypot((point.x - region.center.x) / region.radius.width,
+                                   (point.y - region.center.y) / region.radius.height)
+                guard radius < 1 else { continue }
+                let angle = region.angle * pow(1 - radius * radius, 2)
+                // Rotate in pixel space, not the non-square canvas's normalized coordinates.
+                let dx = point.x - region.root.x
+                let dy = (point.y - region.root.y) * 1.5
+                return CGPoint(x: region.root.x + dx * cos(angle) - dy * sin(angle),
+                               y: region.root.y + (dx * sin(angle) + dy * cos(angle)) / 1.5)
+            }
+            guard point.y > 0.75 else { return point }
+            let t = min(1, (point.y - 0.75) / 0.16)
+            let weight = t * t * (3 - 2 * t)
+            let wave = sin(phase * .pi * 3 - point.x * .pi * 2.4)
+            return CGPoint(x: point.x + weight * (wave * amount * 0.006 + drift * 0.012),
+                           y: point.y + weight * (wave * amount * 0.021 + drift * (point.x - 0.5) * 0.024))
+        }
+    }
+
     private func sourcePoint(_ point: CGPoint, blink: Double, earAngle: Double, nuzzle: Double) -> CGPoint {
         if mode == .hanging { return hangingSourcePoint(point, earAngle: earAngle, nuzzle: nuzzle) }
         if mode == .net { return netSourcePoint(point, earAngle: earAngle, nuzzle: nuzzle) }

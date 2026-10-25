@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 extension PendantCoordinator {
     func smokeCheckGhostAnimation() {
+        smokeCheckGhostBody()
         let animation = artwork.ghostBlink
         precondition(animation.frames.count == 8)
         precondition(zip(animation.frameDurations, GhostBlinkAnimation.keyDurations).allSatisfy { abs($0 - $1) < 0.000001 })
@@ -85,6 +86,10 @@ extension PendantCoordinator {
             NSLog("Ghost eye at %@: open %.1f x %.1f, closed %.1f x %.1f",
                   normalSize ? "48 pt / 2x" : "source size", open.width, open.height, closed.width, closed.height)
         }
+        let movingOpen = eyeBounds(artwork.ghostCharacters[0].image(for: GhostBodyPose(step: 24)), normalSize: true)
+        let movingClosed = eyeBounds(artwork.ghostCharacters[3].image(for: GhostBodyPose(step: 24)), normalSize: true)
+        precondition(!movingOpen.isNull && !movingClosed.isNull && movingClosed.height < movingOpen.height * 0.4,
+                     "Normal-size blinking must remain visible during local ear/hand/hem motion")
         let halo = raster(artwork.ghostHalo)
         precondition(halo[(90 * 768 + 480) * 4 + 3] == 0, "Halo hole must be truly transparent")
         precondition((0..<(768 * 1152)).allSatisfy { $0 / 768 < 240 || halo[$0 * 4 + 3] == 0 },
@@ -140,9 +145,11 @@ extension PendantCoordinator {
             preview.advance(anchor: position, elapsed: 1.0 / 60)
             let scene = SceneSnapshot(simulation: preview, artwork: artwork, isVisible: true)
             let sample = preview.ghostBlink.sample
-            precondition(scene.displayImage === animation.frames[sample.firstIndex])
+            precondition(scene.displayImage === artwork.ghostCharacters[sample.firstIndex].image(for: preview.ghostBody.pose))
             precondition(scene.haloImage === artwork.ghostHalo && scene.haloPose == preview.haloAnimation.pose)
-            if let next = scene.nextDisplayImage { precondition(next === animation.frames[sample.secondIndex]) }
+            if let next = scene.nextDisplayImage {
+                precondition(next === artwork.ghostCharacters[sample.secondIndex].image(for: preview.ghostBody.pose))
+            }
             sawBlink = sawBlink || preview.ghostBlink.isAnimating
             sawHalo = sawHalo || scene.haloPose.offset.magnitude > 0.015
             if frame % 6 == 0 {
@@ -185,15 +192,19 @@ extension PendantCoordinator {
         let clock = simulation.ghostBlink.elapsed
         let sample = simulation.ghostBlink.sample
         let haloPose = simulation.haloAnimation.pose
+        let bodyPose = simulation.ghostBody.pose
         toggleVisible()
         tick(at: lastTick + 2)
-        precondition(timer == nil && simulation.ghostBlink.elapsed == clock && simulation.haloAnimation.pose == haloPose)
+        precondition(timer == nil && simulation.ghostBlink.elapsed == clock && simulation.haloAnimation.pose == haloPose &&
+                     simulation.ghostBody.pose == bodyPose)
         toggleVisible()
         suspend()
         tick(at: lastTick + 2)
-        precondition(timer == nil && simulation.ghostBlink.elapsed == clock && simulation.ghostBlink.sample == sample)
+        precondition(timer == nil && simulation.ghostBlink.elapsed == clock && simulation.ghostBlink.sample == sample &&
+                     simulation.ghostBody.pose == bodyPose)
         resume()
-        precondition(simulation.ghostBlink.sample == sample && simulation.haloAnimation.pose == haloPose)
+        precondition(simulation.ghostBlink.sample == sample && simulation.haloAnimation.pose == haloPose &&
+                     simulation.ghostBody.pose == bodyPose)
         tick(at: lastTick + 0.05)
         precondition(simulation.ghostBlink.elapsed > clock)
         simulation.restartAnimation()
