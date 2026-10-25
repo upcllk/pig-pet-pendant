@@ -137,7 +137,7 @@ extension PendantCoordinator {
               let png = representation.representation(using: .png, properties: [:]) else {
             preconditionFailure("Cannot encode local gesture atlas")
         }
-        let directory = Bundle.main.bundleURL.deletingLastPathComponent()
+        let directory = SmokeArtifactDirectory.url
         do {
             try png.write(to: directory.appendingPathComponent("\(mode.rawValue)-local-poses.png"))
         } catch { preconditionFailure("Cannot save local gesture atlas: \(error)") }

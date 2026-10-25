@@ -39,7 +39,7 @@ extension SettingsWindowController {
         guard let png = bitmap.representation(using: .png, properties: [:]) else {
             preconditionFailure("Cannot encode settings snapshot")
         }
-        let url = Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent(filename)
+        let url = SmokeArtifactDirectory.url.appendingPathComponent(filename)
         do { try png.write(to: url) } catch { preconditionFailure("Settings snapshot: \(error)") }
     }
 
@@ -489,7 +489,7 @@ extension SettingsWindowController {
             case .ghost: filename = "ghost-smoke.png"
             case .ghostWave: filename = "ghost-wave-smoke.png"
             }
-            let previewURL = Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent(filename)
+            let previewURL = SmokeArtifactDirectory.url.appendingPathComponent(filename)
             do { try png.write(to: previewURL) } catch { preconditionFailure("Mode snapshot: \(error)") }
         }
         precondition(haloSpacingRenderChecks == HaloSpacing.modes.count)

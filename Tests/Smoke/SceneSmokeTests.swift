@@ -97,7 +97,7 @@ extension PendantCoordinator {
                 guard let png = bitmap.representation(using: .png, properties: [:]) else {
                     preconditionFailure("Cannot encode rope animation preview")
                 }
-                let url = Bundle.main.bundleURL.deletingLastPathComponent()
+                let url = SmokeArtifactDirectory.url
                     .appendingPathComponent(String(format: "rope-state-%04d.png", index))
                 do { try png.write(to: url) } catch { preconditionFailure("Rope animation snapshot: \(error)") }
             }

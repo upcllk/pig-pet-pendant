@@ -111,7 +111,7 @@ extension PendantCoordinator {
             }
         }
         sheet.unlockFocus()
-        let directory = Bundle.main.bundleURL.deletingLastPathComponent()
+        let directory = SmokeArtifactDirectory.url
         guard let tiff = sheet.tiffRepresentation, let bitmap = NSBitmapImageRep(data: tiff),
               let png = bitmap.representation(using: .png, properties: [:]) else {
             preconditionFailure("Cannot encode layered ghost contact sheet")

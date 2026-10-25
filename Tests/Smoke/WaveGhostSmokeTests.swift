@@ -93,8 +93,7 @@ extension PendantCoordinator {
             }
         }
         sheet.unlockFocus()
-        let destination = Bundle.main.bundleURL.deletingLastPathComponent()
-            .appendingPathComponent("ghost-wave-poses.png")
+        let destination = SmokeArtifactDirectory.url.appendingPathComponent("ghost-wave-poses.png")
         guard let tiff = sheet.tiffRepresentation, let bitmap = NSBitmapImageRep(data: tiff),
               let png = bitmap.representation(using: .png, properties: [:]) else {
             preconditionFailure("Cannot encode wave ghost pose preview")

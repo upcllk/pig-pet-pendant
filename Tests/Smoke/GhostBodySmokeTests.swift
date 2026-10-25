@@ -219,9 +219,9 @@ extension PendantCoordinator {
             preconditionFailure("Cannot encode body motion contact sheet")
         }
         do {
-            try png.write(to: Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("ghost-body-motion-contact.png"))
+            try png.write(to: SmokeArtifactDirectory.url.appendingPathComponent("ghost-body-motion-contact.png"))
         } catch { preconditionFailure("Cannot save ghost body motion contact sheet: \(error)") }
-        let previewURL = Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("ghost-hem-flow-preview.png")
+        let previewURL = SmokeArtifactDirectory.url.appendingPathComponent("ghost-hem-flow-preview.png")
         guard let destination = CGImageDestinationCreateWithURL(previewURL as CFURL, UTType.png.identifier as CFString, 64, nil) else {
             preconditionFailure("Cannot create continuous ghost feet preview")
         }

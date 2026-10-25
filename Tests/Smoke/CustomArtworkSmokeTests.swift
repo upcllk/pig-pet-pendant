@@ -256,7 +256,7 @@ extension PendantCoordinator {
             preconditionFailure("Cannot encode user artwork preview")
         }
         do {
-            try png.write(to: Bundle.main.bundleURL.deletingLastPathComponent()
+            try png.write(to: SmokeArtifactDirectory.url
                 .appendingPathComponent("\(mode.rawValue)-custom-poses.png"))
         } catch { preconditionFailure("Cannot save custom poses: \(error)") }
         var sawEar = false
