@@ -8,7 +8,7 @@ A small desktop pig pendant that follows your mouse. The macOS version is availa
 
 ![Preview of six modes](docs/media/modes.gif)
 
-*The preview shows all six modes in sequence. The images were rendered by the app and combined automatically; they are not a screen recording.*
+*The preview cycles through all six modes using current app artwork, including animation frames for the rope and ghost pigs; it is not a screen recording.*
 
 ## Modes
 
