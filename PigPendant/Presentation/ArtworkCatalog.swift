@@ -32,7 +32,7 @@ struct ArtworkCatalog {
         pig = try image("pig.png")
         balloon = try image("balloon.png")
         bamboo = try image("bamboo-pig.png")
-        hanging = try image("hanging-pig-custom.png")
+        let hangingSource = try image("hanging-pig-custom.png")
         let netSource = try image("net-pig-custom.png")
         guard let netCG = netSource.cgImage(forProposedRect: nil, context: nil, hints: nil),
               netCG.width == 768, netCG.height == 768,
@@ -47,6 +47,7 @@ struct ArtworkCatalog {
             throw ArtworkError.unreadable(directory.appendingPathComponent("rope-pig.png"))
         }
         rope = ropeAnimation
+        hanging = try HangingBandTint.image(hangingSource, ropeReference: ropeAnimation.frames[0])
         balloonCharacter = try LocalCharacterArtwork(image: balloon, mode: .balloon)
         bambooCharacter = try LocalCharacterArtwork(image: bamboo, mode: .bamboo)
         let layers = try HangingArtworkLayers(image: hanging)
@@ -70,11 +71,13 @@ struct ArtworkCatalog {
 enum ArtworkError: LocalizedError {
     case unreadable(URL)
     case invalidHangingLayers
+    case invalidBandTint
 
     var errorDescription: String? {
         switch self {
         case .unreadable(let url): return "无法读取或解码素材：\(url.lastPathComponent)"
         case .invalidHangingLayers: return "无法从猪上吊原素材安全分离光环，请检查素材尺寸及透明连通区域。"
+        case .invalidBandTint: return "无法匹配绳子挂件绑绳颜色或定位猪上吊绑带，请检查参考素材。"
         }
     }
 }

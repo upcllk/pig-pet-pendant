@@ -16,7 +16,7 @@ A small desktop pig pendant that follows your mouse. The macOS version is availa
 - **Pig Balloons**: Shows 1–8 pig-shaped balloons floating upward; the default is 2. Each has independently timed blinks, gentle ear movements and nose gestures, with movement reactions.
 - **Pig in a Net**: Uses the user's manually cleaned transparent image with random local ear/nose gestures and a fixed blue mesh, replacing the old 62-frame loop.
 - **Pig on Bamboo**: The pig hugs a bamboo stalk that bends with mouse movement, with random blinks, ear movements and nose gestures that preserve its grip.
-- **Hanging Pig**: Hangs from a rope with randomly timed ear twitches and nose gestures. Its original halo lags slightly during movement, rebounds after stopping, and occasionally tilts at rest. Cross eyes do not blink; the band, attachment, and original halo artwork are preserved.
+- **Hanging Pig**: Hangs from a rope with randomly timed ear twitches and nose gestures. Its halo lags during movement, rebounds after stopping, and occasionally tilts at rest. Cross eyes do not blink; the band's shape is preserved with the same brown hue as Rope Pendant's binding, alongside the original attachment and halo.
 - **Ghost Pig**: Follows the mouse smoothly without a rope.
 
 ## Music Reactive Experiment
@@ -63,6 +63,8 @@ Idle halo gestures wander along two oblique axes in the local head plane, with r
 The user's two 768x768 transparent single-frame PNGs are copied unchanged as `PigPendant/Resources/net-pig-custom.png` and `PigPendant/Resources/hanging-pig-custom.png`. Automatic white deletion and edge repainting are removed. Original `net-pig.png` (62 frames) and `hanging-pig.png` remain as reference; old net frames are no longer displayed. The net image is cropped only by 256 pixels of nearly transparent left padding (residual alpha at most 2%), without cutting the character or stretching, and its top attachment is realigned. Hanging Pig's local regions and halo pivot are remeasured. Remaining stray source specks are not globally cleaned.
 
 With user approval, the new net image has locally generated ear/nose gestures instead of the original animation. Blue mesh pixels and transparent holes stay fixed; originally closed eyes do not receive artificial blinks. Gestures continue at physical rest, react to motion/falling, and pause while hidden/asleep. Prior automatic white-removal experiments have been removed; their lessons remain historical notes.
+
+Hanging Pig's purple band is tinted only in the display copy, matching the rendered sRGB brown binding sampled from original rope frame 0 while retaining shading. Source PNGs remain unchanged. GUI checks verify only band RGB changes, with alpha, other body pixels, and the halo preserved; Settings and the pendant share the same colors.
 
 ## Known Limitations
 

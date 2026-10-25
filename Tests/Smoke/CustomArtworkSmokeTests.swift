@@ -2,6 +2,68 @@ import AppKit
 
 extension PendantCoordinator {
     func smokeCheckCustomArtworkResources() {
+        guard let originalHanging = NSImage(contentsOf: Bundle.main.resourceURL!.appendingPathComponent("hanging-pig-custom.png")) else {
+            preconditionFailure("Cannot read supplied hanging image")
+        }
+        func rgba(_ image: NSImage) -> [UInt8] {
+            guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+                preconditionFailure("Cannot inspect band color")
+            }
+            var bytes = [UInt8](repeating: 0, count: cg.width * cg.height * 4)
+            let success = bytes.withUnsafeMutableBytes { data -> Bool in
+                guard let context = CGContext(data: data.baseAddress, width: cg.width, height: cg.height,
+                                              bitsPerComponent: 8, bytesPerRow: cg.width * 4,
+                                              space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                              bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+                context.draw(cg, in: CGRect(x: 0, y: 0, width: cg.width, height: cg.height))
+                return true
+            }
+            precondition(success)
+            return bytes
+        }
+        let uncolored = rgba(originalHanging)
+        let colored = rgba(artwork.hanging)
+        let reference = rgba(artwork.rope.frames[0])
+        let referenceIndex = (70 * 297 + 180) * 4
+        let referenceSum = Double(reference[referenceIndex]) + Double(reference[referenceIndex + 1]) +
+            Double(reference[referenceIndex + 2])
+        var bandChanges = 0
+        for pixel in 0..<(768 * 768) {
+            let index = pixel * 4
+            if uncolored[index + 3] != colored[index + 3] {
+                NSLog("Band alpha mismatch at %d,%d: %d -> %d", pixel % 768, pixel / 768,
+                      uncolored[index + 3], colored[index + 3])
+                preconditionFailure("Band tint must not alter the silhouette or alpha")
+            }
+            if uncolored[index..<(index + 3)] != colored[index..<(index + 3)] {
+                let alpha = Double(uncolored[index + 3])
+                let r = Double(uncolored[index]) / max(1, alpha)
+                let g = Double(uncolored[index + 1]) / max(1, alpha)
+                let b = Double(uncolored[index + 2]) / max(1, alpha)
+                let inBand = (Int(768 * 0.19)..<Int(768 * 0.78)).contains(pixel % 768) &&
+                             (Int(768 * 0.30)..<Int(768 * 0.69)).contains(pixel / 768) &&
+                             b > r + 0.02 && b > g + 0.04
+                if !inBand {
+                    NSLog("Unexpected band tint change at %d,%d: %@ -> %@", pixel % 768, pixel / 768,
+                          Array(uncolored[index..<(index + 4)]).description, Array(colored[index..<(index + 4)]).description)
+                    preconditionFailure("Only the purple band may be recolored")
+                }
+                if alpha > 128 {
+                    let sum = Double(colored[index]) + Double(colored[index + 1]) + Double(colored[index + 2])
+                    for channel in 0..<3 {
+                        if abs(Double(colored[index + channel]) / sum
+                                 - Double(reference[referenceIndex + channel]) / referenceSum) >= 0.01 {
+                            NSLog("Band hue mismatch: %@ vs reference %@", Array(colored[index..<(index + 3)]).description,
+                                  Array(reference[referenceIndex..<(referenceIndex + 3)]).description)
+                            preconditionFailure("Band hue must match the rope reference while retaining shading")
+                        }
+                    }
+                }
+                bandChanges += 1
+            }
+        }
+        precondition(bandChanges > 1000)
+        NSLog("PASS: hanging band matches original rope brown, %d tinted pixels, all other source RGBA preserved", bandChanges)
         precondition(artwork.hanging.size == NSSize(width: 768, height: 768))
         precondition(artwork.netImage.size == NSSize(width: 512, height: 768))
         guard let cg = artwork.hanging.cgImage(forProposedRect: nil, context: nil, hints: nil),
