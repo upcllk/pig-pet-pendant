@@ -33,9 +33,10 @@ final class PendantCoordinator {
     }
     var displayImage: NSImage { artwork.image(mode: mode, frameIndex: simulation.artworkFrameIndex) }
 
-    init(resourceURL: URL, defaults: UserDefaults = .standard) throws {
+    init(resourceURL: URL, defaults: UserDefaults = .standard,
+         settingsConfigurationURL: URL? = nil) throws {
         artwork = try ArtworkCatalog(resourceURL: resourceURL)
-        store = SettingsStore(defaults: defaults)
+        store = try SettingsStore(defaults: defaults, configurationURL: settingsConfigurationURL)
         settings = store.load()
         simulation = PendantSimulation(settings: settings, frameDurations: artwork.net.frameDurations,
                                        ropeFrameDurations: artwork.rope.frameDurations,
@@ -224,7 +225,7 @@ final class PendantCoordinator {
     func changeLength(_ value: CGFloat) { changeParameter(.length, value: Double(value)) }
 
     func restoreDefaults() {
-        settings = PendantSettings()
+        settings = store.defaultSettings
         lastBeatStrength = 0
         lastBeatTime = nil
         for mode in DisplayMode.allCases {

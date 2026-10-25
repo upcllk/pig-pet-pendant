@@ -94,6 +94,7 @@ extension PendantCoordinator {
         }
         let full = NSBitmapImageRep(cgImage: netCG)
         let crop = NSBitmapImageRep(cgImage: cropCG)
+        var removedEyePixels = 0
         for y in 0..<768 {
             for x in 0..<768 {
                 if x < 256 {
@@ -101,6 +102,22 @@ extension PendantCoordinator {
                         NSLog("Net crop margin has source pixel at %d,%d alpha=%.4f", x, y,
                               full.colorAt(x: x, y: y)!.alphaComponent)
                         preconditionFailure("Cropping nearly transparent padding must not cut off visible artwork")
+                    }
+                } else if (550..<605).contains(x) && (398..<448).contains(y) {
+                    let sourcePixel = full.colorAt(x: x, y: y)!.usingColorSpace(.deviceRGB)!
+                    let resultPixel = crop.colorAt(x: x - 256, y: y)!.usingColorSpace(.deviceRGB)!
+                    let wasEye = sourcePixel.alphaComponent > 0.1 &&
+                        sourcePixel.redComponent < 0.68 &&
+                        sourcePixel.greenComponent < 0.58 &&
+                        sourcePixel.blueComponent < 0.50
+                    if wasEye {
+                        precondition(resultPixel.redComponent > resultPixel.greenComponent &&
+                                     resultPixel.alphaComponent == sourcePixel.alphaComponent,
+                                     "Only the open black eye is filled with the surrounding skin color")
+                        removedEyePixels += 1
+                    } else {
+                        precondition(sourcePixel == resultPixel,
+                                     "Only the indicated black eye may change; retain the mesh and nearby face pixels")
                     }
                 } else {
                     if full.colorAt(x: x, y: y) != crop.colorAt(x: x - 256, y: y) {
@@ -112,7 +129,9 @@ extension PendantCoordinator {
                 }
             }
         }
-        NSLog("PASS: user 768px artwork, source-preserving disjoint halo/body layers (%d halo pixels), no white deletion", haloPixels)
+        precondition(removedEyePixels > 250)
+        NSLog("PASS: user 768px artwork, source-preserving disjoint halo/body layers (%d halo pixels), only indicated net eye removed (%d pixels)",
+              haloPixels, removedEyePixels)
     }
 
     func smokeCheckCustomCharacter() {

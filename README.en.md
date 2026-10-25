@@ -13,11 +13,11 @@ A small desktop pig pendant that follows your mouse. The macOS version is availa
 ## Modes
 
 - **Rope Pendant**: The default mode. The pig reacts to movement and falling, with randomly spaced blinks, ear movements, and body gestures at rest. After the rope settles, a body gesture can nudge the pig into a short swing; its amplitude is adjustable from 0–200% in Settings. Actions return smoothly to rest instead of looping the entire GIF.
+- **Ghost Pig**: The second mode in the mode list. Follows the mouse without a rope, with random progressive blinks and ear/hand gestures, continuously flowing rounded ghost feet and an independently drifting, tilting, rebounding halo.
 - **Pig Balloons**: Shows 1–8 pig-shaped balloons floating upward; the default is 2. Each has independently timed blinks, gentle ear movements and nose gestures, with movement reactions.
-- **Pig in a Net**: Uses the user's manually cleaned transparent image with random local ear/nose gestures and a fixed blue mesh, replacing the old 62-frame loop.
+- **Pig in a Net**: Uses the user's manually cleaned transparent image, removing only the arrowed black round eye in the display copy and filling it with nearby skin color. Other facial features, blue mesh, and transparent holes remain unchanged; the old 62-frame loop is no longer used.
 - **Pig on Bamboo**: The pig hugs a bamboo stalk that bends with mouse movement, with random blinks, ear movements and nose gestures that preserve its grip.
 - **Hanging Pig**: Hangs from a rope with randomly timed ear twitches and nose gestures. Its halo lags during movement, rebounds after stopping, and occasionally tilts at rest. Cross eyes do not blink; the band's shape is preserved with the same brown hue as Rope Pendant's binding, alongside the original attachment and halo.
-- **Ghost Pig**: Follows the mouse without a rope, with random progressive blinks and ear/hand gestures, continuously flowing rounded ghost feet and an independently drifting, tilting, rebounding halo.
 
 ## Music Reactive Experiment
 
@@ -26,6 +26,8 @@ At launch, the app detects drum onsets from changes in low- and mid-frequency en
 ## Usage
 
 Click the pig icon in the menu bar to switch modes or open **Settings**. Settings are saved automatically. Closing the Settings window does not quit the app; select **Quit Pig Pet Pendant** to exit.
+
+Initial parameters for each mode, balloon count, bamboo position, and ghost offsets are stored in `~/Library/Application Support/PigPendant/default-settings.json`. The file is copied from the app bundle on first launch. Edit the JSON manually, then click **Restore Defaults** in Settings to apply the new values. Existing saved adjustments are not overwritten by editing the file or updating the app; restoring defaults applies the file values. All seven parameters for every mode are required and must be within the ranges shown in Settings.
 
 ## Build
 
@@ -60,7 +62,7 @@ Halo amplitude was increased following user feedback. Movement angle targets are
 
 Idle halo gestures wander along two oblique axes in the local head plane, with random starting directions and a smooth curved return. This is two-dimensional visual motion, without scaling or a claim of 3D simulation. Quiet gaps and movement lag/rebound remain.
 
-The user's two 768x768 transparent single-frame PNGs are copied unchanged as `PigPendant/Resources/net-pig-custom.png` and `PigPendant/Resources/hanging-pig-custom.png`. Automatic white deletion and edge repainting are removed. Original `net-pig.png` (62 frames) and `hanging-pig.png` remain as reference; old net frames are no longer displayed. The net image is cropped only by 256 pixels of nearly transparent left padding (residual alpha at most 2%), without cutting the character or stretching, and its top attachment is realigned. Hanging Pig's local regions and halo pivot are remeasured. Remaining stray source specks are not globally cleaned.
+The user's two 768x768 transparent single-frame PNGs are copied unchanged as `PigPendant/Resources/net-pig-custom.png` and `PigPendant/Resources/hanging-pig-custom.png`. The net display copy additionally removes only the arrowed black round eye and fills it from nearby skin pixels; the original PNG and other facial and mesh pixels remain unchanged. Automatic white deletion and edge repainting are removed. Original `net-pig.png` (62 frames) and `hanging-pig.png` remain as reference; old net frames are no longer displayed. The net image is cropped only by 256 pixels of nearly transparent left padding (residual alpha at most 2%), without cutting the character or stretching, and its top attachment is realigned. Hanging Pig's local regions and halo pivot are remeasured. Remaining stray source specks are not globally cleaned.d.
 
 With user approval, the new net image has locally generated ear/nose gestures instead of the original animation. Blue mesh pixels and transparent holes stay fixed; originally closed eyes do not receive artificial blinks. Gestures continue at physical rest, react to motion/falling, and pause while hidden/asleep. Prior automatic white-removal experiments have been removed; their lessons remain historical notes.
 

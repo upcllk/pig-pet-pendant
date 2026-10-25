@@ -10,6 +10,8 @@ let halo = HaloAnimationTests()
 let ghost = GhostBlinkTests()
 let settingsChecks: [Check] = [
     ("settings.defaults-and-storage-keys", settings.testDefaultsAndOriginalStorageKeys),
+    ("settings.editable-mode-defaults", settings.testEditableConfigurationProvidesModeSpecificRestoreDefaults),
+    ("settings.invalid-editable-defaults", settings.testInvalidEditableConfigurationIsRejected),
     ("settings.audio-reactive-scale-bounds", {
         try expectEqual(AudioReactiveScale.minimumScale, CGFloat(0.73))
         try expectEqual(AudioReactiveScale.maximumScale, CGFloat(1.6))

@@ -43,7 +43,9 @@ struct ArtworkCatalog {
               let cropped = netCG.cropping(to: CGRect(x: 256, y: 0, width: 512, height: 768)) else {
             throw ArtworkError.unreadable(directory.appendingPathComponent("net-pig-custom.png"))
         }
-        netImage = NSImage(cgImage: cropped, size: NSSize(width: 512, height: 768))
+        netImage = try NetPigArtwork.removeOpenEye(
+            NSImage(cgImage: cropped, size: NSSize(width: 512, height: 768))
+        )
         let ghostAnimation = try animation("ghost-blink.png")
         guard ghostAnimation.frames.count == 8,
               ghostAnimation.frames.allSatisfy({ $0.size == NSSize(width: 768, height: 1152) }) else {
@@ -109,12 +111,14 @@ enum ArtworkError: LocalizedError {
     case unreadable(URL)
     case invalidHangingLayers
     case invalidBandTint
+    case invalidNetRetouch
 
     var errorDescription: String? {
         switch self {
         case .unreadable(let url): return "无法读取或解码素材：\(url.lastPathComponent)"
         case .invalidHangingLayers: return "无法从猪上吊原素材安全分离光环，请检查素材尺寸及透明连通区域。"
         case .invalidBandTint: return "无法匹配绳子挂件绑绳颜色或定位猪上吊绑带，请检查参考素材。"
+        case .invalidNetRetouch: return "无法仅移除网兜小猪素材中箭头所指的黑色眼点。"
         }
     }
 }

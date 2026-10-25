@@ -15,6 +15,18 @@ enum ParameterID: Int, CaseIterable {
         }
     }
 
+    var configurationKey: String {
+        switch self {
+        case .length: return "length"
+        case .size: return "size"
+        case .weight: return "weight"
+        case .elasticity: return "elasticity"
+        case .sway: return "sway"
+        case .damping: return "damping"
+        case .gravity: return "gravity"
+        }
+    }
+
     func storageKey(for mode: DisplayMode) -> String {
         "\(storageKey).\(mode.rawValue)"
     }
@@ -95,6 +107,13 @@ enum GhostOffsetAxis: Int, CaseIterable {
         switch self {
         case .horizontal: return "GhostOffsetX"
         case .vertical: return "GhostOffsetY"
+        }
+    }
+
+    var configurationKey: String {
+        switch self {
+        case .horizontal: return "horizontal"
+        case .vertical: return "vertical"
         }
     }
 

@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import Foundation
 import ImageIO
 
@@ -25,14 +26,19 @@ final class PigAppDelegate: NSObject, NSApplicationDelegate {
             #if TESTING
             appController = try PendantCoordinator(resourceURL: resource, defaults: ValidationPreferences().defaults)
             #else
-            appController = try PendantCoordinator(resourceURL: resource)
+            let configuration = try SettingsConfiguration.installBundledDefaults()
+            appController = try PendantCoordinator(resourceURL: resource,
+                                                   settingsConfigurationURL: configuration)
             #endif
         } catch {
             NSLog("Application startup failed: %@", error.localizedDescription)
             let alert = NSAlert()
-            alert.messageText = "无法读取应用图片素材"
+            alert.messageText = "猪猪挂件启动失败"
             alert.informativeText = error.localizedDescription
             alert.runModal()
+            #if TESTING
+            if CommandLine.arguments.contains("--smoke-test") { exit(EXIT_FAILURE) }
+            #endif
             NSApp.terminate(nil)
             return
         }

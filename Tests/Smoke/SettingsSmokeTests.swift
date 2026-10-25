@@ -88,7 +88,7 @@ extension SettingsWindowController {
         precondition(model.settings[.sway] == 175 && swayRow.readout.stringValue == "175%")
         precondition(defaults.double(forKey: ParameterID.sway.storageKey(for: .rope)) == 175)
         precondition(defaults.string(forKey: "DisplayMode") == "rope")
-        modeControl.selectedSegment = 2
+        modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .net)!
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.mode == .net && model.activeRopes.count == 1)
         precondition(model.physics.endPoint.y < model.physics.nodes[0].y)
@@ -103,7 +103,7 @@ extension SettingsWindowController {
         precondition(model.physics.length == CGFloat(originalModeParameters[.net]![.length]!))
         precondition(model.pigSize == CGFloat(originalModeParameters[.net]![.size]!))
         model.smokeCheck()
-        modeControl.selectedSegment = 3
+        modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .bamboo)!
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.mode == .bamboo && model.activeRopes.count == 1)
         precondition(model.displayImage === model.bambooImage && image.image === model.bambooImage)
@@ -171,7 +171,7 @@ extension SettingsWindowController {
         precondition(ghostOffsetRows.allSatisfy { !$0.row.isHidden })
         precondition(ghostOffsetRows[0].slider.doubleValue == 81 && ghostOffsetRows[1].slider.doubleValue == -45)
         precondition(model.settings[.size] == 72)
-        modeControl.selectedSegment = 1
+        modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .balloon)!
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.displayImage === model.balloonImage && image.image === model.balloonImage)
         precondition(countStepper.isEnabled && parameterLabels[6].stringValue == "浮力")

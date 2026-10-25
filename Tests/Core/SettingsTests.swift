@@ -9,7 +9,7 @@ final class SettingsTests {
     func setUpWithError() throws {
         domain = "local.pigpendant.unit-tests.\(UUID().uuidString)"
         defaults = try requireValue(UserDefaults(suiteName: domain))
-        store = SettingsStore(defaults: defaults)
+        store = try SettingsStore(defaults: defaults)
     }
 
     func tearDown() throws {
@@ -31,6 +31,7 @@ final class SettingsTests {
     func testDefaultsAndOriginalStorageKeys() throws {
         let settings = store.load()
         try expectEqual(settings.mode, .rope)
+        try expectEqual(Array(DisplayMode.allCases.prefix(2)), [.rope, .ghost])
         try expectEqual(settings.balloonCount, 2)
         try expectEqual(ParameterID.allCases.map(\.storageKey),
                        ["RopeLength", "PigSize", "Weight", "Elasticity", "NudgeSwingAmplitude", "DampingRate", "Gravity"])
@@ -47,6 +48,43 @@ final class SettingsTests {
                 try expectEqual(defaults.double(forKey: parameter.storageKey(for: mode)), parameter.defaultValue)
             }
         }
+    }
+
+    func testEditableConfigurationProvidesModeSpecificRestoreDefaults() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("pig-pendant-settings-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let parameters = Dictionary(uniqueKeysWithValues: DisplayMode.allCases.map { mode in
+            (mode.rawValue, Dictionary(uniqueKeysWithValues: ParameterID.allCases.map {
+                ($0.configurationKey, $0.defaultValue + (mode == .net ? 1 : 0))
+            }))
+        })
+        let configuration: [String: Any] = [
+            "parameters": parameters,
+            "balloonCount": 5,
+            "bambooPosition": 67,
+            "ghostOffsets": ["horizontal": 81, "vertical": -45]
+        ]
+        try JSONSerialization.data(withJSONObject: configuration, options: [.sortedKeys]).write(to: url)
+        let configuredStore = try SettingsStore(defaults: defaults, configurationURL: url)
+        let configured = configuredStore.load()
+        try expectEqual(configured[.length, mode: .net], 141)
+        try expectEqual(configured[.length, mode: .rope], 140)
+        try expectEqual(configured.balloonCount, 5)
+        try expectEqual(configured.bambooPosition, 67)
+        try expectEqual(configured[.horizontal], 81)
+        try expectEqual(configured[.vertical], -45)
+        defaults.set(222, forKey: ParameterID.length.storageKey(for: .net))
+        try expectEqual(configuredStore.load()[.length, mode: .net], 222)
+        try expectEqual(configuredStore.defaultSettings[.length, mode: .net], 141)
+    }
+
+    func testInvalidEditableConfigurationIsRejected() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("pig-pendant-settings-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try Data("{}".utf8).write(to: url)
+        try expectThrows(try SettingsStore(defaults: defaults, configurationURL: url))
     }
 
     func testFiniteValuesClampAtBothBounds() throws {

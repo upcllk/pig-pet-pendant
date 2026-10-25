@@ -1,0 +1,64 @@
+{
+  "parameters": {
+    "rope": {
+      "length": 140,
+      "size": 48,
+      "weight": 65,
+      "elasticity": 55,
+      "sway": 100,
+      "damping": 0.906818268602891,
+      "gravity": 1350
+    },
+    "ghost": {
+      "length": 140,
+      "size": 48,
+      "weight": 65,
+      "elasticity": 55,
+      "sway": 100,
+      "damping": 0.906818268602891,
+      "gravity": 1350
+    },
+    "balloon": {
+      "length": 140,
+      "size": 48,
+      "weight": 65,
+      "elasticity": 55,
+      "sway": 100,
+      "damping": 0.906818268602891,
+      "gravity": 1350
+    },
+    "net": {
+      "length": 140,
+      "size": 48,
+      "weight": 65,
+      "elasticity": 55,
+      "sway": 100,
+      "damping": 0.906818268602891,
+      "gravity": 1350
+    },
+    "bamboo": {
+      "length": 140,
+      "size": 48,
+      "weight": 65,
+      "elasticity": 55,
+      "sway": 100,
+      "damping": 0.906818268602891,
+      "gravity": 1350
+    },
+    "hanging": {
+      "length": 140,
+      "size": 48,
+      "weight": 65,
+      "elasticity": 55,
+      "sway": 100,
+      "damping": 0.906818268602891,
+      "gravity": 1350
+    }
+  },
+  "balloonCount": 2,
+  "bambooPosition": 50,
+  "ghostOffsets": {
+    "horizontal": 44,
+    "vertical": 32
+  }
+}

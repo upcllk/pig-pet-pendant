@@ -3,11 +3,11 @@ import Foundation
 
 enum DisplayMode: String, CaseIterable {
     case rope
+    case ghost
     case balloon
     case net
     case bamboo
     case hanging
-    case ghost
 
     var title: String {
         switch self {
