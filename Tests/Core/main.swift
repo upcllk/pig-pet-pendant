@@ -53,6 +53,8 @@ let simulationChecks: [Check] = [
     ("ghost.seed-frame-rates-invalid-clock", ghost.testSeedFrameRatesAndInvalidClock),
     ("ghost.body-lag-continuity-settling", ghost.testBodyLagContinuityAndSettling),
     ("ghost.continuous-hem-frame-rates-loop-seam", ghost.testHemFlowsWithoutBlinksAcrossFrameRatesAndLoopSeam),
+    ("ghost.hem-speed-response-frame-rates-recovery", ghost.testHemSpeedResponseContinuityFrameRatesAndRecovery),
+    ("ghost.both-modes-mouse-speed-directions-resume", ghost.testBothGhostModesUseMouseSpeedInAllDirectionsAndResetMotion),
     ("ghost.independent-blink-halo-idle-resume", ghost.testGhostIdleUpdatesBlinkAndHaloWithoutRopeIntegration),
     ("ghost.wave-mode-independent-blink-halo-idle", ghost.testWaveGhostIdleUpdatesBlinkAndHaloWithoutRopeIntegration),
     ("halo.lag-rebound-settling-frame-rates", halo.testLagReboundAndSettlingAcrossFrameRates),

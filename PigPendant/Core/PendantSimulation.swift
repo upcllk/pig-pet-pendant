@@ -6,6 +6,7 @@ final class PendantSimulation {
     var bambooBend = BambooBend()
     private var bambooSway: CGFloat = 0
     private var bambooMotionAnchor: V2?
+    private var ghostMotionAnchor: V2?
     private(set) var ghostPosition = V2(0, 0)
     private(set) var balloons: [RopePhysics] = []
     private(set) var settings: PendantSettings
@@ -119,6 +120,8 @@ final class PendantSimulation {
         bambooSway = 0
         bambooMotionAnchor = anchor
         ghostPosition = ghostTarget(anchor)
+        ghostMotionAnchor = anchor
+        ghostBody.resetMotion()
         ropeAnimation.resetMotion()
         for index in balloonAnimations.indices { balloonAnimations[index].resetMotion() }
         updateBalloonParameters()
@@ -137,6 +140,8 @@ final class PendantSimulation {
             let delta = ghostTarget(anchor) - ghostPosition
             guard delta.x.isFinite, delta.y.isFinite, elapsed.isFinite, elapsed > 0 else { return false }
             let previousPosition = ghostPosition
+            let mouseSpeed = elapsed > 0.25 ? 0 : (anchor - (ghostMotionAnchor ?? anchor)).magnitude / CGFloat(elapsed)
+            ghostMotionAnchor = anchor
             let step = min(0.1, CGFloat(elapsed))
             let blend = 1 - CGFloat(exp(Double(-14 * step)))
             ghostPosition = ghostPosition + delta * blend
@@ -149,7 +154,7 @@ final class PendantSimulation {
             let blinkChanged = ghostBlink.advance(elapsed: elapsed)
             let velocity = elapsed > 0.25 ? V2(0, 0) : (ghostPosition - previousPosition) / CGFloat(elapsed)
             let bodyChanged = ghostBody.advance(elapsed: elapsed, blinking: ghostBlink.isAnimating,
-                                                horizontalVelocity: Double(velocity.x))
+                                                horizontalVelocity: Double(velocity.x), mouseSpeed: Double(mouseSpeed))
             let characterActive = settings.mode == .ghostWave
                 ? ghostBlink.isAnimating || ghostBody.isGesturing
                 : ghostBlink.isAnimating

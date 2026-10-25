@@ -43,6 +43,7 @@ extension PendantCoordinator {
         if mode == .hanging || mode == .net { smokeCheckCustomCharacter() }
         if mode == .ghost { smokeCheckGhostAnimation() }
         if mode == .ghostWave { smokeCheckWaveGhostAnimation() }
+        if simulation.isGhostMode { smokeCheckGhostMouseSpeed() }
         if mode == .bamboo {
             let savedLength = physics.length
             physics.length = 180

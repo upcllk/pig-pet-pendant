@@ -79,6 +79,8 @@ Each blink lasts about 0.91 seconds, with two closed-eye poses totaling 0.28 sec
 
 The halo remains separately rendered using damped following and random plane travel. Ghost mode stays at 60 Hz while stationary to draw its continuous hem; other modes retain their existing waiting/active refresh rules. All ghost clocks pause while hidden/asleep and retain their phase on resume without fast-forwarding.
 
+Both ghost modes smoothly speed up their hem waves as the mouse moves faster, using two-dimensional cursor speed in screen points per second rather than the lagging body's velocity. Horizontal, vertical, and diagonal movement all count. The idle period remains about 3.2 seconds; playback approaches a 4x limit (about 0.8 seconds per cycle) at high speeds and smoothly returns to idle flow after stopping. Only the hem clock accelerates, preserving its phase, artwork, wave shape, and independent blink/ear/hand/halo timing. Hide/sleep resume preserves the phase and resets the speed reference to avoid acceleration from cursor travel during the pause. Core checks cover 15/30/60/120/144 Hz inputs, speeds, directions, rapid reversals, stopping, and long gaps; GUI checks cover both actual render paths and hide/sleep recovery.
+
 The reproducible preparation command requires the user's original key directory and does not modify it:
 
 ```bash
