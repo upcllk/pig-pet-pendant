@@ -25,7 +25,7 @@ At launch, the app detects drum onsets from changes in low- and mid-frequency en
 
 ## Usage
 
-Click the pig icon in the menu bar to switch modes or open **Settings**. Settings are saved automatically. Closing the Settings window does not quit the app; select **Quit Pig Pet Pendant** to exit.
+Click the pig icon in the menu bar to switch modes or open **Settings**. Ghost Pig is second in the mode list. The menu keeps only actionable mode, visibility, adjustment, reset, and quit items; it omits mode descriptions and audio status. Settings are saved automatically. Closing the Settings window does not quit the app; select **Quit Pig Pet Pendant** to exit.
 
 Initial parameters for each mode, balloon count, bamboo position, and ghost offsets are stored in `~/Library/Application Support/PigPendant/default-settings.json`. The file is copied from the app bundle on first launch. Edit the JSON manually, then click **Restore Defaults** in Settings to apply the new values. Existing saved adjustments are not overwritten by editing the file or updating the app; restoring defaults applies the file values. All seven parameters for every mode are required and must be within the ranges shown in Settings.
 

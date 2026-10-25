@@ -23,7 +23,7 @@ final class StatusItemController: NSObject {
         statusItem.button?.title = ""
         statusItem.button?.imagePosition = .imageOnly
         statusItem.button?.image = statusFrames[0]
-        statusItem.button?.toolTip = "猪猪挂件：\(controller.audioStatus)"
+        statusItem.button?.toolTip = "猪猪挂件"
         startIconAnimation()
         refresh()
     }
@@ -132,19 +132,12 @@ final class StatusItemController: NSObject {
         let reset = NSMenuItem(title: controller.mode.resetPoseTitle, action: #selector(resetPig), keyEquivalent: "")
         reset.target = self
         menu.addItem(reset)
-        let detail = NSMenuItem(title: controller.mode.menuDescription(balloonCount: controller.balloonCount),
-                                action: nil, keyEquivalent: "")
-        detail.isEnabled = false
-        menu.addItem(detail)
-        let audioStatus = NSMenuItem(title: "音乐律动：\(controller.audioStatus)", action: nil, keyEquivalent: "")
-        audioStatus.isEnabled = false
-        menu.addItem(audioStatus)
         menu.addItem(.separator())
         let quit = NSMenuItem(title: "退出猪猪挂件", action: #selector(quitApp), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
         statusItem.menu = menu
-        statusItem.button?.toolTip = "猪猪挂件：\(controller.audioStatus)"
+        statusItem.button?.toolTip = "猪猪挂件"
     }
 
     @objc private func togglePig() { controller.toggleVisible() }

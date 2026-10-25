@@ -71,6 +71,8 @@ extension SettingsWindowController {
         }
         showWindow(nil)
         precondition(window?.isVisible == true && window?.canBecomeKey == true)
+        precondition(modeControl.label(forSegment: 0) == DisplayMode.rope.title &&
+                     modeControl.label(forSegment: 1) == DisplayMode.ghost.title)
         modeControl.selectedSegment = 0
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.activeRopes.count == 1 && model.physics.endPoint.y < model.physics.nodes[0].y)
