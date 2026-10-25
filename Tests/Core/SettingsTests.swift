@@ -42,6 +42,16 @@ final class SettingsTests {
         try expectEqual(settings[.horizontal], 44)
         try expectEqual(settings[.vertical], 32)
         try expectEqual(GhostOffsetAxis.range, -300...300)
+        try expectEqual(HaloSpacing.modes, [.ghost, .ghostWave, .hanging])
+        try expectEqual(HaloSpacing.range, -120...120)
+        for mode in HaloSpacing.modes {
+            try expectEqual(settings[haloSpacingFor: mode], HaloSpacing.defaultValue)
+        }
+        try expectEqual(HaloSize.modes, HaloSpacing.modes)
+        try expectEqual(HaloSize.range, 25...300)
+        for mode in HaloSize.modes {
+            try expectEqual(settings[haloSizeFor: mode], HaloSize.defaultValue)
+        }
         try expectEqual(DisplayMode.ghostWave.title, "小小幽灵猪")
         try expectEqual(DisplayMode.ghostWave.visibilityMenuTitle, "显示 / 隐藏小小幽灵猪")
         let bundledDefaultsURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
@@ -69,7 +79,9 @@ final class SettingsTests {
             "parameters": parameters,
             "balloonCount": 5,
             "bambooPosition": 67,
-            "ghostOffsets": ["horizontal": 81, "vertical": -45]
+            "ghostOffsets": ["horizontal": 81, "vertical": -45],
+            "haloSpacing": ["ghost": -30, "ghostWave": 45, "hanging": 100],
+            "haloSize": ["ghost": 75, "ghostWave": 125, "hanging": 200]
         ]
         try JSONSerialization.data(withJSONObject: configuration, options: [.sortedKeys]).write(to: url)
         let configuredStore = try SettingsStore(defaults: defaults, configurationURL: url)
@@ -80,9 +92,58 @@ final class SettingsTests {
         try expectEqual(configured.bambooPosition, 67)
         try expectEqual(configured[.horizontal], 81)
         try expectEqual(configured[.vertical], -45)
+        try expectEqual(configured[haloSpacingFor: .ghost], -30)
+        try expectEqual(configured[haloSpacingFor: .ghostWave], 45)
+        try expectEqual(configured[haloSpacingFor: .hanging], 100)
+        try expectEqual(configured[haloSizeFor: .ghost], 75)
+        try expectEqual(configured[haloSizeFor: .ghostWave], 125)
+        try expectEqual(configured[haloSizeFor: .hanging], 200)
         defaults.set(222, forKey: ParameterID.length.storageKey(for: .net))
         try expectEqual(configuredStore.load()[.length, mode: .net], 222)
         try expectEqual(configuredStore.defaultSettings[.length, mode: .net], 141)
+    }
+
+    func testHaloSpacingPersistsIndependentlyByModeAndClampsToRange() throws {
+        let values: [DisplayMode: Double] = [.ghost: -72, .ghostWave: 48, .hanging: 120]
+        var settings = store.load()
+        for (mode, value) in values {
+            try settings.setHaloSpacing(value, for: mode)
+            store.saveHaloSpacing(settings, mode: mode)
+        }
+        let loaded = store.load()
+        for (mode, value) in values {
+            try expectEqual(loaded[haloSpacingFor: mode], value)
+            try expectEqual(defaults.double(forKey: HaloSpacing.storageKey(for: mode)), value)
+        }
+        try settings.setHaloSpacing(-Double.greatestFiniteMagnitude, for: .ghost)
+        try expectEqual(settings[haloSpacingFor: .ghost], HaloSpacing.range.lowerBound)
+        try settings.setHaloSpacing(Double.greatestFiniteMagnitude, for: .hanging)
+        try expectEqual(settings[haloSpacingFor: .hanging], HaloSpacing.range.upperBound)
+        try expectThrows(try settings.setHaloSpacing(.nan, for: .ghostWave))
+        try expectThrows(try settings.setHaloSpacing(10, for: .rope))
+    }
+
+    func testHaloSizePersistsIndependentlyByModeAndClampsToRange() throws {
+        let values: [DisplayMode: Double] = [.ghost: 75, .ghostWave: 150, .hanging: 300]
+        var settings = store.load()
+        for (mode, value) in values {
+            try settings.setHaloSize(value, for: mode)
+            store.saveHaloSize(settings, mode: mode)
+        }
+        try settings.setHaloSpacing(42, for: .ghost)
+        try settings.setHaloSize(125, for: .ghost)
+        try expectEqual(settings[haloSpacingFor: .ghost], 42)
+        let loaded = store.load()
+        for (mode, value) in values {
+            try expectEqual(loaded[haloSizeFor: mode], value)
+            try expectEqual(defaults.double(forKey: HaloSize.storageKey(for: mode)), value)
+        }
+        try settings.setHaloSize(-Double.greatestFiniteMagnitude, for: .ghost)
+        try expectEqual(settings[haloSizeFor: .ghost], HaloSize.range.lowerBound)
+        try settings.setHaloSize(Double.greatestFiniteMagnitude, for: .hanging)
+        try expectEqual(settings[haloSizeFor: .hanging], HaloSize.range.upperBound)
+        try expectThrows(try settings.setHaloSize(.nan, for: .ghostWave))
+        try expectThrows(try settings.setHaloSize(100, for: .rope))
     }
 
     func testLegacyConfigurationAddsWaveGhostDefaultsWithoutReplacingCustomValues() throws {
@@ -126,6 +187,9 @@ final class SettingsTests {
         try expectEqual(migrated.bambooPosition, 67)
         try expectEqual(migrated[.horizontal], 81)
         try expectEqual(migrated[.vertical], -45)
+        for mode in HaloSize.modes {
+            try expectEqual(migrated[haloSizeFor: mode], HaloSize.defaultValue)
+        }
     }
 
     func testInvalidEditableConfigurationIsRejected() throws {
@@ -133,6 +197,20 @@ final class SettingsTests {
             .appendingPathComponent("pig-pendant-settings-\(UUID().uuidString).json")
         defer { try? FileManager.default.removeItem(at: url) }
         try Data("{}".utf8).write(to: url)
+        try expectThrows(try SettingsStore(defaults: defaults, configurationURL: url))
+        let parameters = Dictionary(uniqueKeysWithValues: DisplayMode.allCases.map { mode in
+            (mode.rawValue, Dictionary(uniqueKeysWithValues: ParameterID.allCases.map {
+                ($0.configurationKey, $0.defaultValue)
+            }))
+        })
+        let configuration: [String: Any] = [
+            "parameters": parameters,
+            "balloonCount": 2,
+            "bambooPosition": 50,
+            "ghostOffsets": ["horizontal": 44, "vertical": 32],
+            "haloSize": ["ghost": 24, "ghostWave": 100, "hanging": 100]
+        ]
+        try JSONSerialization.data(withJSONObject: configuration).write(to: url)
         try expectThrows(try SettingsStore(defaults: defaults, configurationURL: url))
     }
 

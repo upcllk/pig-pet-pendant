@@ -5,6 +5,8 @@ private struct SettingsConfigurationFile: Decodable {
     let balloonCount: Int
     let bambooPosition: Double
     let ghostOffsets: [String: Double]
+    let haloSpacing: [String: Double]?
+    let haloSize: [String: Double]?
 }
 
 enum SettingsConfiguration {
@@ -101,6 +103,36 @@ enum SettingsConfiguration {
                 throw SettingsConfigurationError.invalid(url, "\(axis.configurationKey) 必须在 \(GhostOffsetAxis.range) 范围内")
             }
             try settings.set(value, for: axis)
+        }
+        if let haloSpacing = file.haloSpacing {
+            let expectedModes = Set(HaloSpacing.modes.map(\.rawValue))
+            guard Set(haloSpacing.keys) == expectedModes else {
+                throw SettingsConfigurationError.invalid(url, "haloSpacing 必须包含 ghost、ghostWave 和 hanging")
+            }
+            for mode in HaloSpacing.modes {
+                guard let value = haloSpacing[mode.rawValue], value.isFinite,
+                      HaloSpacing.range.contains(value) else {
+                    throw SettingsConfigurationError.invalid(
+                        url, "haloSpacing.\(mode.rawValue) 必须是 \(HaloSpacing.range) 范围内的有限数值"
+                    )
+                }
+                try settings.setHaloSpacing(value, for: mode)
+            }
+        }
+        if let haloSize = file.haloSize {
+            let expectedModes = Set(HaloSize.modes.map(\.rawValue))
+            guard Set(haloSize.keys) == expectedModes else {
+                throw SettingsConfigurationError.invalid(url, "haloSize 必须包含 ghost、ghostWave 和 hanging")
+            }
+            for mode in HaloSize.modes {
+                guard let value = haloSize[mode.rawValue], value.isFinite,
+                      HaloSize.range.contains(value) else {
+                    throw SettingsConfigurationError.invalid(
+                        url, "haloSize.\(mode.rawValue) 必须是 \(HaloSize.range) 范围内的有限数值"
+                    )
+                }
+                try settings.setHaloSize(value, for: mode)
+            }
         }
         return settings
     }

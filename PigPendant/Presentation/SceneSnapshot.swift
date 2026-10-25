@@ -18,6 +18,8 @@ struct SceneSnapshot {
     let haloImage: NSImage?
     let haloCenter: CGPoint
     let haloPose: HaloPose
+    let haloSpacing: CGFloat
+    let haloScale: CGFloat
     let ropes: [RopeSnapshot]
     let bambooPose: BambooPose?
     let ghostPosition: V2?
@@ -49,6 +51,8 @@ struct SceneSnapshot {
         haloCenter = mode == .ghost || mode == .ghostWave
             ? artwork.ghostHaloCenter : artwork.hangingLayers.center
         haloPose = simulation.haloAnimation.pose
+        haloSpacing = CGFloat(simulation.settings[haloSpacingFor: mode])
+        haloScale = CGFloat(simulation.settings[haloSizeFor: mode] / HaloSize.defaultValue)
         ropes = simulation.activeRopes.enumerated().map { index, rope in
             RopeSnapshot(nodes: rope.nodes, endPoint: rope.endPoint, endAngle: rope.endAngle,
                          width: simulation.balloonWidth(at: index),
@@ -58,8 +62,11 @@ struct SceneSnapshot {
         bambooPose = mode == .bamboo ? simulation.bambooPose : nil
         ghostPosition = simulation.isGhostMode ? simulation.ghostPosition : nil
         let nodes = bambooPose?.points ?? ghostPosition.map { [$0] } ?? ropes.flatMap(\.nodes)
+        let imageAspect = displayImage.size.height / max(displayImage.size.width, 1)
         let padding = max(pigSize * (mode == .bamboo ? 3 : 1.2)
-                          * max(1, displayImage.size.height / max(displayImage.size.width, 1)), 48) + 16
+                          * max(1, imageAspect), 48)
+            + 16 + abs(haloSpacing)
+            + max(pigSize, pigSize * imageAspect) * max(0, haloScale - 1)
         let minX = nodes.map(\.x).min() ?? 0
         let maxX = nodes.map(\.x).max() ?? 0
         let minY = nodes.map(\.y).min() ?? 0

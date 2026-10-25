@@ -15,6 +15,14 @@ extension SettingsWindowController {
             precondition(content.bounds.contains(row.slider.convert(row.slider.bounds, to: content)))
             precondition((row.readout.cell?.cellSize.width ?? 0) <= row.readout.bounds.width)
         }
+        if !haloSpacingSlider.isHiddenOrHasHiddenAncestor {
+            precondition(content.bounds.contains(haloSpacingSlider.convert(haloSpacingSlider.bounds, to: content)))
+            precondition((haloSpacingReadout.cell?.cellSize.width ?? 0) <= haloSpacingReadout.bounds.width)
+        }
+        if !haloSizeSlider.isHiddenOrHasHiddenAncestor {
+            precondition(content.bounds.contains(haloSizeSlider.convert(haloSizeSlider.bounds, to: content)))
+            precondition((haloSizeReadout.cell?.cellSize.width ?? 0) <= haloSizeReadout.bounds.width)
+        }
         for row in parameterRows where !row.row.isHidden {
             precondition(content.bounds.contains(row.readout.convert(row.readout.bounds, to: content)))
             precondition((row.readout.cell?.cellSize.width ?? 0) <= row.readout.bounds.width)
@@ -24,6 +32,8 @@ extension SettingsWindowController {
         precondition(ghostOffsetRows.allSatisfy {
             $0.row.isHidden == (model.mode != .ghost && model.mode != .ghostWave)
         })
+        precondition(haloSpacingRow.isHidden == !HaloSpacing.modes.contains(model.mode))
+        precondition(haloSizeRow.isHidden == !HaloSize.modes.contains(model.mode))
         precondition(parameterRows.first { $0.parameter == .sway }?.row.isHidden == (model.mode != .rope))
         content.cacheDisplay(in: content.bounds, to: bitmap)
         guard let png = bitmap.representation(using: .png, properties: [:]) else {
@@ -40,12 +50,21 @@ extension SettingsWindowController {
         let modeParameterKeys = DisplayMode.allCases.flatMap { mode in
             ParameterID.allCases.map { $0.storageKey(for: mode) }
         }
-        let keys = legacyKeys + ["BalloonCount", "DisplayMode", "BambooPigPosition", "GhostOffsetX", "GhostOffsetY"] + modeParameterKeys
+        let haloSpacingKeys = HaloSpacing.modes.map { HaloSpacing.storageKey(for: $0) }
+        let haloSizeKeys = HaloSize.modes.map { HaloSize.storageKey(for: $0) }
+        let keys = legacyKeys + ["BalloonCount", "DisplayMode", "BambooPigPosition", "GhostOffsetX", "GhostOffsetY"] +
+            modeParameterKeys + haloSpacingKeys + haloSizeKeys
         let saved = keys.map { defaults.object(forKey: $0) }
         let originalCount = model.balloonCount
         let originalMode = model.mode
         let originalBambooPosition = model.settings.bambooPosition
         let originalGhostOffsets = Dictionary(uniqueKeysWithValues: GhostOffsetAxis.allCases.map { ($0, model.settings[$0]) })
+        let originalHaloSpacings = Dictionary(uniqueKeysWithValues: HaloSpacing.modes.map {
+            ($0, model.settings[haloSpacingFor: $0])
+        })
+        let originalHaloSizes = Dictionary(uniqueKeysWithValues: HaloSize.modes.map {
+            ($0, model.settings[haloSizeFor: $0])
+        })
         let originalModeParameters: [DisplayMode: [ParameterID: Double]] = Dictionary(
             uniqueKeysWithValues: DisplayMode.allCases.map { mode in
                 (mode, Dictionary(uniqueKeysWithValues: ParameterID.allCases.map { ($0, model.settings[$0, mode: mode]) }))
@@ -65,6 +84,11 @@ extension SettingsWindowController {
             for axis in GhostOffsetAxis.allCases {
                 model.changeGhostOffset(axis, value: originalGhostOffsets[axis]!)
             }
+            for mode in HaloSpacing.modes {
+                model.changeMode(mode)
+                model.changeHaloSpacing(originalHaloSpacings[mode]!)
+                model.changeHaloSize(originalHaloSizes[mode]!)
+            }
             model.changeCount(originalCount)
             model.changeMode(originalMode)
             for (index, key) in keys.enumerated() { defaults.set(saved[index], forKey: key) }
@@ -83,6 +107,8 @@ extension SettingsWindowController {
         precondition(countRow.isHidden && window?.contentView?.frame.height == 550)
         precondition(bambooPositionRow.isHidden)
         precondition(ghostOffsetRows.allSatisfy(\.row.isHidden))
+        precondition(haloSpacingRow.isHidden)
+        precondition(haloSizeRow.isHidden)
         precondition(parameterRows.allSatisfy { !$0.row.isHidden })
         let swayRow = parameterRows.first { $0.parameter == .sway }!
         precondition(swayRow.slider.minValue == 0 && swayRow.slider.maxValue == 200)
@@ -101,6 +127,8 @@ extension SettingsWindowController {
         precondition(countRow.isHidden && window?.contentView?.frame.height == 510)
         precondition(bambooPositionRow.isHidden)
         precondition(ghostOffsetRows.allSatisfy(\.row.isHidden))
+        precondition(haloSpacingRow.isHidden)
+        precondition(haloSizeRow.isHidden)
         precondition(parameterLabels[6].stringValue == "重力")
         precondition(swayRow.row.isHidden)
         precondition(defaults.string(forKey: "DisplayMode") == "net")
@@ -111,9 +139,24 @@ extension SettingsWindowController {
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.mode == .ghostWave && model.displayImage === model.artwork.ghostWave)
         precondition(visibility.title == "显示小小幽灵猪" && countRow.isHidden && bambooPositionRow.isHidden)
-        precondition(window?.contentView?.frame.height == 390)
+        precondition(window?.contentView?.frame.height == 470)
         precondition(ghostOffsetRows.allSatisfy { !$0.row.isHidden })
         precondition(parameterRows.allSatisfy { $0.row.isHidden == ($0.parameter != .size) })
+        precondition(!haloSpacingRow.isHidden && haloSpacingSlider.minValue == -120 &&
+                     haloSpacingSlider.maxValue == 120 && haloSpacingSlider.doubleValue == 0)
+        precondition(!haloSizeRow.isHidden && haloSizeSlider.minValue == 25 &&
+                     haloSizeSlider.maxValue == 300 && haloSizeSlider.doubleValue == 100 &&
+                     haloSizeReadout.stringValue == "100%")
+        haloSpacingSlider.doubleValue = 60
+        haloSpacingSlider.sendAction(haloSpacingSlider.action, to: haloSpacingSlider.target)
+        precondition(model.settings[haloSpacingFor: .ghostWave] == 60 &&
+                     haloSpacingReadout.stringValue == "+60 点" &&
+                     defaults.double(forKey: HaloSpacing.storageKey(for: .ghostWave)) == 60)
+        haloSizeSlider.doubleValue = 250
+        haloSizeSlider.sendAction(haloSizeSlider.action, to: haloSizeSlider.target)
+        precondition(model.settings[haloSizeFor: .ghostWave] == 250 &&
+                     haloSizeReadout.stringValue == "250%" &&
+                     defaults.double(forKey: HaloSize.storageKey(for: .ghostWave)) == 250)
         model.smokeCheck()
         modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .bamboo)!
         modeControl.sendAction(modeControl.action, to: modeControl.target)
@@ -147,19 +190,35 @@ extension SettingsWindowController {
         precondition(model.mode == .hanging && model.displayImage === model.hangingImage)
         precondition(visibility.title == "显示上吊猪" && countRow.isHidden && bambooPositionRow.isHidden)
         precondition(swayRow.row.isHidden)
-        precondition(window?.contentView?.frame.height == 510 && model.physics.endPoint.y < model.physics.nodes[0].y)
+        precondition(window?.contentView?.frame.height == 590 && model.physics.endPoint.y < model.physics.nodes[0].y)
+        precondition(!haloSpacingRow.isHidden && haloSpacingSlider.doubleValue == 0)
+        precondition(!haloSizeRow.isHidden && haloSizeSlider.doubleValue == 100)
+        haloSpacingSlider.doubleValue = -45
+        haloSpacingSlider.sendAction(haloSpacingSlider.action, to: haloSpacingSlider.target)
+        precondition(model.settings[haloSpacingFor: .hanging] == -45 &&
+                     defaults.double(forKey: HaloSpacing.storageKey(for: .hanging)) == -45)
+        haloSizeSlider.doubleValue = 50
+        haloSizeSlider.sendAction(haloSizeSlider.action, to: haloSizeSlider.target)
+        precondition(model.settings[haloSizeFor: .hanging] == 50 &&
+                     defaults.double(forKey: HaloSize.storageKey(for: .hanging)) == 50)
         model.smokeCheck()
         modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .ghost)!
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.mode == .ghost && model.displayImage === model.ghostImage)
         precondition(visibility.title == "显示幽灵猪" && countRow.isHidden && bambooPositionRow.isHidden)
-        precondition(window?.contentView?.frame.height == 390)
+        precondition(window?.contentView?.frame.height == 470)
         precondition(ghostOffsetRows.allSatisfy { !$0.row.isHidden })
         precondition(ghostOffsetRows.allSatisfy { $0.slider.minValue == -300 && $0.slider.maxValue == 300 })
         precondition(ghostOffsetRows[0].axis == .horizontal && ghostOffsetRows[1].axis == .vertical)
         precondition(parameterRows.allSatisfy { $0.row.isHidden == ($0.parameter != .size) })
         precondition(ghostOffsetRows[0].slider.doubleValue == originalGhostOffsets[.horizontal])
         precondition(ghostOffsetRows[1].slider.doubleValue == originalGhostOffsets[.vertical])
+        precondition(!haloSpacingRow.isHidden && haloSpacingSlider.doubleValue == 0)
+        precondition(!haloSizeRow.isHidden && haloSizeSlider.doubleValue == 100)
+        haloSizeSlider.doubleValue = 300
+        haloSizeSlider.sendAction(haloSizeSlider.action, to: haloSizeSlider.target)
+        precondition(model.settings[haloSizeFor: .ghost] == 300 &&
+                     defaults.double(forKey: HaloSize.storageKey(for: .ghost)) == 300)
         model.smokeCheck()
         let ghostSizeRow = parameterRows.first { $0.parameter == .size }!
         ghostSizeRow.slider.doubleValue = 72
@@ -175,14 +234,33 @@ extension SettingsWindowController {
                                              to: ghostOffsetRows[1].slider.target)
         precondition(model.settings[.horizontal] == 81 && defaults.double(forKey: "GhostOffsetX") == 81)
         precondition(model.settings[.vertical] == -45 && defaults.double(forKey: "GhostOffsetY") == -45)
+        haloSpacingSlider.doubleValue = 90
+        haloSpacingSlider.sendAction(haloSpacingSlider.action, to: haloSpacingSlider.target)
+        precondition(model.settings[haloSpacingFor: .ghost] == 90 &&
+                     defaults.double(forKey: HaloSpacing.storageKey(for: .ghost)) == 90)
         model.changeMode(.hanging)
         refresh()
         precondition(ghostOffsetRows.allSatisfy(\.row.isHidden))
+        precondition(haloSpacingSlider.doubleValue == -45)
         model.changeMode(.ghost)
         refresh()
         precondition(ghostOffsetRows.allSatisfy { !$0.row.isHidden })
         precondition(ghostOffsetRows[0].slider.doubleValue == 81 && ghostOffsetRows[1].slider.doubleValue == -45)
         precondition(model.settings[.size] == 72)
+        model.changeMode(.ghostWave)
+        refresh()
+        precondition(haloSpacingSlider.doubleValue == 60)
+        model.changeMode(.hanging)
+        refresh()
+        precondition(haloSpacingSlider.doubleValue == -45)
+        precondition(haloSizeSlider.doubleValue == 50)
+        model.changeMode(.ghost)
+        refresh()
+        precondition(haloSpacingSlider.doubleValue == 90)
+        precondition(haloSizeSlider.doubleValue == 300)
+        model.changeMode(.ghostWave)
+        refresh()
+        precondition(haloSizeSlider.doubleValue == 250)
         modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .balloon)!
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.displayImage === model.balloonImage && image.image === model.balloonImage)
@@ -239,6 +317,14 @@ extension SettingsWindowController {
         captureSettingsSnapshot(named: "settings-smoke.png")
         restoreSettings()
         precondition(model.mode == .rope && model.activeRopes.count == 1)
+        for mode in HaloSpacing.modes {
+            precondition(model.settings[haloSpacingFor: mode] == HaloSpacing.defaultValue)
+            precondition(defaults.double(forKey: HaloSpacing.storageKey(for: mode)) == HaloSpacing.defaultValue)
+        }
+        for mode in HaloSize.modes {
+            precondition(model.settings[haloSizeFor: mode] == HaloSize.defaultValue)
+            precondition(defaults.double(forKey: HaloSize.storageKey(for: mode)) == HaloSize.defaultValue)
+        }
         precondition(model.balloonCount == 2 && model.balloons.count == 2)
         precondition(model.pigSize == 48 && model.physics.length == 140 && model.physics.gravity == 1350)
         precondition(model.physics.weight == 65 && model.physics.elasticity == 55)
@@ -254,6 +340,8 @@ extension SettingsWindowController {
             let phases: [CGFloat] = mode == .bamboo ? [0, 0.5, 1] : [1]
             return phases.map { (mode, $0) }
         }
+        var haloSpacingRenderChecks = 0
+        var haloSizeRenderChecks = 0
         for (previewMode, bendProgress) in previews {
             model.changeMode(previewMode)
             model.bambooBend = BambooBend(progress: bendProgress)
@@ -276,6 +364,68 @@ extension SettingsWindowController {
             let renderStart = ProcessInfo.processInfo.systemUptime
             preview.scene = model.sceneSnapshot()
             preview.cacheDisplay(in: preview.bounds, to: previewBitmap)
+            if HaloSpacing.modes.contains(previewMode) {
+                let originalSpacing = model.settings[haloSpacingFor: previewMode]
+                let originalBounds = preview.scene!.bounds
+                model.changeHaloSpacing(60)
+                let movedScene = model.sceneSnapshot()
+                let movedPreview = PigOverlayView(frame: preview.bounds)
+                movedPreview.scene = movedScene
+                guard let movedBitmap = movedPreview.bitmapImageRepForCachingDisplay(in: movedPreview.bounds) else {
+                    preconditionFailure("Cannot render separated halo preview")
+                }
+                movedPreview.cacheDisplay(in: movedPreview.bounds, to: movedBitmap)
+                var changedPixels = 0
+                for y in 0..<previewBitmap.pixelsHigh {
+                    for x in 0..<previewBitmap.pixelsWide {
+                        guard let before = previewBitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB),
+                              let after = movedBitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
+                        let differences = [
+                            abs(before.redComponent - after.redComponent),
+                            abs(before.greenComponent - after.greenComponent),
+                            abs(before.blueComponent - after.blueComponent),
+                            abs(before.alphaComponent - after.alphaComponent)
+                        ]
+                        if differences.contains(where: { $0 > 0.08 }) { changedPixels += 1 }
+                    }
+                }
+                precondition(changedPixels > 50,
+                             "\(previewMode.rawValue) halo spacing must move independently from its body")
+                precondition(movedScene.bounds.height > originalBounds.height,
+                             "Scene redraw bounds must include the displaced halo")
+                model.changeHaloSpacing(originalSpacing)
+                haloSpacingRenderChecks += 1
+
+                let originalScale = model.settings[haloSizeFor: previewMode]
+                model.changeHaloSize(200)
+                let scaledScene = model.sceneSnapshot()
+                let scaledPreview = PigOverlayView(frame: preview.bounds)
+                scaledPreview.scene = scaledScene
+                guard let scaledBitmap = scaledPreview.bitmapImageRepForCachingDisplay(in: scaledPreview.bounds) else {
+                    preconditionFailure("Cannot render enlarged halo preview")
+                }
+                scaledPreview.cacheDisplay(in: scaledPreview.bounds, to: scaledBitmap)
+                var scaledChangedPixels = 0
+                for y in 0..<previewBitmap.pixelsHigh {
+                    for x in 0..<previewBitmap.pixelsWide {
+                        guard let before = previewBitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB),
+                              let after = scaledBitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
+                        let differences = [
+                            abs(before.redComponent - after.redComponent),
+                            abs(before.greenComponent - after.greenComponent),
+                            abs(before.blueComponent - after.blueComponent),
+                            abs(before.alphaComponent - after.alphaComponent)
+                        ]
+                        if differences.contains(where: { $0 > 0.08 }) { scaledChangedPixels += 1 }
+                    }
+                }
+                precondition(scaledChangedPixels > 50,
+                             "\(previewMode.rawValue) halo size must scale the halo independently from its body")
+                precondition(scaledScene.bounds.height > originalBounds.height,
+                             "Scene redraw bounds must include the enlarged halo")
+                model.changeHaloSize(originalScale)
+                haloSizeRenderChecks += 1
+            }
             if previewMode == .bamboo {
                 NSLog("Bamboo render at bend=%.1f: %.2f ms", Double(bendProgress),
                       (ProcessInfo.processInfo.systemUptime - renderStart) * 1000)
@@ -342,6 +492,10 @@ extension SettingsWindowController {
             let previewURL = Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent(filename)
             do { try png.write(to: previewURL) } catch { preconditionFailure("Mode snapshot: \(error)") }
         }
+        precondition(haloSpacingRenderChecks == HaloSpacing.modes.count)
+        precondition(haloSizeRenderChecks == HaloSize.modes.count)
+        NSLog("PASS: ghost, little ghost and hanging halo spacing renders independently with safe redraw bounds")
+        NSLog("PASS: ghost, little ghost and hanging halo size scales around the halo center with safe redraw bounds")
         NSLog("PASS: seven-mode switch, custom net/hanging artwork and local actions, idle playback, pause/resume, separate artwork, ghost following and offsets, balloon counts 1–8, persistence, defaults, layout, all mode snapshots and close")
     }
 }

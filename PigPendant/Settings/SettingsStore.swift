@@ -57,6 +57,32 @@ final class SettingsStore {
                 NSLog("Invalid saved %@: %@; using default", axis.storageKey, String(describing: error))
             }
         }
+        for mode in HaloSpacing.modes {
+            let key = HaloSpacing.storageKey(for: mode)
+            guard let saved = defaults.object(forKey: key) else { continue }
+            guard let value = saved as? NSNumber else {
+                NSLog("Invalid saved %@ type; using configured default", key)
+                continue
+            }
+            do {
+                try settings.setHaloSpacing(value.doubleValue, for: mode)
+            } catch {
+                NSLog("Invalid saved %@: %@; using configured default", key, String(describing: error))
+            }
+        }
+        for mode in HaloSize.modes {
+            let key = HaloSize.storageKey(for: mode)
+            guard let saved = defaults.object(forKey: key) else { continue }
+            guard let value = saved as? NSNumber else {
+                NSLog("Invalid saved %@ type; using configured default", key)
+                continue
+            }
+            do {
+                try settings.setHaloSize(value.doubleValue, for: mode)
+            } catch {
+                NSLog("Invalid saved %@: %@; using configured default", key, String(describing: error))
+            }
+        }
         if defaults.object(forKey: "BalloonCount") != nil {
             if let value = defaults.object(forKey: "BalloonCount") as? NSNumber {
                 settings.setCount(value.intValue)
@@ -89,6 +115,14 @@ final class SettingsStore {
 
     func saveGhostOffset(_ settings: PendantSettings, axis: GhostOffsetAxis) {
         defaults.set(settings[axis], forKey: axis.storageKey)
+    }
+
+    func saveHaloSpacing(_ settings: PendantSettings, mode: DisplayMode) {
+        defaults.set(settings[haloSpacingFor: mode], forKey: HaloSpacing.storageKey(for: mode))
+    }
+
+    func saveHaloSize(_ settings: PendantSettings, mode: DisplayMode) {
+        defaults.set(settings[haloSizeFor: mode], forKey: HaloSize.storageKey(for: mode))
     }
 
     private func loadLegacyValue(for parameter: ParameterID) -> Double? {

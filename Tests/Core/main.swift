@@ -13,6 +13,10 @@ let settingsChecks: [Check] = [
     ("settings.editable-mode-defaults", settings.testEditableConfigurationProvidesModeSpecificRestoreDefaults),
     ("settings.legacy-configuration-wave-mode-migration",
      settings.testLegacyConfigurationAddsWaveGhostDefaultsWithoutReplacingCustomValues),
+    ("settings.halo-spacing-independent-persistence",
+     settings.testHaloSpacingPersistsIndependentlyByModeAndClampsToRange),
+    ("settings.halo-size-independent-persistence",
+     settings.testHaloSizePersistsIndependentlyByModeAndClampsToRange),
     ("settings.invalid-editable-defaults", settings.testInvalidEditableConfigurationIsRejected),
     ("settings.audio-reactive-scale-bounds", {
         try expectEqual(AudioReactiveScale.minimumScale, CGFloat(0.73))
