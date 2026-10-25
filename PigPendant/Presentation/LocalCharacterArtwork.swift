@@ -31,7 +31,7 @@ final class LocalCharacterArtwork {
             throw ArtworkError.unreadable(URL(fileURLWithPath: "\(mode.rawValue) animation raster"))
         }
         if mode == .hanging {
-            HangingBodyEdgeCleanup.apply(to: &data, width: w, height: h)
+            WhiteColorKey.apply(to: &data, width: w, height: h)
             guard let provider = CGDataProvider(data: Data(data) as CFData),
                   let cleaned = CGImage(width: w, height: h, bitsPerComponent: 8, bitsPerPixel: 32,
                                         bytesPerRow: w * 4, space: CGColorSpaceCreateDeviceRGB(),

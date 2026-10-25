@@ -28,7 +28,7 @@ extension PendantCoordinator {
         for index in original.frames.indices {
             let before = raster(original.frames[index])
             var after = before
-            NetArtworkCleanup.apply(to: &after, width: 207, height: 200)
+            WhiteColorKey.apply(to: &after, width: 207, height: 200)
             let displayed = raster(artwork.net.frames[index])
             var changed = 0
             for pixel in 0..<(207 * 200) {
@@ -39,11 +39,23 @@ extension PendantCoordinator {
                     let red = Double(bytes[offset]) / alpha
                     let green = Double(bytes[offset + 1]) / alpha
                     let blue = Double(bytes[offset + 2]) / alpha
-                    return min(red, green, blue) > 0.75 && max(red, green, blue) - min(red, green, blue) < 0.18 &&
-                        blue >= red - 0.015 && green >= red - 0.015
+                    return min(red, green, blue) >= 0.78 && max(red, green, blue) - min(red, green, blue) <= 0.22
                 }
                 if pale(before) { paleBefore += 1 }
                 if pale(after) { paleAfter += 1 }
+                if pale(before) && before[offset..<(offset + 4)] != after[offset..<(offset + 4)] {
+                    precondition(after[offset + 3] == 0, "Selected exterior white must become transparent, not blue")
+                }
+                if pale(before) {
+                    let x = pixel % 207
+                    let y = pixel / 207
+                    for (dx, dy) in [(0, -1), (0, 1), (-1, 0), (1, 0)] where
+                        (0..<207).contains(x + dx) && (0..<200).contains(y + dy) {
+                        if before[((y + dy) * 207 + x + dx) * 4 + 3] == 0 {
+                            precondition(after[offset + 3] == 0, "Selected mesh boundary white must be deleted in every frame")
+                        }
+                    }
+                }
                 if before[offset + 3] == 0 {
                     precondition(after[offset + 3] == 0, "Normal transparent net holes must not be filled")
                 }
@@ -54,10 +66,24 @@ extension PendantCoordinator {
                     let red = Double(before[offset]) / alpha
                     let green = Double(before[offset + 1]) / alpha
                     let blue = Double(before[offset + 2]) / alpha
-                    precondition(min(red, green, blue) > 0.60 && max(red, green, blue) - min(red, green, blue) < 0.18,
-                                 "Pig expressions and colored artwork must not be repainted")
-                    precondition(blue >= red - 0.015 && green >= red - 0.015,
-                                 "Warm pig colors must not be replaced with mesh colors")
+                    precondition(min(red, green, blue) > 0.68 && max(red, green, blue) - min(red, green, blue) <= 0.22,
+                                 "Only pixels in the white color selection may change")
+                    let x = pixel % 207
+                    let y = pixel / 207
+                    var exteriorNearby = false
+                    for dy in -3...3 {
+                        for dx in -3...3 where abs(dx) + abs(dy) <= 3 &&
+                            (0..<207).contains(x + dx) && (0..<200).contains(y + dy) {
+                            exteriorNearby = exteriorNearby || before[((y + dy) * 207 + x + dx) * 4 + 3] == 0
+                        }
+                    }
+                    precondition(exteriorNearby, "Mesh white selection must not cut through the pig's interior")
+                    let coverage = WhiteColorKey.retainedCoverage(red: red, green: green, blue: blue)
+                    for channel in 0..<4 {
+                        precondition(after[offset + 3] == 0 ||
+                                     after[offset + channel] == UInt8((Double(before[offset + channel]) * coverage).rounded()),
+                                     "White selection must only reduce coverage, never repaint RGB")
+                    }
                 }
                 for channel in 0..<4 {
                     precondition(abs(Int(displayed[offset + channel]) - Int(after[offset + channel])) <= 2,
@@ -70,7 +96,7 @@ extension PendantCoordinator {
         NSLog("Net edge cleanup: %d pixels over %d/%d original frames", totalChanged, changedFrames, original.frames.count)
         NSLog("Net pale neutral/blue pixels: %d -> %d", paleBefore, paleAfter)
         precondition(changedFrames == 62 && totalChanged > 500)
-        precondition(paleAfter < paleBefore / 2, "Net white contamination must be measurably reduced")
+        precondition(paleBefore > 500 && paleAfter < paleBefore / 2, "Exterior white selection must reduce mesh fringes")
         let sheet = NSImage(size: NSSize(width: 1200, height: 1400))
         sheet.lockFocus()
         for (row, frame) in [0, 15, 30, 45].enumerated() {
