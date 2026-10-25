@@ -22,8 +22,34 @@ enum SettingsConfiguration {
             }
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
             try fileManager.copyItem(at: source, to: destination)
+        } else if let bundledDefaults = bundle.url(forResource: "default-settings", withExtension: "json") {
+            try migrateMissingWaveGhostDefaults(at: destination, bundledDefaultsURL: bundledDefaults)
         }
         return destination
+    }
+
+    static func migrateMissingWaveGhostDefaults(at url: URL, bundledDefaultsURL: URL) throws {
+        let data = try Data(contentsOf: url)
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              var parameters = root["parameters"] as? [String: Any] else { return }
+
+        let legacyModes = Set(DisplayMode.allCases.map(\.rawValue))
+            .subtracting([DisplayMode.ghostWave.rawValue])
+        guard Set(parameters.keys) == legacyModes else { return }
+
+        let bundledData = try Data(contentsOf: bundledDefaultsURL)
+        guard let bundledRoot = try JSONSerialization.jsonObject(with: bundledData) as? [String: Any],
+              let bundledParameters = bundledRoot["parameters"] as? [String: Any],
+              let waveDefaults = bundledParameters[DisplayMode.ghostWave.rawValue] else {
+            throw SettingsConfigurationError.bundledFileMissing
+        }
+
+        parameters[DisplayMode.ghostWave.rawValue] = waveDefaults
+        var migratedRoot = root
+        migratedRoot["parameters"] = parameters
+        let migratedData = try JSONSerialization.data(withJSONObject: migratedRoot,
+                                                      options: [.prettyPrinted, .sortedKeys])
+        try migratedData.write(to: url, options: .atomic)
     }
 
     static func load(from url: URL?) throws -> PendantSettings {

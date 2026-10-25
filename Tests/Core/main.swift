@@ -11,6 +11,8 @@ let ghost = GhostBlinkTests()
 let settingsChecks: [Check] = [
     ("settings.defaults-and-storage-keys", settings.testDefaultsAndOriginalStorageKeys),
     ("settings.editable-mode-defaults", settings.testEditableConfigurationProvidesModeSpecificRestoreDefaults),
+    ("settings.legacy-configuration-wave-mode-migration",
+     settings.testLegacyConfigurationAddsWaveGhostDefaultsWithoutReplacingCustomValues),
     ("settings.invalid-editable-defaults", settings.testInvalidEditableConfigurationIsRejected),
     ("settings.audio-reactive-scale-bounds", {
         try expectEqual(AudioReactiveScale.minimumScale, CGFloat(0.73))

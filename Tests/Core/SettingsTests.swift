@@ -79,6 +79,49 @@ final class SettingsTests {
         try expectEqual(configuredStore.defaultSettings[.length, mode: .net], 141)
     }
 
+    func testLegacyConfigurationAddsWaveGhostDefaultsWithoutReplacingCustomValues() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("pig-pendant-settings-migration-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let legacyURL = directory.appendingPathComponent("legacy.json")
+        let bundledURL = directory.appendingPathComponent("bundled.json")
+
+        var parameters = Dictionary(uniqueKeysWithValues: DisplayMode.allCases.map { mode in
+            (mode.rawValue, Dictionary(uniqueKeysWithValues: ParameterID.allCases.map {
+                ($0.configurationKey, $0.defaultValue)
+            }))
+        })
+        parameters[DisplayMode.ghostWave.rawValue]?[ParameterID.length.configurationKey] = 180
+        parameters[DisplayMode.rope.rawValue]?[ParameterID.length.configurationKey] = 175
+
+        func writeConfiguration(_ parameters: [String: [String: Double]], to url: URL) throws {
+            let configuration: [String: Any] = [
+                "parameters": parameters,
+                "balloonCount": 5,
+                "bambooPosition": 67,
+                "ghostOffsets": ["horizontal": 81, "vertical": -45]
+            ]
+            try JSONSerialization.data(withJSONObject: configuration).write(to: url)
+        }
+
+        var legacyParameters = parameters
+        legacyParameters.removeValue(forKey: DisplayMode.ghostWave.rawValue)
+        try writeConfiguration(legacyParameters, to: legacyURL)
+        try writeConfiguration(parameters, to: bundledURL)
+
+        try SettingsConfiguration.migrateMissingWaveGhostDefaults(
+            at: legacyURL, bundledDefaultsURL: bundledURL
+        )
+        let migrated = try SettingsConfiguration.load(from: legacyURL)
+        try expectEqual(migrated[.length, mode: .rope], 175)
+        try expectEqual(migrated[.length, mode: .ghostWave], 180)
+        try expectEqual(migrated.balloonCount, 5)
+        try expectEqual(migrated.bambooPosition, 67)
+        try expectEqual(migrated[.horizontal], 81)
+        try expectEqual(migrated[.vertical], -45)
+    }
+
     func testInvalidEditableConfigurationIsRejected() throws {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("pig-pendant-settings-\(UUID().uuidString).json")
