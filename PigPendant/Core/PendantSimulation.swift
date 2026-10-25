@@ -44,7 +44,7 @@ final class PendantSimulation {
             return 1.0 / 60.0
         }
         if settings.mode == .balloon && balloonAnimations.contains(where: \.isAnimating) { return 1.0 / 60.0 }
-        if settings.mode == .ghost && (ghostBlink.isAnimating || ghostBody.isAnimating) { return 1.0 / 60.0 }
+        if settings.mode == .ghost { return 1.0 / 60.0 }
         if [.hanging, .ghost].contains(settings.mode) && haloAnimation.isAnimating { return 1.0 / 60.0 }
         return 1.0 / 15.0
     }

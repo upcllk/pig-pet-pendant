@@ -51,7 +51,6 @@ final class LocalCharacterArtwork {
 
     func image(for pose: GhostBodyPose) -> NSImage {
         precondition(mode == .ghost)
-        guard pose.step != 0 || pose.drift != 0 else { return restImage }
         return render(key: NSNumber(value: pose.key), sourcePoint: ghostSourceMapping(pose))
     }
 
@@ -123,8 +122,8 @@ final class LocalCharacterArtwork {
             (CGPoint(x: 0.690, y: 0.626), CGSize(width: 0.14, height: 0.095),
              CGPoint(x: 0.75, y: 0.57), -0.48 * pose.pulse(start: 0.14, end: 0.78) * sin((phase - 0.14) * .pi * 3))
         ]
-        let amount = pose.pulse(start: 0.10, end: 1)
         let drift = Double(pose.drift) / 16
+        let hemAngle = pose.hemPhase * .pi * 2
         return { point in
             for region in regions where region.angle != 0 {
                 let radius = hypot((point.x - region.center.x) / region.radius.width,
@@ -140,9 +139,10 @@ final class LocalCharacterArtwork {
             guard point.y > 0.75 else { return point }
             let t = min(1, (point.y - 0.75) / 0.16)
             let weight = t * t * (3 - 2 * t)
-            let wave = sin(phase * .pi * 3 - point.x * .pi * 2.4)
-            return CGPoint(x: point.x + weight * (wave * amount * 0.006 + drift * 0.012),
-                           y: point.y + weight * (wave * amount * 0.021 + drift * (point.x - 0.5) * 0.024))
+            let wave = sin(hemAngle - point.x * .pi * 2.4)
+            return CGPoint(x: point.x + weight * (wave * 0.0035 + drift * 0.010),
+                           y: point.y + weight * (wave * 0.017 * (1 + abs(drift) * 0.25)
+                                                + drift * (point.x - 0.5) * 0.012))
         }
     }
 

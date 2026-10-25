@@ -1,4 +1,6 @@
 import AppKit
+import ImageIO
+import UniformTypeIdentifiers
 
 extension PendantCoordinator {
     func smokeCheckGhostBody() {
@@ -56,14 +58,26 @@ extension PendantCoordinator {
             CGRect(x: 0, y: row * 320, width: 960, height: 320).fill()
         }
         sheet.unlockFocus()
-        let poses = stride(from: 0, through: 144, by: 12).map { GhostBodyPose(step: $0) } +
-            [GhostBodyPose(drift: -16), GhostBodyPose(drift: 16),
-             GhostBodyPose(step: 72, drift: -16), GhostBodyPose(step: 72, drift: 16)]
+        let poses = stride(from: 0, through: 144, by: 12).map {
+            GhostBodyPose(step: $0, hemStep: $0 * GhostBodyPose.hemSteps / GhostBodyPose.steps % GhostBodyPose.hemSteps)
+        } + [-16, 0, 16].flatMap { drift in
+            stride(from: 0, to: GhostBodyPose.hemSteps, by: 16).map { GhostBodyPose(drift: drift, hemStep: $0) }
+        }
+        var idleContours: [[Int]] = []
         for (index, pose) in poses.enumerated() {
             let image = character.image(for: pose)
             precondition(image === character.image(for: pose), "Repeated poses must use the bounded cache")
             let current = raster(image, width: 384)
             let normal = raster(image, width: 96)
+            if pose.step == 0 && pose.drift == 0 {
+                idleContours.append([17, 36, 60, 83].map { bottom(normal, x: $0) })
+                for y in 0..<432 {
+                    for x in 0..<384 {
+                        precondition(current.colorAt(x: x, y: y) == rest.colorAt(x: x, y: y),
+                                     "Continuous foot waves must leave the entire upper body fixed")
+                    }
+                }
+            }
             for (feature, region) in regions.enumerated() {
                 let center = pinkCenter(normal, region: region)
                 movement[feature] = max(movement[feature], hypot(center.x - centers[feature].x, center.y - centers[feature].y))
@@ -127,6 +141,22 @@ extension PendantCoordinator {
         }
         NSLog("Ghost hem peak contour movement: %d pixels at 48 pt / 2x", hemMovement)
         precondition(hemMovement >= 2, "Hem motion must change the actual normal-size contour")
+        for foot in 0..<4 {
+            let heights = idleContours.map { $0[foot] }
+            let range = heights.max()! - heights.min()!
+            NSLog("Ghost continuously flowing foot %d contour range: %d pixels at 48 pt / 2x", foot, range)
+            precondition(range >= 4, "Every rounded ghost foot must move without blinking or mouse movement")
+        }
+        let meanHeights = (0..<4).map { foot in Double(idleContours.map { $0[foot] }.reduce(0, +)) / Double(idleContours.count) }
+        precondition(idleContours.contains { contour in
+            let offsets = (0..<4).map { Double(contour[$0]) - meanHeights[$0] }
+            return offsets.min()! < -1 && offsets.max()! > 1
+        }, "Feet must move out of phase as a traveling wave, not bob together")
+        let beforeSeam = raster(character.image(for: GhostBodyPose(hemStep: GhostBodyPose.hemSteps - 1)), width: 96)
+        for x in 15..<85 {
+            precondition(abs(bottom(beforeSeam, x: x) - bottom(normalRest, x: x)) <= 1,
+                         "Continuous wave must cross its loop seam without a contour jump")
+        }
         guard let data = sheet.tiffRepresentation, let bitmap = NSBitmapImageRep(data: data),
               let png = bitmap.representation(using: .png, properties: [:]) else {
             preconditionFailure("Cannot encode body motion contact sheet")
@@ -134,6 +164,37 @@ extension PendantCoordinator {
         do {
             try png.write(to: Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("ghost-body-motion-contact.png"))
         } catch { preconditionFailure("Cannot save ghost body motion contact sheet: \(error)") }
-        NSLog("PASS: ghost ear/hand local movement, waving hem contour, fixed face, bounded pose cache and black/white normal-size contact sheet")
+        let previewURL = Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("ghost-hem-flow-preview.png")
+        guard let destination = CGImageDestinationCreateWithURL(previewURL as CFURL, UTType.png.identifier as CFString, 64, nil) else {
+            preconditionFailure("Cannot create continuous ghost feet preview")
+        }
+        CGImageDestinationSetProperties(destination, [kCGImagePropertyPNGDictionary: [kCGImagePropertyAPNGLoopCount: 0]] as CFDictionary)
+        for frame in 0..<64 {
+            let image = character.image(for: GhostBodyPose(hemStep: frame * 3))
+            let canvas = NSImage(size: NSSize(width: 480, height: 320))
+            canvas.lockFocus()
+            for side in 0..<2 {
+                (side == 0 ? NSColor.black : NSColor.white).setFill()
+                CGRect(x: side * 240, y: 0, width: 240, height: 320).fill()
+                for rect in [CGRect(x: side * 240 + 50, y: 100, width: 140, height: 210),
+                             CGRect(x: side * 240 + 96, y: 10, width: 48, height: 72)] {
+                    image.draw(in: rect)
+                    artwork.ghostHalo.draw(in: rect)
+                }
+            }
+            canvas.unlockFocus()
+            guard let cg = canvas.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+                preconditionFailure("Cannot render ghost feet preview")
+            }
+            CGImageDestinationAddImage(destination, cg, [kCGImagePropertyPNGDictionary: [
+                kCGImagePropertyAPNGDelayTime: 0.05, kCGImagePropertyAPNGUnclampedDelayTime: 0.05
+            ]] as CFDictionary)
+        }
+        precondition(CGImageDestinationFinalize(destination), "Cannot finalize ghost feet APNG preview")
+        guard let exported = CGImageSourceCreateWithURL(previewURL as CFURL, nil) else {
+            preconditionFailure("Cannot reopen ghost feet preview")
+        }
+        precondition(CGImageSourceGetCount(exported) == 64)
+        NSLog("PASS: ghost ear/hand movement, continuous traveling feet at rest, fixed upper body, normal-size contour ranges, loop seam and black/white preview")
     }
 }

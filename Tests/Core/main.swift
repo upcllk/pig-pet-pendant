@@ -47,6 +47,7 @@ let simulationChecks: [Check] = [
     ("ghost.random-blinks-and-closed-hold", ghost.testRandomBlinksHaveClosedHoldAndIdenticalRest),
     ("ghost.seed-frame-rates-invalid-clock", ghost.testSeedFrameRatesAndInvalidClock),
     ("ghost.body-lag-continuity-settling", ghost.testBodyLagContinuityAndSettling),
+    ("ghost.continuous-hem-frame-rates-loop-seam", ghost.testHemFlowsWithoutBlinksAcrossFrameRatesAndLoopSeam),
     ("ghost.independent-blink-halo-idle-resume", ghost.testGhostIdleUpdatesBlinkAndHaloWithoutRopeIntegration),
     ("halo.lag-rebound-settling-frame-rates", halo.testLagReboundAndSettlingAcrossFrameRates),
     ("halo.idle-spacing-invalid-input", halo.testIdleSpacingAndInvalidInput),

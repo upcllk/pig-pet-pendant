@@ -73,7 +73,7 @@ final class GhostBlinkTests {
         let nodes = simulation.physics.nodes
         var sawBlink = false
         var sawHalo = false
-        var sawRest = false
+        var sawQuietGestures = false
         var sawBodyTail = false
         for _ in 0..<3600 {
             simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
@@ -82,12 +82,11 @@ final class GhostBlinkTests {
             try expect(zip(nodes, simulation.physics.nodes).allSatisfy { ($0 - $1).magnitude == 0 })
             sawBlink = sawBlink || simulation.ghostBlink.isAnimating
             sawHalo = sawHalo || simulation.haloAnimation.isAnimating
-            let active = simulation.ghostBlink.isAnimating || simulation.ghostBody.isAnimating || simulation.haloAnimation.isAnimating
-            sawRest = sawRest || !active
-            sawBodyTail = sawBodyTail || (simulation.ghostBody.isAnimating && !simulation.ghostBlink.isAnimating)
-            try expectEqual(simulation.updateInterval, active ? 1.0 / 60 : 1.0 / 15)
+            sawQuietGestures = sawQuietGestures || (!simulation.ghostBlink.isAnimating && !simulation.ghostBody.isGesturing)
+            sawBodyTail = sawBodyTail || (simulation.ghostBody.isGesturing && !simulation.ghostBlink.isAnimating)
+            try expectEqual(simulation.updateInterval, 1.0 / 60)
         }
-        try expect(sawBlink && sawHalo && sawRest && sawBodyTail)
+        try expect(sawBlink && sawHalo && sawQuietGestures && sawBodyTail)
         let blink = simulation.ghostBlink.sample
         let halo = simulation.haloAnimation.pose
         let body = simulation.ghostBody.pose
@@ -116,11 +115,12 @@ final class GhostBlinkTests {
                     try expect(abs(body.pose.phase - previous.phase) < 0.04)
                 }
                 previous = body.pose
-                if frame == rate { try expect(body.isAnimating) }
+                if frame == rate { try expect(body.isGesturing) }
             }
             try expectGreaterThan(steps.count, 30)
-            try expectEqual(body.pose, GhostBodyPose())
-            try expect(!body.isAnimating)
+            try expectEqual(body.pose.step, 0)
+            try expectEqual(body.pose.drift, 0)
+            try expect(!body.isGesturing)
             for direction in [1.0, -1.0] {
                 for _ in 0..<rate {
                     body.advance(elapsed: 1.0 / Double(rate), blinking: false, horizontalVelocity: direction * 900)
@@ -135,14 +135,45 @@ final class GhostBlinkTests {
             for _ in 0..<(rate * 2) {
                 body.advance(elapsed: 1.0 / Double(rate), blinking: false, horizontalVelocity: 0)
             }
-            try expectEqual(body.pose, GhostBodyPose())
-            try expect(!body.isAnimating)
+            try expectEqual(body.pose.step, 0)
+            try expectEqual(body.pose.drift, 0)
+            try expect(!body.isGesturing)
+            let hemPhase = body.pose.hemPhase
             body.advance(elapsed: 1, blinking: false, horizontalVelocity: 10000)
-            try expectEqual(body.pose, GhostBodyPose())
+            try expectEqual(body.pose.drift, 0)
+            try expectEqual(body.pose.hemPhase, (hemPhase + 0.1 / GhostBodyPose.hemPeriod).truncatingRemainder(dividingBy: 1),
+                            accuracy: 1.0 / Double(GhostBodyPose.hemSteps))
             body.advance(elapsed: 0.05, blinking: true, horizontalVelocity: 600)
             body.reset()
             try expectEqual(body.pose, GhostBodyPose())
-            try expect(!body.isAnimating)
+            try expect(!body.isGesturing)
+        }
+    }
+
+    func testHemFlowsWithoutBlinksAcrossFrameRatesAndLoopSeam() throws {
+        for rate in [15, 30, 60, 120, 144] {
+            var body = GhostBodyAnimation()
+            var steps = Set<Int>()
+            var wraps = 0
+            for _ in 0..<(rate * 12) {
+                let previous = body.pose
+                body.advance(elapsed: 1.0 / Double(rate), blinking: false, horizontalVelocity: 0)
+                steps.insert(body.pose.hemStep)
+                if body.pose.hemStep < previous.hemStep { wraps += 1 }
+                let delta = (body.pose.hemPhase - previous.hemPhase + 1).truncatingRemainder(dividingBy: 1)
+                try expect(delta <= 1.0 / Double(rate) / GhostBodyPose.hemPeriod + 1.0 / Double(GhostBodyPose.hemSteps))
+                try expectEqual(body.pose.step, 0)
+                try expectEqual(body.pose.drift, 0)
+                try expect(!body.isGesturing)
+            }
+            try expectEqual(wraps, 3)
+            try expectGreaterThan(steps.count, 40)
+            try expectEqual(body.pose.hemPhase, 0.75, accuracy: 1.0 / Double(GhostBodyPose.hemSteps))
+            let held = body.pose
+            for delta in [0, -1, .nan, .infinity] {
+                try expect(!body.advance(elapsed: delta, blinking: false, horizontalVelocity: 0))
+                try expectEqual(body.pose, held)
+            }
         }
     }
 }
