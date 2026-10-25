@@ -81,7 +81,7 @@ enum RopeRenderer {
                                  control: CGPoint(x: 0, y: knot * 0.40))
             context.strokePath()
             let rect = NSRect(x: -width * 0.5, y: knot, width: width, height: height)
-            scene.displayImage.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1.0)
+            (balloon.characterImage ?? scene.displayImage).draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1.0)
             context.restoreGState()
         }
     }

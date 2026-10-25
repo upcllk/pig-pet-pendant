@@ -13,9 +13,9 @@ A small desktop pig pendant that follows your mouse. The macOS version is availa
 ## Modes
 
 - **Rope Pendant**: The default mode. The pig reacts to movement and falling, with randomly spaced blinks, ear movements, and body gestures at rest. Actions return smoothly to rest instead of looping the entire GIF.
-- **Pig Balloons**: Shows 1–8 pig-shaped balloons floating upward; the default is 2.
+- **Pig Balloons**: Shows 1–8 pig-shaped balloons floating upward; the default is 2. Each has independently timed blinks, gentle ear movements and nose gestures, with movement reactions.
 - **Pig in a Net**: A pig in a net with a looping animation.
-- **Pig on Bamboo**: The pig hugs a bamboo stalk that bends with mouse movement.
+- **Pig on Bamboo**: The pig hugs a bamboo stalk that bends with mouse movement, with random blinks, ear movements and nose gestures that preserve its grip.
 - **Hanging Pig**: The pig hangs from a rope. The pig stays clear, with the same soft, closed halo effect used by Ghost Pig.
 - **Ghost Pig**: Follows the mouse smoothly without a rope.
 
@@ -47,6 +47,8 @@ To run the build, physics, and GUI smoke checks:
 GUI checks require a logged-in desktop session. The test pendant appears briefly and exits automatically.
 
 The transparent artwork `PigPendant/Resources/rope-pig.png` preserves all 75 original GIF frames and their 40 ms durations. Only the upper rope and distant stray pixels are removed; frames share an attachment point without redrawing the character. The original static `pig.png` is unchanged. Playback selects short, state-driven actions and blends similar poses instead of jumping across the original loop seam. Random gestures remain available after physics settles; waiting uses a lower update rate, and hiding or sleeping pauses playback. Re-extract with `swift tools/extract-rope-pig.swift source.gif PigPendant/Resources/rope-pig.png`. The [animation notes](docs/ROPE_ANIMATION.md) preserve the complete pose atlas, seam analysis, action mapping, and reproduction commands.
+
+Balloon and bamboo characters share the action scheduler, not the rope pig's frames. Local pixel warps around their original eyes, ears and noses produce small gestures without redrawing the character, changing source files or stretching the whole pig. Balloon attachment pixels and bamboo foot pixels / grip geometry remain unchanged; these are not the GIF's full limb and body gestures. Balloons have independent idle timing; movement and actual downward motion trigger reactions, with smooth returns to rest. Character playback continues after physics settles and pauses while hidden or asleep. Working images are at most 512 pixels wide, with bounded pose caches. `./build.sh --test` checks eye shape, protected nose and foot pixels, all balloons' independent states, and pause/resume; it exports light-background pose atlases and scene sequences to `dist/`. These are automated renders, not screen recordings or confirmation of subjective naturalness.
 
 ## Known Limitations
 

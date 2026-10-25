@@ -165,10 +165,61 @@ final class SimulationTests {
         for _ in 0..<50 { simulation.advance(anchor: anchor, elapsed: 0.05) }
         try expect(simulation.isIdle)
         try expect(simulation.bambooBend.isSettled)
-        try expectEqual(simulation.updateInterval, 1.0 / 15)
+        try expectEqual(simulation.updateInterval, simulation.idleInterval)
         simulation.advance(anchor: anchor + V2(20, 0), elapsed: 0.05)
         try expect(!(simulation.isIdle))
         try expectLessThan(simulation.bambooBend.progress, 1)
+    }
+
+    func testLocalCharactersAnimateWithoutWakingPhysics() throws {
+        for mode in [DisplayMode.balloon, .bamboo] {
+            for count in [1, 8] {
+                var settings = PendantSettings()
+                settings.mode = mode
+                settings.setCount(count)
+                let simulation = PendantSimulation(settings: settings, frameDurations: durations,
+                                                   ropeFrameDurations: ropeDurations, animationSeed: 2026)
+                simulation.reset(anchor: anchor)
+                for _ in 0..<7200 {
+                    simulation.advance(anchor: anchor, elapsed: simulation.physics.fixedStep)
+                    if simulation.isIdle { break }
+                }
+                if !simulation.isIdle {
+                    throw CheckFailure(description: "Local animation fixture did not settle: mode=\(mode), count=\(count)")
+                }
+                let heldNodes = simulation.activeRopes.map(\.nodes)
+                var sawAnimation = Array(repeating: false, count: mode == .balloon ? count : 1)
+                var sawDifferentPoses = false
+                var sawWaiting = false
+                for _ in 0..<1200 {
+                    simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
+                    let players = mode == .balloon ? simulation.balloonAnimations : [simulation.ropeAnimation]
+                    for index in players.indices {
+                        sawAnimation[index] = sawAnimation[index] || players[index].localPose != .rest
+                    }
+                    sawDifferentPoses = sawDifferentPoses || Set(players.map(\.localPose)).count > 1
+                    let animating = players.contains(where: \.isAnimating)
+                    sawWaiting = sawWaiting || !animating
+                    try expectEqual(simulation.updateInterval, animating ? 1.0 / 60 : 1.0 / 15)
+                    try expect(simulation.isIdle)
+                    for (rope, nodes) in zip(simulation.activeRopes, heldNodes) {
+                        try expect(zip(rope.nodes, nodes).allSatisfy { ($0 - $1).magnitude == 0 })
+                    }
+                }
+                try expect(sawAnimation.allSatisfy { $0 } && sawWaiting)
+                if mode == .balloon && count == 8 { try expect(sawDifferentPoses) }
+                let heldPoses = simulation.balloonAnimations.map(\.localPose)
+                let heldBambooPose = simulation.ropeAnimation.localPose
+                simulation.reset(anchor: anchor)
+                try expectEqual(simulation.balloonAnimations.map(\.localPose), heldPoses)
+                try expectEqual(simulation.ropeAnimation.localPose, heldBambooPose)
+                var other = simulation.settings
+                other.mode = .net
+                simulation.apply(other)
+                try expect(simulation.balloonAnimations.allSatisfy { !$0.isAnimating })
+                try expectEqual(simulation.ropeAnimation.localPose, .rest)
+            }
+        }
     }
 
     func testBambooVerticalShakesHaveNoPoseCuts() throws {

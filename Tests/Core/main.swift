@@ -47,6 +47,8 @@ let simulationChecks: [Check] = [
     ("simulation.net-idle-animation", simulation.testNetAnimationContinuesWithoutIntegratingSettledRope),
     ("simulation.rope-idle-animation", simulation.testRopeCharacterAnimationContinuesWithoutIntegratingSettledRope),
     ("simulation.rope-animation-clock-and-physics", simulation.testRopeAnimationClockAndPhysicsAcrossFrameRates),
+    ("simulation.local-characters-independent-of-physics", simulation.testLocalCharactersAnimateWithoutWakingPhysics),
+    ("character.local-pose-continuity", character.testLocalPoseReturnsSmoothlyToRest),
     ("character.random-idle-gaps-and-actions", character.testIdleActionsHaveRandomGapsAndDoNotRepeat),
     ("character.movement-and-falling-reactions", character.testMouseMovementAndBobFallingTriggerDifferentActions),
     ("character.continuous-seam-weights", character.testTransitionsHaveContinuousWeightsAndNeverWrapLastToFirst),

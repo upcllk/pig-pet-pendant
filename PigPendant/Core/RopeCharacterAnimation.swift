@@ -51,6 +51,25 @@ struct RopeCharacterAnimation {
 
     var isAnimating: Bool { action != nil }
 
+    var localPose: LocalCharacterPose {
+        guard let action = action else { return .rest }
+        let gesture: LocalCharacterPose.Gesture
+        switch action {
+        case .blink: gesture = .blink
+        case .ears, .moving: gesture = .ears
+        case .stretch, .falling: gesture = .nuzzle
+        }
+        let step = Int((actionTime / duration(of: action) * Double(LocalCharacterPose.steps)).rounded())
+        guard step > 0 && step < LocalCharacterPose.steps else { return .rest }
+        return LocalCharacterPose(gesture: gesture, step: step)
+    }
+
+    private func duration(of action: Action) -> TimeInterval {
+        let frames = action.frames
+        return (frames[0] == 0 ? 0 : 0.14) + frames.reduce(0) { $0 + frameDurations[$1] }
+            + (frames.last == 0 ? 0 : 0.18)
+    }
+
     var sample: CharacterFrameSample {
         guard let action = action else { return .rest }
         let frames = action.frames
@@ -145,10 +164,7 @@ struct RopeCharacterAnimation {
             default: rate = idleRate
             }
             actionTime += step * rate
-            let frames = action.frames
-            let duration = (frames[0] == 0 ? 0 : 0.14) + frames.reduce(0) { $0 + frameDurations[$1] }
-                + (frames.last == 0 ? 0 : 0.18)
-            if actionTime >= duration {
+            if actionTime >= duration(of: action) {
                 self.action = nil
                 actionTime = 0
                 idleRemaining = 2 + randomUnit() * 3

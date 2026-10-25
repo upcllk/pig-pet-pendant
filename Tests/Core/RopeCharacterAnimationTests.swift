@@ -121,11 +121,31 @@ final class RopeCharacterAnimationTests {
             try expectEqual(player.sample, sample)
             try expectEqual(player.elapsed, elapsed)
         }
+
         player.resetMotion()
         try expectEqual(player.sample, sample)
         player.reset()
         try expectEqual(player.sample, .rest)
         try expectEqual(player.elapsed, 0)
         try expect(!player.isAnimating)
+    }
+
+    func testLocalPoseReturnsSmoothlyToRest() throws {
+        for gesture in [LocalCharacterPose.Gesture.blink, .ears, .nuzzle] {
+            var previous = LocalCharacterPose.rest
+            for step in 0...LocalCharacterPose.steps {
+                let pose = LocalCharacterPose(gesture: gesture, step: step)
+                try expect((0...1).contains(pose.blink) && (0...1).contains(pose.nuzzle))
+                try expectLessThan(abs(pose.blink - previous.blink), 0.19)
+                try expectLessThan(abs(pose.earAngle - previous.earAngle), 0.08)
+                try expectLessThan(abs(pose.nuzzle - previous.nuzzle), 0.11)
+                if step == 0 || step == LocalCharacterPose.steps {
+                    try expectEqual(pose.blink, 0, accuracy: 0.000001)
+                    try expectEqual(pose.earAngle, 0, accuracy: 0.000001)
+                    try expectEqual(pose.nuzzle, 0, accuracy: 0.000001)
+                }
+                previous = pose
+            }
+        }
     }
 }

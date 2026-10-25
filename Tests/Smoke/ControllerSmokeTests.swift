@@ -34,6 +34,7 @@ extension PendantCoordinator {
         tick()
         precondition(isIdle && timerInterval == idleTimerInterval)
         if mode == .rope { smokeCheckRopeAnimation() }
+        if mode == .balloon || mode == .bamboo { smokeCheckLocalCharacters() }
         if mode == .bamboo {
             let savedLength = physics.length
             physics.length = 180
@@ -86,7 +87,7 @@ extension PendantCoordinator {
             precondition(displayImage === bambooImage && physics.endPoint.y < physics.nodes[0].y)
             let heldNodes = physics.nodes
             tick(at: lastTick + 0.08)
-            precondition(isIdle && timerInterval == 1.0 / 15.0)
+            precondition(isIdle && timerInterval == idleTimerInterval)
             precondition(zip(physics.nodes, heldNodes).allSatisfy { ($0 - $1).magnitude < 0.0001 })
             bambooBend = BambooBend(progress: 0)
             tick(at: lastTick + 0.05)

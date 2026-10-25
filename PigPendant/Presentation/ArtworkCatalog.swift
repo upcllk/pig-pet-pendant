@@ -10,6 +10,8 @@ struct ArtworkCatalog {
     let ghost: NSImage
     let net: AnimatedArtwork
     let rope: AnimatedArtwork
+    let balloonCharacter: LocalCharacterArtwork
+    let bambooCharacter: LocalCharacterArtwork
 
     init(resourceURL: URL) throws {
         let directory = resourceURL.deletingLastPathComponent()
@@ -34,6 +36,8 @@ struct ArtworkCatalog {
             throw ArtworkError.unreadable(directory.appendingPathComponent("rope-pig.png"))
         }
         rope = ropeAnimation
+        balloonCharacter = try LocalCharacterArtwork(image: balloon, mode: .balloon)
+        bambooCharacter = try LocalCharacterArtwork(image: bamboo, mode: .bamboo)
     }
 
     func image(mode: DisplayMode, frameIndex: Int) -> NSImage {

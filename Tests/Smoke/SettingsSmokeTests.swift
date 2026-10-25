@@ -214,6 +214,7 @@ extension SettingsWindowController {
         precondition(model.pigSize == CGFloat(originalModeParameters[.bamboo]![.size]!))
         precondition(model.physics.weight == CGFloat(originalModeParameters[.bamboo]![.weight]!))
         precondition(model.physics.elasticity == CGFloat(originalModeParameters[.bamboo]![.elasticity]!))
+        model.smokeCheck()
         modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .hanging)!
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.mode == .hanging && model.displayImage === model.hangingImage)
