@@ -65,5 +65,6 @@ GUI 检查需要已登录的桌面会话，会短暂显示测试挂件后自动�
 
 ## 相关文档
 
+- [角色微动作 skill](.github/skills/character-micro-animation/SKILL.md)：项目级复用流程，包含原帧编排、静态图局部变形、状态驱动与验证。支持项目技能的 Copilot 客户端可发现并按任务相关性加载；也可在支持技能斜杠调用的客户端中输入 `/character-micro-animation`。发现不等于必定调用，新增后若未出现，可新建会话或重新加载窗口；[AGENTS.md](AGENTS.md) 提供直接读取的兜底入口。目录与按需加载规则见 [VS Code 官方说明](https://code.visualstudio.com/docs/copilot/customization/agent-skills)。本项目不安装到全局技能目录。
 - [Windows 移植计划](docs/WINDOWS_PORT_PLAN.md)
 - [开发经验与踩坑记录](docs/DEVELOPMENT_LEARNINGS.md)

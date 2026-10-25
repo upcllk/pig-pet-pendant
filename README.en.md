@@ -65,4 +65,5 @@ This repository does not yet include a general-purpose open-source license. Publ
 
 ## Related Documentation
 
+- [Character micro-animation skill](.github/skills/character-micro-animation/SKILL.md): project-local workflows for source-frame choreography, local deformation, state-driven playback, and validation. Compatible Copilot clients discover project skills and load them by relevance; clients supporting skill slash commands also offer `/character-micro-animation`. Discovery does not guarantee invocation. If a new skill is missing, try a new session or reload the window; [AGENTS.md](AGENTS.md) provides a direct-read fallback. See the [official VS Code documentation](https://code.visualstudio.com/docs/copilot/customization/agent-skills). No global skill installation is performed.
 - [Windows Porting Plan](docs/WINDOWS_PORT_PLAN.md)
