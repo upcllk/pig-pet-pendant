@@ -50,6 +50,8 @@ The transparent artwork `PigPendant/Resources/rope-pig.png` preserves all 75 ori
 
 Balloon and bamboo characters share the action scheduler, not the rope pig's frames. Local pixel warps around their original eyes, ears and noses produce small gestures without redrawing the character, changing source files or stretching the whole pig. Balloon attachment pixels and bamboo foot pixels / grip geometry remain unchanged; these are not the GIF's full limb and body gestures. Balloons have independent idle timing; movement and actual downward motion trigger reactions, with smooth returns to rest. Character playback continues after physics settles and pauses while hidden or asleep. Working images are at most 512 pixels wide, with bounded pose caches. `./build.sh --test` checks eye shape, protected nose and foot pixels, all balloons' independent states, and pause/resume; it exports light-background pose atlases and scene sequences to `dist/`. These are automated renders, not screen recordings or confirmation of subjective naturalness.
 
+Local gestures use 72 phase intervals and update at 60 Hz during playback; this is neither 72 FPS nor additional source artwork frames. Blinks progressively close, hold for about 0.2 seconds, reopen more slowly, and return to rest. Ears pivot around their roots, and nose gestures have a more visible local displacement. GUI checks also measure eye-height progression and ear/nose displacement at 48 pt with 2x pixels, rather than relying on enlarged previews. Original-frame rope animation is unaffected.
+
 ## Known Limitations
 
 - A Windows executable is not currently available.

@@ -148,4 +148,34 @@ final class RopeCharacterAnimationTests {
             }
         }
     }
+
+    func testLocalBlinkHasProgressiveClosureHoldAndReopening() throws {
+            var player = RopeCharacterAnimation(frameDurations: durations, seed: 2026)
+            for _ in 0..<3600 {
+                player.advance(elapsed: 1.0 / 60, anchorVelocity: zero, bobVelocity: zero)
+                if player.action == .blink { break }
+            }
+            try expectEqual(player.action, .blink)
+            var values: [Double] = []
+            var steps = Set<Int>()
+            while player.action == .blink {
+                let pose = player.localPose
+                values.append(pose.blink)
+                if pose.blink > 0 && pose.blink < 1 { steps.insert(pose.step) }
+                player.advance(elapsed: 1.0 / 60, anchorVelocity: zero, bobVelocity: zero)
+            }
+            let firstClosed = try requireValue(values.firstIndex(of: 1))
+            let lastClosed = try requireValue(values.lastIndex(of: 1))
+            try expectGreaterThan(steps.count, 25)
+            let closedDuration = Double(values.filter { $0 == 1 }.count) / 60
+            try expect(closedDuration >= 0.18 && closedDuration <= 0.30)
+            try expectGreaterThan(values.filter { $0 > 0 }.count, 45)
+            for (before, after) in zip(values[..<firstClosed], values.dropFirst().prefix(firstClosed)) {
+                try expect(after >= before)
+            }
+            for (before, after) in zip(values[lastClosed...], values.dropFirst(lastClosed + 1)) {
+                try expect(after <= before)
+            }
+            try expectEqual(player.localPose, .rest)
+    }
 }

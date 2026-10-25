@@ -37,12 +37,14 @@ final class LocalCharacterArtwork {
 
     func image(for pose: LocalCharacterPose) -> NSImage {
         guard pose.step > 0 && pose.step < LocalCharacterPose.steps else { return restImage }
-        let key = NSNumber(value: pose.gesture.rawValue * (LocalCharacterPose.steps + 1) + pose.step)
-        if let image = cache.object(forKey: key) { return image }
-        var output = pixels
         let blink = pose.blink
         let earAngle = pose.earAngle
         let nuzzle = pose.nuzzle
+        guard blink > 0 || abs(earAngle) > 0.000001 || nuzzle > 0.000001 else { return restImage }
+        let step = pose.gesture == .blink && blink == 1 ? Int((0.4 * Double(LocalCharacterPose.steps)).rounded()) : pose.step
+        let key = NSNumber(value: pose.gesture.rawValue * (LocalCharacterPose.steps + 1) + step)
+        if let image = cache.object(forKey: key) { return image }
+        var output = pixels
         for y in 0..<height {
             for x in 0..<width {
                 let original = CGPoint(x: (Double(x) + 0.5) / Double(width),
@@ -94,7 +96,7 @@ final class LocalCharacterArtwork {
                 let dy = result.y - eye.y
                 guard dx < 1, abs(dy) < outer else { continue }
                 let edge = min(1, (1 - dx) * 4)
-                let scale = 1 - 0.92 * blink * edge * edge * (3 - 2 * edge)
+                let scale = 1 - 0.86 * blink * edge * edge * (3 - 2 * edge)
                 let distance = abs(dy)
                 let mapped = distance < inner * scale ? distance / scale
                     : inner + (distance - inner * scale) * (outer - inner) / (outer - inner * scale)
@@ -102,20 +104,21 @@ final class LocalCharacterArtwork {
             }
         }
         if earAngle != 0 {
-            let ears: [(CGPoint, CGSize)] = mode == .balloon
-                ? [(CGPoint(x: 0.10, y: 0.27), CGSize(width: 0.15, height: 0.17)),
-                   (CGPoint(x: 0.68, y: 0.20), CGSize(width: 0.19, height: 0.18))]
-                : [(CGPoint(x: 0.10, y: 0.13), CGSize(width: 0.17, height: 0.23)),
-                   (CGPoint(x: 0.40, y: 0.21), CGSize(width: 0.12, height: 0.17))]
+            let ears: [(center: CGPoint, radius: CGSize, root: CGPoint)] = mode == .balloon
+                ? [(CGPoint(x: 0.10, y: 0.27), CGSize(width: 0.15, height: 0.17), CGPoint(x: 0.13, y: 0.46)),
+                   (CGPoint(x: 0.68, y: 0.20), CGSize(width: 0.19, height: 0.18), CGPoint(x: 0.68, y: 0.40))]
+                : [(CGPoint(x: 0.10, y: 0.13), CGSize(width: 0.17, height: 0.23), CGPoint(x: 0.14, y: 0.25)),
+                   (CGPoint(x: 0.40, y: 0.21), CGSize(width: 0.12, height: 0.17), CGPoint(x: 0.43, y: 0.33))]
             for (index, ear) in ears.enumerated() {
-                let dx = result.x - ear.0.x
-                let dy = result.y - ear.0.y
-                let radius = hypot(dx / ear.1.width, dy / ear.1.height)
+                let radius = hypot((result.x - ear.center.x) / ear.radius.width,
+                                   (result.y - ear.center.y) / ear.radius.height)
                 guard radius < 1 else { continue }
                 let weight = pow(1 - radius * radius, 2)
                 let angle = earAngle * weight * (index == 0 ? 1 : -1)
-                result = CGPoint(x: ear.0.x + dx * cos(angle) - dy * sin(angle),
-                                 y: ear.0.y + dx * sin(angle) + dy * cos(angle))
+                let dx = result.x - ear.root.x
+                let dy = result.y - ear.root.y
+                result = CGPoint(x: ear.root.x + dx * cos(angle) - dy * sin(angle),
+                                 y: ear.root.y + dx * sin(angle) + dy * cos(angle))
             }
         }
         if nuzzle > 0 {
@@ -123,8 +126,8 @@ final class LocalCharacterArtwork {
             let radius = hypot((result.x - nose.x) / 0.19, (result.y - nose.y) / 0.18)
             if radius < 1 {
                 let amount = nuzzle * pow(1 - radius * radius, 2)
-                result.x = nose.x + (result.x - nose.x) / (1 + 0.08 * amount) + 0.008 * amount
-                result.y = nose.y + (result.y - nose.y) / (1 + 0.05 * amount) + 0.004 * amount
+                result.x = nose.x + (result.x - nose.x) / (1 + 0.14 * amount) + 0.034 * amount
+                result.y = nose.y + (result.y - nose.y) / (1 + 0.09 * amount) + 0.012 * amount
             }
         }
         return result
