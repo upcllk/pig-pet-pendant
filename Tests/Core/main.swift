@@ -45,6 +45,7 @@ let audioChecks: [Check] = [
 let simulationChecks: [Check] = [
     ("halo.lag-rebound-settling-frame-rates", halo.testLagReboundAndSettlingAcrossFrameRates),
     ("halo.idle-spacing-invalid-input", halo.testIdleSpacingAndInvalidInput),
+    ("halo.random-head-plane-directions", halo.testRandomIdleTravelsAcrossHeadPlane),
     ("halo.simulation-scheduling-resume-mode-reset", halo.testSimulationSchedulingResumeAndModeReset),
     ("simulation.eight-balloon-anchor-and-activity", simulation.testEightBalloonsShareAnchorAndNonFirstActivityPreventsIdle),
     ("simulation.count-extremes-and-mode-directions", simulation.testBalloonCountExtremesAndNonBalloonModesUseOneRope),

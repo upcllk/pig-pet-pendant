@@ -2,6 +2,7 @@ import AppKit
 
 extension PendantCoordinator {
     func smokeCheckHangingCharacter() {
+        smokeCheckHangingEdges()
         smokeCheckHangingHalo()
         let character = artwork.hangingCharacter
         func bitmap(_ image: NSImage, displaySize: Bool = false) -> NSBitmapImageRep {
@@ -218,6 +219,56 @@ extension PendantCoordinator {
         precondition(displacement > 5, "Halo displacement must exceed 2.5 pt at normal 48 pt pendant size")
         precondition(abs(movedHalo.1 / restHalo.1 - 1) < 0.08, "Halo motion must not fade or clip the original ring")
         NSLog("PASS: halo normal-size movement %.2f px at 2x, full alpha and uncropped contour", displacement)
+        let planeSheet = NSImage(size: NSSize(width: 1200, height: 780))
+        planeSheet.lockFocus()
+        NSColor(calibratedWhite: 0.18, alpha: 1).setFill()
+        NSRect(x: 0, y: 0, width: 1200, height: 780).fill()
+        var randomHalo = HaloAnimation(seed: 17)
+        var activeFrames = 0
+        var examples = 0
+        var minTravel = V2(0, 0)
+        var maxTravel = V2(0, 0)
+        for _ in 0..<9000 {
+            randomHalo.advance(elapsed: 1.0 / 60, localVelocity: V2(0, 0), characterActive: false)
+            activeFrames = randomHalo.isAnimating ? activeFrames + 1 : 0
+            guard activeFrames == 36, examples < 12 else { continue }
+            let rendered = alphaCentroid(renderedHalo(randomHalo.pose))
+            let travel = rendered.0 - restHalo.0
+            minTravel = V2(min(minTravel.x, travel.x), min(minTravel.y, travel.y))
+            maxTravel = V2(max(maxTravel.x, travel.x), max(maxTravel.y, travel.y))
+            precondition(abs(rendered.1 / restHalo.1 - 1) < 0.08)
+            let rect = NSRect(x: CGFloat(examples % 4) * 300 + 60,
+                              y: 780 - CGFloat(examples / 4 + 1) * 260 + 45,
+                              width: 176, height: 176 * 384 / 360)
+            artwork.hangingCharacter.image(for: .rest).draw(in: rect)
+            let center = artwork.hangingLayers.center
+            let pivot = CGPoint(x: rect.minX + rect.width * center.x, y: rect.minY + rect.height * center.y)
+            NSGraphicsContext.saveGraphicsState()
+            let context = NSGraphicsContext.current!.cgContext
+            context.translateBy(x: pivot.x + randomHalo.pose.offset.x * rect.width,
+                                y: pivot.y + randomHalo.pose.offset.y * rect.width)
+            context.rotate(by: randomHalo.pose.angle)
+            artwork.hangingLayers.halo.draw(in: rect.offsetBy(dx: -pivot.x, dy: -pivot.y))
+            NSGraphicsContext.restoreGraphicsState()
+            String(format: "Idle %d  (%+.1f, %+.1f) pt", examples + 1,
+                   randomHalo.pose.offset.x * 48, randomHalo.pose.offset.y * 48)
+                .draw(at: NSPoint(x: rect.minX - 20, y: rect.minY - 25),
+                      withAttributes: [.foregroundColor: NSColor.white])
+            examples += 1
+        }
+        planeSheet.unlockFocus()
+        precondition(examples == 12)
+        precondition(minTravel.x < -2 && minTravel.y < -2 && maxTravel.x > 2 && maxTravel.y > 2,
+                     "Random head-plane travel must render in both directions on both screen axes")
+        NSLog("PASS: randomized halo rendered travel x=[%.2f,%.2f] y=[%.2f,%.2f] px at 2x",
+              minTravel.x, maxTravel.x, minTravel.y, maxTravel.y)
+        guard let planeTIFF = planeSheet.tiffRepresentation, let planeBitmap = NSBitmapImageRep(data: planeTIFF),
+              let planePNG = planeBitmap.representation(using: .png, properties: [:]) else {
+            preconditionFailure("Cannot encode randomized head-plane preview")
+        }
+        do {
+            try planePNG.write(to: Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("hanging-halo-plane.png"))
+        } catch { preconditionFailure("Cannot save head-plane preview: \(error)") }
         var settings = self.settings
         do {
             try settings.set(140, for: .size)

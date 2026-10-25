@@ -17,6 +17,7 @@ struct HaloAnimation {
     private var idleRemaining: TimeInterval = 0
     private var idleTime: TimeInterval?
     private var idleDirection: CGFloat = 1
+    private var idlePlaneAngle: CGFloat = 0
 
     init(seed: UInt64) {
         randomState = seed
@@ -57,14 +58,20 @@ struct HaloAnimation {
                 if idleRemaining <= 0 {
                     idleTime = 0
                     idleDirection = randomUnit() < 0.5 ? -1 : 1
+                    idlePlaneAngle = CGFloat(randomUnit() * 2 * .pi)
                 }
             }
             let idle = idleTime.map { CGFloat(pow(sin(.pi * $0 / 1.2), 2)) } ?? 0
             let horizontal = CGFloat(tanh(Double(localVelocity.x / 450)))
             let vertical = CGFloat(tanh(Double(localVelocity.y / 450)))
             let idleWeight = idle * (1 - max(abs(horizontal), abs(vertical)))
+            let phase = CGFloat((idleTime ?? 0) / 1.2)
+            let planeAngle = idlePlaneAngle + idleDirection * phase * .pi
+            let along = cos(planeAngle) * idleWeight * 0.065
+            let across = sin(planeAngle) * idleWeight * 0.040
+            let planeOffset = V2(0.64, 0.77) * along + V2(-0.77, 0.64) * across
             let targetAngle = max(-0.168, min(0.168, -horizontal * 0.168 + idleWeight * idleDirection * 0.128))
-            let targetOffset = V2(-horizontal * 0.048, -vertical * 0.056 + idleWeight * 0.0192)
+            let targetOffset = V2(-horizontal * 0.048, -vertical * 0.056) + planeOffset
             // A damped visual follower, independent of rope forces.
             angularVelocity += ((targetAngle - pose.angle) * 100 - angularVelocity * 12) * step
             velocity = velocity + ((targetOffset - pose.offset) * 100 - velocity * 12) * step

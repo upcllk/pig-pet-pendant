@@ -27,8 +27,20 @@ final class LocalCharacterArtwork {
             context.draw(source, in: CGRect(x: 0, y: 0, width: w, height: h))
             return context.makeImage()
         }
-        guard let raster = raster else {
+        guard var raster = raster else {
             throw ArtworkError.unreadable(URL(fileURLWithPath: "\(mode.rawValue) animation raster"))
+        }
+        if mode == .hanging {
+            HangingBodyEdgeCleanup.apply(to: &data, width: w, height: h)
+            guard let provider = CGDataProvider(data: Data(data) as CFData),
+                  let cleaned = CGImage(width: w, height: h, bitsPerComponent: 8, bitsPerPixel: 32,
+                                        bytesPerRow: w * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                        bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
+                                        provider: provider, decode: nil, shouldInterpolate: true,
+                                        intent: .defaultIntent) else {
+                throw ArtworkError.unreadable(URL(fileURLWithPath: "hanging edge cleanup"))
+            }
+            raster = cleaned
         }
         pixels = data
         restImage = NSImage(cgImage: raster, size: image.size)

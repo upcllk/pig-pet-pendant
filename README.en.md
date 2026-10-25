@@ -58,6 +58,10 @@ GUI checks cover normal-size gestures, protected cross eyes/band/attachment, dis
 
 Halo angle and displacement targets are 60% larger than the initial version, without changing idle gaps, timing, or damping. Movement targets are capped at about 9.6 degrees, with an idle target peak of about 7.3 degrees; rebound may slightly overshoot. A fixed-input render check at 48 pt / 2x requires more than 2.5 pt of halo-center displacement without clipping or alpha loss. Displacement still depends on movement speed.
 
+Idle halo gestures also wander along two oblique axes in the pig's local head plane, with randomized starting directions and a smooth curved return. This is two-dimensional visual motion, without scaling or a claim of 3D simulation. Quiet gaps and movement lag/rebound remain. `dist/hanging-halo-plane.png` shows varied idle poses.
+
+White matte contamination is cleaned only in the runtime body copy, within three source pixels of transparency. Nearby deeper skin colors guide edge color correction and softer outer coverage. Original PNGs, halo glow, and interior facial features are unchanged. `dist/hanging-edge-comparison.png` compares enlarged black/white/gray-background renders; interior highlights are not globally removed or erased by shrinking the whole silhouette.
+
 ## Known Limitations
 
 - A Windows executable is not currently available.

@@ -2,6 +2,31 @@ import Foundation
 @testable import PigPendantCore
 
 final class HaloAnimationTests {
+    func testRandomIdleTravelsAcrossHeadPlane() throws {
+        var first = HaloAnimation(seed: 17)
+        var second = HaloAnimation(seed: 17)
+        var left = false
+        var right = false
+        var front = false
+        var back = false
+        var previous = HaloPose()
+        for _ in 0..<7200 {
+            first.advance(elapsed: 1.0 / 60, localVelocity: V2(0, 0), characterActive: false)
+            second.advance(elapsed: 1.0 / 60, localVelocity: V2(0, 0), characterActive: false)
+            try expectEqual(first.pose, second.pose)
+            let along = first.pose.offset.x * 0.64 + first.pose.offset.y * 0.77
+            let across = -first.pose.offset.x * 0.77 + first.pose.offset.y * 0.64
+            left = left || along < -0.025
+            right = right || along > 0.025
+            front = front || across < -0.018
+            back = back || across > 0.018
+            try expectLessThan((first.pose.offset - previous.offset).magnitude, 0.012)
+            try expect(first.pose.offset.magnitude < 0.08 && abs(first.pose.angle) < 0.24)
+            previous = first.pose
+        }
+        try expect(left && right && front && back)
+    }
+
     func testLagReboundAndSettlingAcrossFrameRates() throws {
         var results: [HaloPose] = []
         for rate in [30, 60, 120, 144] {
