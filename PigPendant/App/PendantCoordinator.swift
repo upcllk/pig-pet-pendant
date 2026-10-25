@@ -38,7 +38,8 @@ final class PendantCoordinator {
         store = SettingsStore(defaults: defaults)
         settings = store.load()
         simulation = PendantSimulation(settings: settings, frameDurations: artwork.net.frameDurations,
-                                       ropeFrameDurations: artwork.rope.frameDurations)
+                                       ropeFrameDurations: artwork.rope.frameDurations,
+                                       ghostFrameDurations: artwork.ghostBlink.frameDurations)
         audioMonitor.onBeat = { [weak self] strength in
             guard let self = self, !self.isSuspended else { return }
             let now = ProcessInfo.processInfo.systemUptime

@@ -31,15 +31,17 @@ struct SceneSnapshot {
         self.isVisible = isVisible
         pigSize = CGFloat(simulation.settings[.size])
         displayImage = mode == .bamboo ? artwork.bambooCharacter.image(for: simulation.ropeAnimation.localPose)
+            : mode == .ghost ? artwork.ghostBlink.frames[simulation.ghostBlink.sample.firstIndex]
             : mode == .net ? artwork.netCharacter.image(for: simulation.ropeAnimation.localPose)
             : mode == .hanging ? artwork.hangingCharacter.image(for: simulation.ropeAnimation.localPose)
             : artwork.image(mode: mode, frameIndex: simulation.artworkFrameIndex)
-        let sample = simulation.ropeAnimation.sample
-        nextDisplayImage = mode == .rope && sample.firstIndex != sample.secondIndex
-            ? artwork.rope.frames[sample.secondIndex] : nil
-        imageBlend = mode == .rope ? CGFloat(sample.fraction) : 0
-        haloImage = mode == .hanging ? artwork.hangingLayers.halo : nil
-        haloCenter = artwork.hangingLayers.center
+        let sample = mode == .ghost ? simulation.ghostBlink.sample : simulation.ropeAnimation.sample
+        let frames = mode == .ghost ? artwork.ghostBlink.frames : artwork.rope.frames
+        nextDisplayImage = (mode == .ghost || mode == .rope) && sample.firstIndex != sample.secondIndex
+            ? frames[sample.secondIndex] : nil
+        imageBlend = mode == .rope || mode == .ghost ? CGFloat(sample.fraction) : 0
+        haloImage = mode == .ghost ? artwork.ghostHalo : mode == .hanging ? artwork.hangingLayers.halo : nil
+        haloCenter = mode == .ghost ? artwork.ghostHaloCenter : artwork.hangingLayers.center
         haloPose = simulation.haloAnimation.pose
         ropes = simulation.activeRopes.enumerated().map { index, rope in
             RopeSnapshot(nodes: rope.nodes, endPoint: rope.endPoint, endAngle: rope.endAngle,

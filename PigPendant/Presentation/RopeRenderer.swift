@@ -6,9 +6,33 @@ enum RopeRenderer {
         let width = scene.pigSize
         let height = width * scene.imageAspect
         context.saveGState()
-        scene.displayImage.draw(in: NSRect(x: point.x - width * 0.5, y: point.y - height * 0.5,
-                                           width: width, height: height),
-                               from: .zero, operation: .sourceOver, fraction: 1)
+        let rect = NSRect(x: point.x - width * 0.5, y: point.y - height * 0.5, width: width, height: height)
+        drawCharacter(scene: scene, rect: rect, context: context)
+        drawHalo(scene: scene, rect: rect, width: width, context: context)
+        context.restoreGState()
+    }
+
+    private static func drawCharacter(scene: SceneSnapshot, rect: NSRect, context: CGContext) {
+        if let nextImage = scene.nextDisplayImage, scene.imageBlend > 0 {
+            context.beginTransparencyLayer(auxiliaryInfo: nil)
+            scene.displayImage.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1 - scene.imageBlend)
+            nextImage.draw(in: rect, from: .zero, operation: .plusLighter, fraction: scene.imageBlend)
+            context.endTransparencyLayer()
+        } else {
+            scene.displayImage.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
+        }
+    }
+
+    private static func drawHalo(scene: SceneSnapshot, rect: NSRect, width: CGFloat, context: CGContext) {
+        guard let halo = scene.haloImage else { return }
+        let pivot = CGPoint(x: rect.minX + rect.width * scene.haloCenter.x,
+                            y: rect.minY + rect.height * scene.haloCenter.y)
+        context.saveGState()
+        context.translateBy(x: pivot.x + scene.haloPose.offset.x * width,
+                            y: pivot.y + scene.haloPose.offset.y * width)
+        context.rotate(by: scene.haloPose.angle)
+        halo.draw(in: rect.offsetBy(dx: -pivot.x, dy: -pivot.y),
+                  from: .zero, operation: .sourceOver, fraction: 1)
         context.restoreGState()
     }
 
@@ -53,26 +77,8 @@ enum RopeRenderer {
                                  y: -height * (1 - ArtworkCatalog.ropeAttachment.y),
                                  width: width, height: height)
                     : NSRect(x: -width * 0.5, y: -height * 0.5, width: width, height: height)
-                if let nextImage = scene.nextDisplayImage, scene.imageBlend > 0 {
-                    context.beginTransparencyLayer(auxiliaryInfo: nil)
-                    scene.displayImage.draw(in: rect, from: .zero, operation: .sourceOver,
-                                            fraction: 1 - scene.imageBlend)
-                    nextImage.draw(in: rect, from: .zero, operation: .plusLighter, fraction: scene.imageBlend)
-                    context.endTransparencyLayer()
-                } else {
-                    scene.displayImage.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
-                }
-                if let halo = scene.haloImage {
-                    let pivot = CGPoint(x: rect.minX + rect.width * scene.haloCenter.x,
-                                        y: rect.minY + rect.height * scene.haloCenter.y)
-                    context.saveGState()
-                    context.translateBy(x: pivot.x + scene.haloPose.offset.x * width,
-                                        y: pivot.y + scene.haloPose.offset.y * width)
-                    context.rotate(by: scene.haloPose.angle)
-                    halo.draw(in: rect.offsetBy(dx: -pivot.x, dy: -pivot.y),
-                              from: .zero, operation: .sourceOver, fraction: 1)
-                    context.restoreGState()
-                }
+                drawCharacter(scene: scene, rect: rect, context: context)
+                drawHalo(scene: scene, rect: rect, width: width, context: context)
                 context.restoreGState()
                 continue
             }

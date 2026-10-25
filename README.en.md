@@ -17,7 +17,7 @@ A small desktop pig pendant that follows your mouse. The macOS version is availa
 - **Pig in a Net**: Uses the user's manually cleaned transparent image with random local ear/nose gestures and a fixed blue mesh, replacing the old 62-frame loop.
 - **Pig on Bamboo**: The pig hugs a bamboo stalk that bends with mouse movement, with random blinks, ear movements and nose gestures that preserve its grip.
 - **Hanging Pig**: Hangs from a rope with randomly timed ear twitches and nose gestures. Its halo lags during movement, rebounds after stopping, and occasionally tilts at rest. Cross eyes do not blink; the band's shape is preserved with the same brown hue as Rope Pendant's binding, alongside the original attachment and halo.
-- **Ghost Pig**: Follows the mouse smoothly without a rope.
+- **Ghost Pig**: Follows the mouse without a rope, with random progressive blinks from user-supplied artwork and an independently drifting, tilting, rebounding halo.
 
 ## Music Reactive Experiment
 
@@ -65,6 +65,22 @@ The user's two 768x768 transparent single-frame PNGs are copied unchanged as `Pi
 With user approval, the new net image has locally generated ear/nose gestures instead of the original animation. Blue mesh pixels and transparent holes stay fixed; originally closed eyes do not receive artificial blinks. Gestures continue at physical rest, react to motion/falling, and pause while hidden/asleep. Prior automatic white-removal experiments have been removed; their lessons remain historical notes.
 
 Hanging Pig's purple band is tinted only in the display copy, matching the rendered sRGB brown binding sampled from original rope frame 0 while retaining shading. Source PNGs remain unchanged. GUI checks verify only band RGB changes, with alpha, other body pixels, and the halo preserved; Settings and the pendant share the same colors.
+
+### Layered Ghost Pig blinks
+
+`ghost-body.png` and `ghost-halo.png` are the user's independent 768x1152 transparent layers, imported unchanged; the checkerboard composite is not an asset. `ghost-blink.png` transfers only eye differences from eight supplied 1024x1536 keys to the new body. It has no baked-in halo or old full-body glow. Non-eye pixels and body alpha remain fixed, and endpoints match the body master. There is no redrawing or automatic white removal. Alignment error for these inputs was below 0.01 source pixels; this is not guaranteed for replacement images.
+
+Each blink lasts about 0.91 seconds, with two closed-eye poses totaling 0.28 seconds and gradual frame blending. Initial waiting is approximately 1.2–2.5 seconds, followed by random 3–6-second gaps rather than a fixed loop. The halo is rendered separately using damped following and random plane travel. Both clocks continue at physical rest, use 15 Hz while waiting and 60 Hz during playback/rebound, pause while hidden/asleep, and preserve their poses on resume. New waving or ear-animation source frames are not included in this iteration.
+
+The reproducible preparation command requires the user's original key directory and does not modify it:
+
+```bash
+swift -O tools/prepare-ghost-blink.swift /path/to/blink_keys_8 \
+  PigPendant/Resources/ghost-body.png PigPendant/Resources/ghost-blink.png
+./build.sh --test
+```
+
+The old `ghost-pig.png` remains reference-only. Build checks package all three new PNGs. Core tests cover scheduling, closed hold, frame rates, idle following and resume; GUI checks source pixels, real eye shapes, separate halo rendering, opaque blending, clipping and pause/resume. `dist/ghost-layered-contact.png` is a black/white contact sheet; `dist/ghost-layered-preview.png` is a 16-second preview from the actual rendering path with synthetic input, not a screen recording or user acceptance.
 
 ## Known Limitations
 

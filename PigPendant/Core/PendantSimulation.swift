@@ -13,18 +13,21 @@ final class PendantSimulation {
     private(set) var ropeAnimation: RopeCharacterAnimation
     private(set) var balloonAnimations: [RopeCharacterAnimation] = []
     private(set) var haloAnimation: HaloAnimation
+    private(set) var ghostBlink: GhostBlinkAnimation
     private let characterFrameDurations: [TimeInterval]
     private let characterSeed: UInt64
     private(set) var isIdle = false
 
     init(settings: PendantSettings, frameDurations: [TimeInterval], ropeFrameDurations: [TimeInterval],
-         animationSeed: UInt64 = UInt64.random(in: 0...UInt64.max)) {
+         animationSeed: UInt64 = UInt64.random(in: 0...UInt64.max),
+         ghostFrameDurations: [TimeInterval] = GhostBlinkAnimation.keyDurations) {
         self.settings = settings
         timeline = AnimationTimeline(frameDurations: frameDurations)
         characterFrameDurations = ropeFrameDurations
         characterSeed = animationSeed
         ropeAnimation = RopeCharacterAnimation(frameDurations: ropeFrameDurations, seed: animationSeed)
         haloAnimation = HaloAnimation(seed: animationSeed &+ 104729)
+        ghostBlink = GhostBlinkAnimation(frameDurations: ghostFrameDurations, seed: animationSeed &+ 130363)
         apply(settings)
     }
 
@@ -40,11 +43,15 @@ final class PendantSimulation {
             return 1.0 / 60.0
         }
         if settings.mode == .balloon && balloonAnimations.contains(where: \.isAnimating) { return 1.0 / 60.0 }
-        if settings.mode == .hanging && haloAnimation.isAnimating { return 1.0 / 60.0 }
+        if settings.mode == .ghost && ghostBlink.isAnimating { return 1.0 / 60.0 }
+        if [.hanging, .ghost].contains(settings.mode) && haloAnimation.isAnimating { return 1.0 / 60.0 }
         return 1.0 / 15.0
     }
     var updateInterval: TimeInterval { isIdle ? idleInterval : 1.0 / 60.0 }
-    var artworkFrameIndex: Int { settings.mode == .rope ? ropeAnimation.sample.firstIndex : timeline.frameIndex }
+    var artworkFrameIndex: Int {
+        settings.mode == .ghost ? ghostBlink.sample.firstIndex :
+            settings.mode == .rope ? ropeAnimation.sample.firstIndex : timeline.frameIndex
+    }
 
     func apply(_ settings: PendantSettings) {
         let modeChanged = self.settings.mode != settings.mode
@@ -81,6 +88,7 @@ final class PendantSimulation {
         timeline.reset()
         ropeAnimation.reset()
         haloAnimation.reset()
+        ghostBlink.reset()
         for index in balloonAnimations.indices { balloonAnimations[index].reset() }
     }
 
@@ -125,11 +133,6 @@ final class PendantSimulation {
         if settings.mode == .ghost {
             let delta = ghostTarget(anchor) - ghostPosition
             guard delta.x.isFinite, delta.y.isFinite, elapsed.isFinite, elapsed > 0 else { return false }
-            guard delta.magnitude >= 0.15 else {
-                ghostPosition = ghostTarget(anchor)
-                isIdle = true
-                return false
-            }
             let previousPosition = ghostPosition
             let step = min(0.1, CGFloat(elapsed))
             let blend = 1 - CGFloat(exp(Double(-14 * step)))
@@ -140,7 +143,11 @@ final class PendantSimulation {
             } else {
                 isIdle = false
             }
-            return (ghostPosition - previousPosition).magnitude > 0
+            let blinkChanged = ghostBlink.advance(elapsed: elapsed)
+            let velocity = elapsed > 0.25 ? V2(0, 0) : (ghostPosition - previousPosition) / CGFloat(elapsed)
+            let haloChanged = haloAnimation.advance(elapsed: elapsed, localVelocity: velocity,
+                                                      characterActive: ghostBlink.isAnimating)
+            return (ghostPosition - previousPosition).magnitude > 0 || blinkChanged || haloChanged
         }
         let movementTolerance: CGFloat = settings.mode == .bamboo ? 1 : 0.01
         let anchorUnchanged = activeRopes.allSatisfy {

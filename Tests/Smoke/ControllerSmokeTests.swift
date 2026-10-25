@@ -32,10 +32,16 @@ extension PendantCoordinator {
         precondition(timer != nil)
         reset()
         tick()
-        precondition(isIdle && timerInterval == idleTimerInterval)
+        if !isIdle || timerInterval != idleTimerInterval {
+            NSLog("Controller reset check %@ count=%d idle=%d timer=%.6f expected=%.6f settled=%@",
+                  mode.rawValue, balloonCount, isIdle ? 1 : 0, timerInterval, idleTimerInterval,
+                  simulation.activeRopes.map { $0.isSettled ? "yes" : "no" }.joined(separator: ","))
+            preconditionFailure("Controller reset must reach the idle schedule")
+        }
         if mode == .rope { smokeCheckRopeAnimation() }
         if mode == .balloon || mode == .bamboo { smokeCheckLocalCharacters() }
         if mode == .hanging || mode == .net { smokeCheckCustomCharacter() }
+        if mode == .ghost { smokeCheckGhostAnimation() }
         if mode == .bamboo {
             let savedLength = physics.length
             physics.length = 180

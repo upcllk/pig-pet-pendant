@@ -9,6 +9,9 @@ struct ArtworkCatalog {
     let hanging: NSImage
     let netImage: NSImage
     let ghost: NSImage
+    let ghostBlink: AnimatedArtwork
+    let ghostHalo: NSImage
+    let ghostHaloCenter: CGPoint
     let net: AnimatedArtwork
     let rope: AnimatedArtwork
     let balloonCharacter: LocalCharacterArtwork
@@ -40,7 +43,39 @@ struct ArtworkCatalog {
             throw ArtworkError.unreadable(directory.appendingPathComponent("net-pig-custom.png"))
         }
         netImage = NSImage(cgImage: cropped, size: NSSize(width: 512, height: 768))
-        ghost = try image("ghost-pig.png")
+        let ghostAnimation = try animation("ghost-blink.png")
+        guard ghostAnimation.frames.count == 8,
+              ghostAnimation.frames.allSatisfy({ $0.size == NSSize(width: 768, height: 1152) }) else {
+            throw ArtworkError.unreadable(directory.appendingPathComponent("ghost-blink.png"))
+        }
+        ghostBlink = ghostAnimation
+        let haloImage = try image("ghost-halo.png")
+        guard let haloCG = haloImage.cgImage(forProposedRect: nil, context: nil, hints: nil),
+              haloCG.width == 768 && haloCG.height == 1152 else {
+            throw ArtworkError.unreadable(directory.appendingPathComponent("ghost-halo.png"))
+        }
+        ghostHalo = haloImage
+        let haloPixels = NSBitmapImageRep(cgImage: haloCG)
+        var weightedX: CGFloat = 0
+        var weightedY: CGFloat = 0
+        var total: CGFloat = 0
+        for y in 0..<haloCG.height {
+            for x in 0..<haloCG.width {
+                let alpha = haloPixels.colorAt(x: x, y: y)?.alphaComponent ?? 0
+                weightedX += CGFloat(x) * alpha
+                weightedY += CGFloat(y) * alpha
+                total += alpha
+            }
+        }
+        guard total > 0 else { throw ArtworkError.unreadable(directory.appendingPathComponent("ghost-halo.png")) }
+        ghostHaloCenter = CGPoint(x: weightedX / total / 768, y: 1 - weightedY / total / 1152)
+        let composite = NSImage(size: ghostAnimation.frames[0].size)
+        composite.lockFocus()
+        let ghostRect = NSRect(origin: .zero, size: composite.size)
+        ghostAnimation.frames[0].draw(in: ghostRect)
+        haloImage.draw(in: ghostRect)
+        composite.unlockFocus()
+        ghost = composite
         net = try animation("net-pig.png")
         let ropeAnimation = try animation("rope-pig.png")
         guard ropeAnimation.frames.count == 75 else {

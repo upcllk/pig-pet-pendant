@@ -7,6 +7,7 @@ let simulation = SimulationTests()
 let audio = AudioReactiveTests()
 let character = RopeCharacterAnimationTests()
 let halo = HaloAnimationTests()
+let ghost = GhostBlinkTests()
 let settingsChecks: [Check] = [
     ("settings.defaults-and-storage-keys", settings.testDefaultsAndOriginalStorageKeys),
     ("settings.audio-reactive-scale-bounds", {
@@ -43,6 +44,9 @@ let audioChecks: [Check] = [
     ("audio.steady-tone-does-not-repeat-beats", audio.testSteadyToneDoesNotProduceRepeatedPulses)
 ]
 let simulationChecks: [Check] = [
+    ("ghost.random-blinks-and-closed-hold", ghost.testRandomBlinksHaveClosedHoldAndIdenticalRest),
+    ("ghost.seed-frame-rates-invalid-clock", ghost.testSeedFrameRatesAndInvalidClock),
+    ("ghost.independent-blink-halo-idle-resume", ghost.testGhostIdleUpdatesBlinkAndHaloWithoutRopeIntegration),
     ("halo.lag-rebound-settling-frame-rates", halo.testLagReboundAndSettlingAcrossFrameRates),
     ("halo.idle-spacing-invalid-input", halo.testIdleSpacingAndInvalidInput),
     ("halo.random-head-plane-directions", halo.testRandomIdleTravelsAcrossHeadPlane),
