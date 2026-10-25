@@ -38,7 +38,7 @@ Requires macOS 12 or later and Xcode Command Line Tools. From the repository roo
 open dist/PigPendant.app
 ```
 
-The app bundle and a ZIP archive for the current architecture are created in `dist/`. The app uses an ad hoc signature and is not notarized by Apple. When opened on another Mac for the first time, macOS may show a security warning.
+The app bundle, ZIP archive, and DMG installer for the current architecture are created in `dist/`. Open `PigPendant-macOS-<architecture>.dmg`, then drag `PigPendant.app` onto the `Applications` shortcut to install it. The app uses an ad hoc signature and is not notarized by Apple. When opened on another Mac for the first time, macOS may show a security warning.
 
 To run the build, physics, and GUI smoke checks:
 

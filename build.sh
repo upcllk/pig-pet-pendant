@@ -83,8 +83,16 @@ cmp PigPendant/Resources/status-pig-spin.gif "$APP/Contents/Resources/status-pig
 ARCHIVE="$PWD/dist/PigPendant-macOS-$(uname -m).zip"
 ditto -c -k --keepParent "$APP" "$BUILD_DIR/PigPendant.zip"
 mv "$BUILD_DIR/PigPendant.zip" "$ARCHIVE"
+DMG_SOURCE="$BUILD_DIR/PigPendantDMG"
+mkdir -p "$DMG_SOURCE"
+ditto "$APP" "$DMG_SOURCE/PigPendant.app"
+ln -s /Applications "$DMG_SOURCE/Applications"
+DMG="$PWD/dist/PigPendant-macOS-$(uname -m).dmg"
+hdiutil create -volname "Pig Pendant" -srcfolder "$DMG_SOURCE" -ov -format UDZO "$DMG"
+hdiutil verify "$DMG"
 printf '\n✅ 编译完成：%s\n' "$APP"
 printf '应用压缩包：%s\n' "$ARCHIVE"
+printf '磁盘映像：%s\n' "$DMG"
 printf '启动命令：open "%s"\n' "$APP"
 if [[ "${1:-}" == "--test" ]]; then
   if domain_exists local.pigpendant.mac; then
