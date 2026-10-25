@@ -2,105 +2,6 @@ import AppKit
 import Foundation
 
 extension SettingsWindowController {
-    private func checkHangingArtwork() {
-        guard let cgImage = model.hangingImage.cgImage(forProposedRect: nil, context: nil, hints: nil),
-              cgImage.width == 360, cgImage.height == 384 else {
-            preconditionFailure("Hanging pig artwork dimensions are invalid")
-        }
-        let bitmap = NSBitmapImageRep(cgImage: cgImage)
-        let haloXRange = 235..<356
-        let haloYRange = 201..<344
-        var translucentHaloPixels = 0
-        var opaqueHaloPixels = 0
-        var nearWhiteEdgePixels = 0
-        for y in 0..<bitmap.pixelsHigh {
-            for x in 0..<bitmap.pixelsWide {
-                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else {
-                    preconditionFailure("Cannot inspect hanging pig artwork")
-                }
-                if color.alphaComponent > 0 {
-                    if haloXRange.contains(x) && haloYRange.contains(y) {
-                        if color.alphaComponent < 0.999 {
-                            translucentHaloPixels += 1
-                        } else {
-                            opaqueHaloPixels += 1
-                        }
-                    } else {
-                        precondition(color.alphaComponent > 0.999, "Hanging pig body must not be translucent")
-                    }
-                    if !(haloXRange.contains(x) && haloYRange.contains(y)),
-                       color.alphaComponent > 0.999,
-                       color.redComponent >= 240.0 / 255,
-                       color.greenComponent >= 240.0 / 255,
-                       color.blueComponent >= 235.0 / 255,
-                       max(color.redComponent, max(color.greenComponent, color.blueComponent))
-                            - min(color.redComponent, min(color.greenComponent, color.blueComponent)) <= 36.0 / 255,
-                       (-1...1).contains(where: { dy in
-                           (-1...1).contains(where: { dx in
-                               guard (dx != 0 || dy != 0), x + dx >= 0, x + dx < bitmap.pixelsWide,
-                                     y + dy >= 0, y + dy < bitmap.pixelsHigh,
-                                     let neighbor = bitmap.colorAt(x: x + dx, y: y + dy)?
-                                        .usingColorSpace(.deviceRGB) else { return false }
-                               return neighbor.alphaComponent < 0.001
-                           })
-                       }) {
-                        nearWhiteEdgePixels += 1
-                    }
-                }
-            }
-        }
-        precondition(translucentHaloPixels > 100 && opaqueHaloPixels > 0, "Hanging pig halo must retain soft edges")
-        precondition(nearWhiteEdgePixels <= 500, "Hanging pig silhouette must not have a bright white matte")
-
-        let xOrigin = 210
-        let yOrigin = 180
-        let width = 150
-        let height = 180
-        var halo = [Bool](repeating: false, count: width * height)
-        for y in 0..<height {
-            for x in 0..<width {
-                guard let color = bitmap.colorAt(x: x + xOrigin, y: y + yOrigin)?
-                    .usingColorSpace(.deviceRGB) else {
-                    preconditionFailure("Cannot inspect hanging pig halo")
-                }
-                halo[y * width + x] = color.alphaComponent > 0.5
-                    && color.redComponent > 245.0 / 255
-                    && color.greenComponent > 220.0 / 255
-                    && color.blueComponent < 230.0 / 255
-            }
-        }
-
-        var outside = [Bool](repeating: false, count: halo.count)
-        var queue: [Int] = []
-        for y in 0..<height {
-            for x in 0..<width where x == 0 || x == width - 1 || y == 0 || y == height - 1 {
-                let index = y * width + x
-                if !halo[index] && !outside[index] {
-                    outside[index] = true
-                    queue.append(index)
-                }
-            }
-        }
-        var cursor = 0
-        while cursor < queue.count {
-            let index = queue[cursor]
-            cursor += 1
-            let x = index % width
-            let y = index / width
-            for (nextX, nextY) in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
-            where nextX >= 0 && nextX < width && nextY >= 0 && nextY < height {
-                let next = nextY * width + nextX
-                if !halo[next] && !outside[next] {
-                    outside[next] = true
-                    queue.append(next)
-                }
-            }
-        }
-        let enclosedHaloPixels = halo.indices.filter { !halo[$0] && !outside[$0] }.count
-        precondition(enclosedHaloPixels > 0, "Hanging pig halo must be a closed loop")
-        NSLog("PASS: hanging pig foreground opacity and closed halo")
-    }
-
     private func captureSettingsSnapshot(named filename: String) {
         guard let content = window?.contentView,
               let bitmap = content.bitmapImageRepForCachingDisplay(in: content.bounds) else {
@@ -131,7 +32,7 @@ extension SettingsWindowController {
     }
 
     func smokeCheck() {
-        checkHangingArtwork()
+        model.smokeCheckCustomArtworkResources()
         let defaults = model.validationDefaults
         let legacyKeys = ParameterID.allCases.map(\.storageKey)
         let modeParameterKeys = DisplayMode.allCases.flatMap { mode in
@@ -191,7 +92,7 @@ extension SettingsWindowController {
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.mode == .net && model.activeRopes.count == 1)
         precondition(model.physics.endPoint.y < model.physics.nodes[0].y)
-        precondition(model.displayImage === model.netAnimation.frames[0])
+        precondition(model.displayImage === model.artwork.netImage)
         precondition(image.image === model.displayImage && !countStepper.isEnabled)
         precondition(countRow.isHidden && window?.contentView?.frame.height == 510)
         precondition(bambooPositionRow.isHidden)
@@ -428,6 +329,6 @@ extension SettingsWindowController {
             let previewURL = Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent(filename)
             do { try png.write(to: previewURL) } catch { preconditionFailure("Mode snapshot: \(error)") }
         }
-        NSLog("PASS: six-mode switch, bamboo artwork and idle/resume, 62-frame net animation, idle playback, pause/resume, separate artwork, ghost following and offsets, balloon counts 1–8, persistence, defaults, layout, all mode snapshots and close")
+        NSLog("PASS: six-mode switch, custom net/hanging artwork and local actions, idle playback, pause/resume, separate artwork, ghost following and offsets, balloon counts 1–8, persistence, defaults, layout, all mode snapshots and close")
     }
 }

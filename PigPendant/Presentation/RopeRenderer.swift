@@ -45,7 +45,7 @@ enum RopeRenderer {
             if scene.mode != .balloon {
                 context.rotate(by: balloon.endAngle * -0.70)
                 let rect = scene.mode == .net
-                    ? NSRect(x: -width * 140 / 207, y: -height, width: width, height: height)
+                    ? NSRect(x: -width * 0.52, y: -height, width: width, height: height)
                     : scene.mode == .hanging
                         ? NSRect(x: -width * 0.5, y: -height + 6, width: width, height: height)
                     : scene.mode == .rope

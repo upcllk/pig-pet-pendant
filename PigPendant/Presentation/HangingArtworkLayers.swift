@@ -7,7 +7,7 @@ struct HangingArtworkLayers {
 
     init(image: NSImage) throws {
         guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
-              cg.width == 360, cg.height == 384 else { throw ArtworkError.invalidHangingLayers }
+              cg.width == 768, cg.height == 768 else { throw ArtworkError.invalidHangingLayers }
         let width = cg.width
         let height = cg.height
         let bitmap = NSBitmapImageRep(cgImage: cg)
@@ -40,7 +40,8 @@ struct HangingArtworkLayers {
                     }
                 }
             }
-            if CGRect(x: 235, y: 201, width: 121, height: 143).contains(componentBounds) {
+            if CGRect(x: 0.64 * CGFloat(width), y: 0.52 * CGFloat(height),
+                      width: 0.35 * CGFloat(width), height: 0.42 * CGFloat(height)).contains(componentBounds) {
                 bounds = bounds.union(componentBounds)
                 for pixel in component { mask[pixel] = true }
             }

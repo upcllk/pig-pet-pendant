@@ -36,8 +36,7 @@ final class PendantSimulation {
                    initialPosition: CGFloat(settings.bambooPosition / 100))
     }
     var idleInterval: TimeInterval {
-        if settings.mode == .net { return min(1.0 / 15.0, timeline.frameDurations.min()!) }
-        if [.rope, .bamboo, .hanging].contains(settings.mode) && ropeAnimation.isAnimating {
+        if [.rope, .bamboo, .hanging, .net].contains(settings.mode) && ropeAnimation.isAnimating {
             return 1.0 / 60.0
         }
         if settings.mode == .balloon && balloonAnimations.contains(where: \.isAnimating) { return 1.0 / 60.0 }
@@ -123,7 +122,6 @@ final class PendantSimulation {
         let previousFrame = timeline.frameIndex
         let previousAnchor = physics.nodes.first ?? anchor
         let previousEndPoints = activeRopes.map(\.endPoint)
-        if settings.mode == .net { timeline.advance(elapsed: elapsed) }
         if settings.mode == .ghost {
             let delta = ghostTarget(anchor) - ghostPosition
             guard delta.x.isFinite, delta.y.isFinite, elapsed.isFinite, elapsed > 0 else { return false }
@@ -199,7 +197,7 @@ final class PendantSimulation {
     @discardableResult
     private func advanceCharacterAnimations(anchor: V2, previousAnchor: V2, previousEndPoints: [V2],
                                              elapsed: TimeInterval) -> Bool {
-        guard [.rope, .bamboo, .balloon, .hanging].contains(settings.mode), elapsed.isFinite, elapsed > 0 else { return false }
+        guard [.rope, .bamboo, .balloon, .hanging, .net].contains(settings.mode), elapsed.isFinite, elapsed > 0 else { return false }
         let anchorVelocity = elapsed > 0.25 ? V2(0, 0) : (anchor - previousAnchor) / CGFloat(elapsed)
         if settings.mode == .balloon {
             var changed = false
@@ -214,7 +212,7 @@ final class PendantSimulation {
         }
         let before = ropeAnimation.localPose
         let bobVelocity = elapsed > 0.25 ? V2(0, 0) : (physics.endPoint - previousEndPoints[0]) / CGFloat(elapsed)
-        if settings.mode == .bamboo || settings.mode == .hanging {
+        if [.bamboo, .hanging, .net].contains(settings.mode) {
             ropeAnimation.advance(elapsed: elapsed, anchorVelocity: anchorVelocity, bobVelocity: bobVelocity)
             var haloChanged = false
             if settings.mode == .hanging {

@@ -53,13 +53,19 @@ final class SimulationTests {
         simulation.advance(anchor: anchor, elapsed: 0.01)
         try expect(simulation.isIdle)
         let nodes = simulation.physics.nodes
-        let frame = simulation.timeline.frameIndex
-        try expect(simulation.advance(anchor: anchor, elapsed: 0.045))
-        try expectNotEqual(simulation.timeline.frameIndex, frame)
+        try expectEqual(simulation.updateInterval, 1.0 / 15)
+        for _ in 0..<300 {
+            simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
+            if simulation.ropeAnimation.isAnimating { break }
+        }
+        try expect(simulation.ropeAnimation.isAnimating)
+        let pose = simulation.ropeAnimation.localPose
+        for _ in 0..<6 { simulation.advance(anchor: anchor, elapsed: 1.0 / 60) }
+        try expectNotEqual(simulation.ropeAnimation.localPose, pose)
         for (before, after) in zip(nodes, simulation.physics.nodes) {
             try expectEqual((after - before).magnitude, 0)
         }
-        try expectEqual(simulation.updateInterval, 0.04)
+        try expectEqual(simulation.updateInterval, 1.0 / 60)
     }
 
     func testSettledRopeNudgeTriggersSwingOnlyDuringStretchAction() throws {
@@ -283,7 +289,7 @@ final class SimulationTests {
     }
 
     func testLocalCharactersAnimateWithoutWakingPhysics() throws {
-        for mode in [DisplayMode.balloon, .bamboo, .hanging] {
+        for mode in [DisplayMode.balloon, .bamboo, .hanging, .net] {
             for count in [1, 8] {
                 var settings = PendantSettings()
                 settings.mode = mode
@@ -330,7 +336,7 @@ final class SimulationTests {
                 simulation.apply(other)
                 try expect(simulation.balloonAnimations.allSatisfy { !$0.isAnimating })
                 try expectEqual(simulation.ropeAnimation.localPose, .rest)
-                if mode == .hanging {
+                if mode == .hanging || mode == .net {
                     for falling in [false, true] {
                         let reaction = PendantSimulation(settings: settings, frameDurations: durations,
                                                          ropeFrameDurations: ropeDurations, animationSeed: 2026)

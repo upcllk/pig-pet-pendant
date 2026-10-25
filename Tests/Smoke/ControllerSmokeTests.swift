@@ -35,7 +35,7 @@ extension PendantCoordinator {
         precondition(isIdle && timerInterval == idleTimerInterval)
         if mode == .rope { smokeCheckRopeAnimation() }
         if mode == .balloon || mode == .bamboo { smokeCheckLocalCharacters() }
-        if mode == .hanging { smokeCheckHangingCharacter() }
+        if mode == .hanging || mode == .net { smokeCheckCustomCharacter() }
         if mode == .bamboo {
             let savedLength = physics.length
             physics.length = 180
@@ -67,20 +67,10 @@ extension PendantCoordinator {
             tick()
         }
         if mode == .net {
-            smokeCheckNetEdges()
-            precondition(netAnimation.frames.count == 62 && abs(netAnimation.duration - 2.48) < 0.0001)
-            precondition(netAnimation.frames.allSatisfy { $0.size == NSSize(width: 207, height: 200) })
-            var elapsed = 0.0
-            for (index, delay) in netAnimation.frameDurations.enumerated() {
-                precondition(abs(delay - 0.04) < 0.0001)
-                precondition(netAnimation.frameIndex(at: elapsed + delay * 0.5) == index)
-                elapsed += delay
-            }
-            precondition(netAnimation.frameIndex(at: netAnimation.duration + 0.02) == 0)
-            let frame = netFrameIndex
+            precondition(artwork.netImage.size == NSSize(width: 512, height: 768))
             let heldNodes = physics.nodes
             tick(at: lastTick + 0.045)
-            precondition(isIdle && netFrameIndex != frame)
+            precondition(isIdle)
             precondition(zip(physics.nodes, heldNodes).allSatisfy { ($0 - $1).magnitude < 0.0001 })
             reset()
         }

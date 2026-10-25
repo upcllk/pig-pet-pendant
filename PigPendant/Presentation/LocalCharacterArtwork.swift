@@ -27,20 +27,8 @@ final class LocalCharacterArtwork {
             context.draw(source, in: CGRect(x: 0, y: 0, width: w, height: h))
             return context.makeImage()
         }
-        guard var raster = raster else {
+        guard let raster = raster else {
             throw ArtworkError.unreadable(URL(fileURLWithPath: "\(mode.rawValue) animation raster"))
-        }
-        if mode == .hanging {
-            WhiteColorKey.apply(to: &data, width: w, height: h)
-            guard let provider = CGDataProvider(data: Data(data) as CFData),
-                  let cleaned = CGImage(width: w, height: h, bitsPerComponent: 8, bitsPerPixel: 32,
-                                        bytesPerRow: w * 4, space: CGColorSpaceCreateDeviceRGB(),
-                                        bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
-                                        provider: provider, decode: nil, shouldInterpolate: true,
-                                        intent: .defaultIntent) else {
-                throw ArtworkError.unreadable(URL(fileURLWithPath: "hanging edge cleanup"))
-            }
-            raster = cleaned
         }
         pixels = data
         restImage = NSImage(cgImage: raster, size: image.size)
@@ -48,7 +36,7 @@ final class LocalCharacterArtwork {
     }
 
     func image(for pose: LocalCharacterPose) -> NSImage {
-        let pose = mode == .hanging && pose.gesture == .blink
+        let pose = (mode == .hanging || mode == .net) && pose.gesture == .blink
             ? LocalCharacterPose(gesture: .ears, step: pose.step) : pose
         guard pose.step > 0 && pose.step < LocalCharacterPose.steps else { return restImage }
         let blink = pose.blink
@@ -72,6 +60,17 @@ final class LocalCharacterArtwork {
                 let fx = sx - Double(left)
                 let fy = sy - Double(top)
                 let offset = (y * width + x) * 4
+                if mode == .net {
+                    // Protect both sides of the warp so mesh pixels cannot be dragged into the face.
+                    func isProtected(_ px: Int, _ py: Int) -> Bool {
+                        guard (0..<width).contains(px), (0..<height).contains(py) else { return true }
+                        let index = (py * width + px) * 4
+                        let alpha = Double(pixels[index + 3])
+                        return alpha == 0 || Double(pixels[index + 2]) > Double(pixels[index]) + alpha * 0.04
+                    }
+                    if isProtected(x, y) || isProtected(left, top) || isProtected(left + 1, top) ||
+                        isProtected(left, top + 1) || isProtected(left + 1, top + 1) { continue }
+                }
                 for channel in 0..<4 {
                     func value(_ px: Int, _ py: Int) -> Double {
                         guard (0..<width).contains(px), (0..<height).contains(py) else { return 0 }
@@ -98,6 +97,7 @@ final class LocalCharacterArtwork {
     // Coordinates are normalized source pixels, with y increasing downward.
     private func sourcePoint(_ point: CGPoint, blink: Double, earAngle: Double, nuzzle: Double) -> CGPoint {
         if mode == .hanging { return hangingSourcePoint(point, earAngle: earAngle, nuzzle: nuzzle) }
+        if mode == .net { return netSourcePoint(point, earAngle: earAngle, nuzzle: nuzzle) }
         var result = point
         if blink > 0 {
             let eyes: [CGPoint] = mode == .balloon
@@ -151,9 +151,9 @@ final class LocalCharacterArtwork {
     private func hangingSourcePoint(_ point: CGPoint, earAngle: Double, nuzzle: Double) -> CGPoint {
         if earAngle != 0 {
             for (index, ear) in [
-                (center: CGPoint(x: 0.196, y: 0.378), root: CGPoint(x: 0.232, y: 0.408),
+                (center: CGPoint(x: 0.194, y: 0.391), root: CGPoint(x: 0.232, y: 0.425),
                  radius: CGSize(width: 0.050, height: 0.074)),
-                (center: CGPoint(x: 0.800, y: 0.331), root: CGPoint(x: 0.757, y: 0.374),
+                (center: CGPoint(x: 0.786, y: 0.350), root: CGPoint(x: 0.745, y: 0.390),
                  radius: CGSize(width: 0.086, height: 0.089))
             ].enumerated() {
                 let radius = hypot((point.x - ear.center.x) / ear.radius.width,
@@ -167,12 +167,34 @@ final class LocalCharacterArtwork {
             }
         }
         if nuzzle > 0 {
-            let center = CGPoint(x: 0.543, y: 0.216)
+            let center = CGPoint(x: 0.525, y: 0.235)
             let radius = hypot((point.x - center.x) / 0.108, (point.y - center.y) / 0.075)
             if radius < 1 {
                 let amount = nuzzle * pow(1 - radius * radius, 2)
                 return CGPoint(x: center.x + (point.x - center.x) / (1 + 0.10 * amount) - 0.018 * amount,
                                y: center.y + (point.y - center.y) / (1 + 0.08 * amount) + 0.026 * amount)
+            }
+        }
+        return point
+    }
+
+    private func netSourcePoint(_ point: CGPoint, earAngle: Double, nuzzle: Double) -> CGPoint {
+        if earAngle != 0 {
+            for (index, center) in [CGPoint(x: 0.60, y: 0.79), CGPoint(x: 0.23, y: 0.92)].enumerated() {
+                let dx = point.x - center.x
+                let dy = point.y - center.y
+                let radius = hypot(dx / 0.13, dy / 0.09)
+                guard radius < 1 else { continue }
+                let amount = earAngle * pow(1 - radius * radius, 2) * (index == 0 ? 1 : -1)
+                return CGPoint(x: point.x + amount * 0.085, y: point.y + amount * 0.025)
+            }
+        }
+        if nuzzle > 0 {
+            let center = CGPoint(x: 0.255, y: 0.723)
+            let radius = hypot((point.x - center.x) / 0.15, (point.y - center.y) / 0.10)
+            if radius < 1 {
+                let amount = nuzzle * pow(1 - radius * radius, 2)
+                return CGPoint(x: point.x + amount * 0.025, y: point.y + amount * 0.012)
             }
         }
         return point

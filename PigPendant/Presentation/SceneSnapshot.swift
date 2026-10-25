@@ -31,6 +31,7 @@ struct SceneSnapshot {
         self.isVisible = isVisible
         pigSize = CGFloat(simulation.settings[.size])
         displayImage = mode == .bamboo ? artwork.bambooCharacter.image(for: simulation.ropeAnimation.localPose)
+            : mode == .net ? artwork.netCharacter.image(for: simulation.ropeAnimation.localPose)
             : mode == .hanging ? artwork.hangingCharacter.image(for: simulation.ropeAnimation.localPose)
             : artwork.image(mode: mode, frameIndex: simulation.artworkFrameIndex)
         let sample = simulation.ropeAnimation.sample

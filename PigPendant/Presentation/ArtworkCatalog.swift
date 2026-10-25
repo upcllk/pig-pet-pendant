@@ -7,12 +7,14 @@ struct ArtworkCatalog {
     let balloon: NSImage
     let bamboo: NSImage
     let hanging: NSImage
+    let netImage: NSImage
     let ghost: NSImage
     let net: AnimatedArtwork
     let rope: AnimatedArtwork
     let balloonCharacter: LocalCharacterArtwork
     let bambooCharacter: LocalCharacterArtwork
     let hangingCharacter: LocalCharacterArtwork
+    let netCharacter: LocalCharacterArtwork
     let hangingLayers: HangingArtworkLayers
 
     init(resourceURL: URL) throws {
@@ -22,17 +24,24 @@ struct ArtworkCatalog {
             guard let image = NSImage(contentsOf: url) else { throw ArtworkError.unreadable(url) }
             return image
         }
-        func animation(_ name: String, cleanNetEdges: Bool = false) throws -> AnimatedArtwork {
+        func animation(_ name: String) throws -> AnimatedArtwork {
             let url = directory.appendingPathComponent(name)
-            guard let animation = AnimatedArtwork(url: url, cleanNetEdges: cleanNetEdges) else { throw ArtworkError.unreadable(url) }
+            guard let animation = AnimatedArtwork(url: url) else { throw ArtworkError.unreadable(url) }
             return animation
         }
         pig = try image("pig.png")
         balloon = try image("balloon.png")
         bamboo = try image("bamboo-pig.png")
-        hanging = try image("hanging-pig.png")
+        hanging = try image("hanging-pig-custom.png")
+        let netSource = try image("net-pig-custom.png")
+        guard let netCG = netSource.cgImage(forProposedRect: nil, context: nil, hints: nil),
+              netCG.width == 768, netCG.height == 768,
+              let cropped = netCG.cropping(to: CGRect(x: 256, y: 0, width: 512, height: 768)) else {
+            throw ArtworkError.unreadable(directory.appendingPathComponent("net-pig-custom.png"))
+        }
+        netImage = NSImage(cgImage: cropped, size: NSSize(width: 512, height: 768))
         ghost = try image("ghost-pig.png")
-        net = try animation("net-pig.png", cleanNetEdges: true)
+        net = try animation("net-pig.png")
         let ropeAnimation = try animation("rope-pig.png")
         guard ropeAnimation.frames.count == 75 else {
             throw ArtworkError.unreadable(directory.appendingPathComponent("rope-pig.png"))
@@ -43,13 +52,14 @@ struct ArtworkCatalog {
         let layers = try HangingArtworkLayers(image: hanging)
         hangingLayers = layers
         hangingCharacter = try LocalCharacterArtwork(image: layers.body, mode: .hanging)
+        netCharacter = try LocalCharacterArtwork(image: netImage, mode: .net)
     }
 
     func image(mode: DisplayMode, frameIndex: Int) -> NSImage {
         switch mode {
         case .rope: return rope.frames[frameIndex]
         case .balloon: return balloon
-        case .net: return net.frames[frameIndex]
+        case .net: return netImage
         case .bamboo: return bamboo
         case .hanging: return hanging
         case .ghost: return ghost
