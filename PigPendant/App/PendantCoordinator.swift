@@ -61,7 +61,7 @@ final class PendantCoordinator {
         if let validationAnchor = validationAnchor { return validationAnchor }
         #endif
         let point = NSEvent.mouseLocation
-        if mode == .ghost { return V2(point.x, point.y) }
+        if simulation.isGhostMode { return V2(point.x, point.y) }
         return V2(point.x + 4, point.y + (mode == .balloon ? 6 : -6))
     }
 

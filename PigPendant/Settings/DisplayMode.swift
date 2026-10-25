@@ -8,8 +8,9 @@ enum DisplayMode: String, CaseIterable {
     case bamboo
     case hanging
     case ghost
+    case ghostWave
 
-    static let allCases: [DisplayMode] = [.rope, .ghost, .balloon, .net, .bamboo, .hanging]
+    static let allCases: [DisplayMode] = [.rope, .ghost, .ghostWave, .balloon, .net, .bamboo, .hanging]
 
     var title: String {
         switch self {
@@ -19,6 +20,7 @@ enum DisplayMode: String, CaseIterable {
         case .bamboo: return "竹子小猪"
         case .hanging: return "猪上吊"
         case .ghost: return "幽灵猪"
+        case .ghostWave: return "幽灵猪（波浪版）"
         }
     }
 
@@ -30,12 +32,14 @@ enum DisplayMode: String, CaseIterable {
         case .bamboo: return "显示 / 隐藏竹子小猪"
         case .hanging: return "显示 / 隐藏上吊猪"
         case .ghost: return "显示 / 隐藏幽灵猪"
+        case .ghostWave: return "显示 / 隐藏波浪幽灵猪"
         }
     }
 
     var visibilityCheckboxTitle: String {
         switch self {
         case .ghost: return "显示幽灵猪"
+        case .ghostWave: return "显示波浪幽灵猪"
         case .hanging: return "显示上吊猪"
         default: return "显示小猪"
         }

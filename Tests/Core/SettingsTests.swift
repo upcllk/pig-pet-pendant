@@ -31,7 +31,7 @@ final class SettingsTests {
     func testDefaultsAndOriginalStorageKeys() throws {
         let settings = store.load()
         try expectEqual(settings.mode, .rope)
-        try expectEqual(Array(DisplayMode.allCases.prefix(2)), [.rope, .ghost])
+        try expectEqual(Array(DisplayMode.allCases.prefix(3)), [.rope, .ghost, .ghostWave])
         try expectEqual(settings.balloonCount, 2)
         try expectEqual(ParameterID.allCases.map(\.storageKey),
                        ["RopeLength", "PigSize", "Weight", "Elasticity", "NudgeSwingAmplitude", "DampingRate", "Gravity"])
@@ -164,7 +164,9 @@ final class SettingsTests {
         let settings = store.load()
         for mode in DisplayMode.allCases {
             for parameter in ParameterID.allCases {
-                let expected = legacyValues[parameter] ?? parameter.defaultValue
+                let expected = mode == .ghostWave
+                    ? parameter.defaultValue
+                    : legacyValues[parameter] ?? parameter.defaultValue
                 try expectEqual(settings[parameter, mode: mode], expected)
                 try expectEqual(defaults.double(forKey: parameter.storageKey(for: mode)), expected)
             }
@@ -176,7 +178,28 @@ final class SettingsTests {
         let reloaded = store.load()
         try expectEqual(reloaded[.length, mode: .rope], 555)
         for mode in DisplayMode.allCases where mode != .rope {
-            try expectEqual(reloaded[.length, mode: mode], legacyValues[.length]!)
+            let expected = mode == .ghostWave ? ParameterID.length.defaultValue : legacyValues[.length]!
+            try expectEqual(reloaded[.length, mode: mode], expected)
+        }
+    }
+
+    func testNewWaveModeDefaultsDoNotTriggerLegacyMigrationForSavedModes() throws {
+        for mode in DisplayMode.allCases where mode != .ghostWave {
+            for parameter in ParameterID.allCases {
+                defaults.set(parameter.defaultValue + 1, forKey: parameter.storageKey(for: mode))
+            }
+        }
+        for parameter in ParameterID.allCases {
+            defaults.set(parameter.defaultValue + 2, forKey: parameter.storageKey)
+        }
+        let loaded = store.load()
+        for mode in DisplayMode.allCases where mode != .ghostWave {
+            for parameter in ParameterID.allCases {
+                try expectEqual(loaded[parameter, mode: mode], parameter.defaultValue + 1)
+            }
+        }
+        for parameter in ParameterID.allCases {
+            try expectEqual(loaded[parameter, mode: .ghostWave], parameter.defaultValue)
         }
     }
 

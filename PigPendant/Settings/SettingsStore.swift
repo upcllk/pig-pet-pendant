@@ -20,13 +20,15 @@ final class SettingsStore {
             }
         }
         for parameter in ParameterID.allCases {
-            let needsMigration = DisplayMode.allCases.contains {
+            let needsMigration = DisplayMode.allCases.filter { $0 != .ghostWave }.contains {
                 defaults.object(forKey: parameter.storageKey(for: $0)) == nil
             }
             let legacyValue = needsMigration ? loadLegacyValue(for: parameter) : nil
             for mode in DisplayMode.allCases {
                 let key = parameter.storageKey(for: mode)
-                let fallback = legacyValue ?? defaultSettings[parameter, mode: mode]
+                let fallback = mode == .ghostWave
+                    ? defaultSettings[parameter, mode: mode]
+                    : legacyValue ?? defaultSettings[parameter, mode: mode]
                 guard let saved = defaults.object(forKey: key) else {
                     applyMigrationFallback(fallback, parameter: parameter, mode: mode, key: key, settings: &settings)
                     continue

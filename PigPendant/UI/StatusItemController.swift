@@ -113,7 +113,7 @@ final class StatusItemController: NSObject {
         sizeParent.submenu = sizeMenu
         menu.addItem(sizeParent)
 
-        if controller.mode != .ghost {
+        if controller.mode != .ghost && controller.mode != .ghostWave {
             let lengthTitle = ParameterID.length.title(mode: controller.mode)
             let lengthMenu = NSMenu(title: lengthTitle)
             for n in [20, 60, 100, 140, 220, 320, 440, 600, 900, 1200] {

@@ -21,7 +21,9 @@ extension SettingsWindowController {
         }
         precondition(countRow.isHidden == (model.mode != .balloon))
         precondition(bambooPositionRow.isHidden == (model.mode != .bamboo))
-        precondition(ghostOffsetRows.allSatisfy { $0.row.isHidden == (model.mode != .ghost) })
+        precondition(ghostOffsetRows.allSatisfy {
+            $0.row.isHidden == (model.mode != .ghost && model.mode != .ghostWave)
+        })
         precondition(parameterRows.first { $0.parameter == .sway }?.row.isHidden == (model.mode != .rope))
         content.cacheDisplay(in: content.bounds, to: bitmap)
         guard let png = bitmap.representation(using: .png, properties: [:]) else {
@@ -104,6 +106,14 @@ extension SettingsWindowController {
         precondition(defaults.string(forKey: "DisplayMode") == "net")
         precondition(model.physics.length == CGFloat(originalModeParameters[.net]![.length]!))
         precondition(model.pigSize == CGFloat(originalModeParameters[.net]![.size]!))
+        model.smokeCheck()
+        modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .ghostWave)!
+        modeControl.sendAction(modeControl.action, to: modeControl.target)
+        precondition(model.mode == .ghostWave && model.displayImage === model.artwork.ghostWave)
+        precondition(visibility.title == "显示波浪幽灵猪" && countRow.isHidden && bambooPositionRow.isHidden)
+        precondition(window?.contentView?.frame.height == 390)
+        precondition(ghostOffsetRows.allSatisfy { !$0.row.isHidden })
+        precondition(parameterRows.allSatisfy { $0.row.isHidden == ($0.parameter != .size) })
         model.smokeCheck()
         modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .bamboo)!
         modeControl.sendAction(modeControl.action, to: modeControl.target)
@@ -252,11 +262,11 @@ extension SettingsWindowController {
             let previewHeight: CGFloat = previewMode == .bamboo ? 520 : 360
             let preview = PigOverlayView(frame: NSRect(x: 0, y: 0, width: 460, height: previewHeight))
             let anchorY = previewMode == .balloon ? 45
-                : previewMode == .ghost ? previewHeight * 0.5 - 38
+                : model.simulation.isGhostMode ? previewHeight * 0.5 - 38
                 : previewHeight - (previewMode == .bamboo ? 90 : 50)
             let anchor = V2(230, anchorY)
             for rope in model.activeRopes { rope.reset(anchor: anchor) }
-            if previewMode == .ghost { model.simulation.reset(anchor: anchor) }
+            if model.simulation.isGhostMode { model.simulation.reset(anchor: anchor) }
             precondition(model.activeRopes.allSatisfy {
                 previewMode == .balloon ? $0.endPoint.y > anchor.y : $0.endPoint.y < anchor.y
             })
@@ -327,10 +337,11 @@ extension SettingsWindowController {
                     : bendProgress == 0.5 ? "bamboo-bending-smoke.png" : "bamboo-smoke.png"
             case .hanging: filename = "hanging-smoke.png"
             case .ghost: filename = "ghost-smoke.png"
+            case .ghostWave: filename = "ghost-wave-smoke.png"
             }
             let previewURL = Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent(filename)
             do { try png.write(to: previewURL) } catch { preconditionFailure("Mode snapshot: \(error)") }
         }
-        NSLog("PASS: six-mode switch, custom net/hanging artwork and local actions, idle playback, pause/resume, separate artwork, ghost following and offsets, balloon counts 1–8, persistence, defaults, layout, all mode snapshots and close")
+        NSLog("PASS: seven-mode switch, custom net/hanging artwork and local actions, idle playback, pause/resume, separate artwork, ghost following and offsets, balloon counts 1–8, persistence, defaults, layout, all mode snapshots and close")
     }
 }

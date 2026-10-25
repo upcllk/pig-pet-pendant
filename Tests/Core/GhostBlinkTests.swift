@@ -103,6 +103,39 @@ final class GhostBlinkTests {
         try expectEqual(simulation.ghostBody.pose, GhostBodyPose())
     }
 
+    func testWaveGhostIdleUpdatesBlinkAndHaloWithoutRopeIntegration() throws {
+        var settings = PendantSettings()
+        settings.mode = .ghostWave
+        let simulation = PendantSimulation(settings: settings, frameDurations: Array(repeating: 0.04, count: 62),
+                                           ropeFrameDurations: Array(repeating: 0.04, count: 75), animationSeed: 17)
+        let anchor = V2(320, -120)
+        simulation.reset(anchor: anchor)
+        let position = simulation.ghostPosition
+        let nodes = simulation.physics.nodes
+        var sawBlink = false
+        var sawHalo = false
+        var sawBodyGesture = false
+        for _ in 0..<3600 {
+            simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
+            try expect(simulation.isIdle)
+            try expectEqual((simulation.ghostPosition - position).magnitude, 0)
+            try expect(zip(nodes, simulation.physics.nodes).allSatisfy { ($0 - $1).magnitude == 0 })
+            sawBlink = sawBlink || simulation.ghostBlink.isAnimating
+            sawHalo = sawHalo || simulation.haloAnimation.isAnimating
+            sawBodyGesture = sawBodyGesture || simulation.ghostBody.isGesturing
+            try expectEqual(simulation.updateInterval, 1.0 / 60)
+        }
+        try expect(sawBlink && sawHalo && sawBodyGesture)
+        try expect(simulation.isGhostMode)
+        settings.mode = .ghost
+        simulation.apply(settings)
+        try expect(simulation.isGhostMode)
+        settings.mode = .rope
+        simulation.apply(settings)
+        try expect(!simulation.isGhostMode)
+        try expectEqual(simulation.ghostBlink.sample, .rest)
+    }
+
     func testBodyLagContinuityAndSettling() throws {
         for rate in [15, 30, 60, 120, 144] {
             var body = GhostBodyAnimation()

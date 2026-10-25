@@ -24,7 +24,7 @@ extension PigAppDelegate {
             precondition(NSApp.sendAction(action, to: item.target, from: item))
             precondition(controller.mode == mode && defaults.string(forKey: "DisplayMode") == mode.rawValue)
             precondition(modes.items.map(\.title) == DisplayMode.allCases.map(\.title))
-            precondition(Array(DisplayMode.allCases.prefix(2)) == [.rope, .ghost])
+            precondition(Array(DisplayMode.allCases.prefix(3)) == [.rope, .ghost, .ghostWave])
             guard let refreshed = statusItem?.menu?.items.first(where: { $0.submenu?.title == "模式" })?.submenu else {
                 preconditionFailure("Missing refreshed mode menu")
             }
@@ -37,7 +37,7 @@ extension PigAppDelegate {
             }
             let length = menu.items.first(where: { $0.title == ParameterID.length.title(mode: mode) })
             precondition(visibility.state == .on && size.submenu != nil && reset.isEnabled)
-            precondition((length?.submenu != nil) == (mode != .ghost))
+            precondition((length?.submenu != nil) == (mode != .ghost && mode != .ghostWave))
             precondition(menu.items.allSatisfy {
                 !$0.title.contains("鼠标旁跟随") && !$0.title.contains("音乐律动")
             })
@@ -52,7 +52,7 @@ extension PigAppDelegate {
                 precondition(controller.balloonCount == 8)
             }
         }
-        NSLog("PASS: all six real mode menu actions, saved selection and checkmarks")
+        NSLog("PASS: all seven real mode menu actions, saved selection and checkmarks")
     }
 
 }

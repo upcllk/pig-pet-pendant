@@ -44,10 +44,11 @@ final class PendantSimulation {
             return 1.0 / 60.0
         }
         if settings.mode == .balloon && balloonAnimations.contains(where: \.isAnimating) { return 1.0 / 60.0 }
-        if settings.mode == .ghost { return 1.0 / 60.0 }
-        if [.hanging, .ghost].contains(settings.mode) && haloAnimation.isAnimating { return 1.0 / 60.0 }
+        if isGhostMode { return 1.0 / 60.0 }
+        if [.hanging, .ghost, .ghostWave].contains(settings.mode) && haloAnimation.isAnimating { return 1.0 / 60.0 }
         return 1.0 / 15.0
     }
+    var isGhostMode: Bool { settings.mode == .ghost || settings.mode == .ghostWave }
     var updateInterval: TimeInterval { isIdle ? idleInterval : 1.0 / 60.0 }
     var artworkFrameIndex: Int {
         settings.mode == .ghost ? ghostBlink.sample.firstIndex :
@@ -132,7 +133,7 @@ final class PendantSimulation {
         let previousFrame = timeline.frameIndex
         let previousAnchor = physics.nodes.first ?? anchor
         let previousEndPoints = activeRopes.map(\.endPoint)
-        if settings.mode == .ghost {
+        if isGhostMode {
             let delta = ghostTarget(anchor) - ghostPosition
             guard delta.x.isFinite, delta.y.isFinite, elapsed.isFinite, elapsed > 0 else { return false }
             let previousPosition = ghostPosition
@@ -149,8 +150,11 @@ final class PendantSimulation {
             let velocity = elapsed > 0.25 ? V2(0, 0) : (ghostPosition - previousPosition) / CGFloat(elapsed)
             let bodyChanged = ghostBody.advance(elapsed: elapsed, blinking: ghostBlink.isAnimating,
                                                 horizontalVelocity: Double(velocity.x))
+            let characterActive = settings.mode == .ghostWave
+                ? ghostBlink.isAnimating || ghostBody.isGesturing
+                : ghostBlink.isAnimating
             let haloChanged = haloAnimation.advance(elapsed: elapsed, localVelocity: velocity,
-                                                      characterActive: ghostBlink.isAnimating)
+                                                     characterActive: characterActive)
             return (ghostPosition - previousPosition).magnitude > 0 || blinkChanged || bodyChanged || haloChanged
         }
         let movementTolerance: CGFloat = settings.mode == .bamboo ? 1 : 0.01

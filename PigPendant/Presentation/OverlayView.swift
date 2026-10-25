@@ -9,7 +9,7 @@ final class PigOverlayView: NSView {
         guard let scene = scene, scene.isVisible,
               let context = NSGraphicsContext.current?.cgContext else { return }
         let origin = window?.frame.origin ?? .zero
-        if scene.mode == .ghost, let position = scene.ghostPosition {
+        if (scene.mode == .ghost || scene.mode == .ghostWave), let position = scene.ghostPosition {
             RopeRenderer.drawGhost(scene: scene, position: position, context: context, origin: origin)
             return
         }

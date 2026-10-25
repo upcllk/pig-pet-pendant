@@ -191,7 +191,7 @@ final class SettingsWindowController: NSWindowController {
     func refresh() {
         let isBalloon = model.mode == .balloon
         let isBamboo = model.mode == .bamboo
-        let isGhost = model.mode == .ghost
+        let isGhost = model.mode == .ghost || model.mode == .ghostWave
         let isRope = model.mode == .rope
         modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: model.mode) ?? 0
         visibility.title = model.mode.visibilityCheckboxTitle
