@@ -6,7 +6,7 @@
 
 A small desktop pig pendant that follows your mouse. Native macOS and Windows clients are available. The Windows client now includes all seven character modes, layered artwork, motion, editable defaults, and system-audio-reactive tray icon in a self-contained single-file EXE.
 
-Starting with `v0.2.2`, a release tag builds the Windows x64 EXE and macOS arm64 DMG/ZIP on their respective GitHub Actions runners. The workflow publishes one Release with checksums only after both builds and checks pass.
+Starting with `v0.2.2`, a release tag builds the Windows x64 EXE and macOS arm64 DMG/ZIP on their respective GitHub Actions runners. The workflow publishes one Release with checksums only after both builds and checks pass. Version `v0.2.3` fixes a visible hem-wave loop seam in Little Ghost Pig and adds full-cycle seam regression checks for both ghost modes.
 
 ![Preview of the original six modes](docs/media/modes.gif)
 
@@ -15,8 +15,8 @@ Starting with `v0.2.2`, a release tag builds the Windows x64 EXE and macOS arm64
 ## Modes
 
 - **Rope Pendant**: The default mode. The pig reacts to movement and falling, with randomly spaced blinks, ear movements, and body gestures at rest. After the rope settles, a body gesture can nudge the pig into a short swing; its amplitude is adjustable from 0–200% in Settings. Actions return smoothly to rest instead of looping the entire GIF.
-- **Ghost Pig**: The second mode in the mode list. Follows the mouse without a rope, with random progressive blinks and ear/hand gestures, continuously flowing rounded ghost feet and an independently drifting, tilting, rebounding halo. Halo spacing and size are adjustable independently.
-- **Little Ghost Pig**: A separately saved mode with a default size of 96 pt that keeps the original Ghost Pig. Uses the user's square transparent artwork, reuses and independently positions the original halo, and adds random blinks, more visible ear motion, and a continuously moving wavy hem. Its halo spacing and size are saved independently.
+- **Ghost Pig**: The second mode in the mode list. Follows the mouse without a rope, with random progressive blinks and ear/hand gestures, continuously flowing rounded ghost feet with a seamless loop, and an independently drifting, tilting, rebounding halo. Halo spacing and size are adjustable independently.
+- **Little Ghost Pig**: A separately saved mode with a default size of 96 pt that keeps the original Ghost Pig. Uses the user's square transparent artwork, reuses and independently positions the original halo, and adds random blinks, more visible ear motion, and a continuously moving wavy hem with a seamless loop. Its halo spacing and size are saved independently.
 - **Pig Balloons**: Shows 1–8 pig-shaped balloons floating upward; the default is 2. Each has independently timed blinks, gentle ear movements and nose gestures, with movement reactions.
 - **Pig in a Net**: Uses the user's manually cleaned transparent image, removing only the arrowed extra foot's pink and dark pixels in the display copy. The original PNG, other facial features, blue mesh, and transparent holes remain unchanged; the old 62-frame loop is no longer used.
 - **Pig on Bamboo**: The pig hugs a bamboo stalk that bends with mouse movement, with random blinks, ear movements and nose gestures that preserve its grip.
