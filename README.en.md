@@ -4,7 +4,7 @@
 
 # Pig Pet Pendant
 
-A small desktop pig pendant that follows your mouse. Native macOS and Windows clients are available. The Windows client now includes the six current character modes, layered artwork, motion, editable defaults, and system-audio-reactive tray icon in a self-contained single-file EXE.
+A small desktop pig pendant that follows your mouse. Native macOS and Windows clients are available. The Windows client now includes all seven character modes, layered artwork, motion, editable defaults, and system-audio-reactive tray icon in a self-contained single-file EXE.
 
 ![Preview of the original six modes](docs/media/modes.gif)
 

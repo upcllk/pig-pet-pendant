@@ -23,6 +23,31 @@ internal static class Program
     private static int Main(string[] args)
     {
         #if TESTING
+        if (args.Contains("--render-wave-preview"))
+        {
+            var artwork = new Artwork();
+            var wave = new WaveGhostArtwork(artwork.Get(DisplayMode.GhostWave));
+            var visual = new System.Windows.Media.DrawingVisual();
+            using (var drawing = visual.RenderOpen())
+            {
+                drawing.DrawRectangle(System.Windows.Media.Brushes.White, null, new Rect(0, 0, 480, 180));
+                var poses = new[] { new GhostBodyPose(0, 0, 0), new GhostBodyPose(0, 0, 0),
+                    new GhostBodyPose(40, 0, 48), new GhostBodyPose(70, 0, 96) };
+                for (var i = 0; i < poses.Length; i++)
+                {
+                    var x = 12 + i * 120;
+                    drawing.DrawImage(artwork.Halo(DisplayMode.GhostWave), new Rect(x, 65 - 96 * .29, 96, 144));
+                    drawing.DrawImage(wave.Render(poses[i], i == 1 ? new FrameSample(3, 3, 0) : FrameSample.Rest), new Rect(x, 65, 96, 96));
+                }
+            }
+            var target = new System.Windows.Media.Imaging.RenderTargetBitmap(480, 180, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            target.Render(visual);
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(target));
+            using var output = File.Create(args.SkipWhile(arg => arg != "--render-wave-preview").Skip(1).First());
+            encoder.Save(output);
+            return 0;
+        }
         if (args.Contains("--self-check"))
         {
             try
@@ -32,6 +57,17 @@ internal static class Program
                     throw new InvalidDataException("Character frame count");
                 foreach (var mode in Enum.GetValues<DisplayMode>())
                     if (artwork.Get(mode, 0).PixelWidth <= 0) throw new InvalidDataException($"Artwork {mode}");
+                if (artwork.Get(DisplayMode.GhostWave).PixelWidth != 768 || artwork.AppIcon.PixelWidth < 128)
+                    throw new InvalidDataException("New wave ghost or app icon missing");
+                var wave = new WaveGhostArtwork(artwork.Get(DisplayMode.GhostWave));
+                var restWave = Artwork.Pixels(wave.Render(default, FrameSample.Rest)).Pixels;
+                var blinkWave = Artwork.Pixels(wave.Render(default, new FrameSample(3, 3, 0))).Pixels;
+                var eyeChanged = false;
+                for (var y = 130; y < 195; y++) for (var x = 65; x < 220; x++)
+                    eyeChanged |= restWave[(y * 384 + x) * 4] != blinkWave[(y * 384 + x) * 4];
+                var nose = (220 * 384 + 140) * 4;
+                if (!eyeChanged || !restWave.AsSpan(nose, 4).SequenceEqual(blinkWave.AsSpan(nose, 4)))
+                    throw new InvalidDataException("Wave ghost blink or protected nose");
                 using (var notice = typeof(Program).Assembly.GetManifestResourceStream("PigPendant.Licenses.NAudio.txt"))
                     if (notice is null || notice.Length < 500) throw new InvalidDataException("NAudio license notice");
                 var opaqueRed = Artwork.Bitmap([0, 0, 255, 255], 1, 1);
@@ -61,6 +97,20 @@ internal static class Program
                     File.WriteAllText(configurationPath, edited);
                     if (settingsStore.Load().Get(Parameter.Sway) != 75 || settingsStore.Defaults().Get(Parameter.Sway) != 120)
                         throw new InvalidDataException("User settings precedence or edited defaults");
+                    var oldDefaults = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(configurationPath))!;
+                    oldDefaults["parameters"]!.AsObject().Remove("ghostWave");
+                    File.WriteAllText(configurationPath, oldDefaults.ToJsonString());
+                    if (settingsStore.Defaults().Get(Parameter.Size, DisplayMode.GhostWave) != 96 ||
+                        settingsStore.Defaults().Get(Parameter.Sway) != 120 ||
+                        settingsStore.Load().Get(Parameter.Sway) != 75)
+                        throw new InvalidDataException("Legacy defaults migration changed personal values");
+                    var personal = settingsStore.Load();
+                    personal.SetHaloSpacing(DisplayMode.GhostWave, 42);
+                    personal.SetHaloSize(DisplayMode.GhostWave, 175);
+                    settingsStore.Save(personal);
+                    if (settingsStore.Load().HaloSpacing(DisplayMode.GhostWave) != 42 ||
+                        settingsStore.Load().HaloSize(DisplayMode.GhostWave) != 175)
+                        throw new InvalidDataException("Wave halo settings did not persist");
                 }
                 finally
                 {
@@ -145,7 +195,7 @@ internal sealed class Controller : IDisposable
     #endif
     private static readonly (DisplayMode mode, string title)[] modes =
     [
-        (DisplayMode.Rope, "绳子挂件"), (DisplayMode.Ghost, "幽灵猪"),
+        (DisplayMode.Rope, "绳子挂件"), (DisplayMode.Ghost, "幽灵猪"), (DisplayMode.GhostWave, "小小幽灵猪"),
         (DisplayMode.Balloon, "猪猪气球"), (DisplayMode.Net, "网兜小猪"),
         (DisplayMode.Bamboo, "竹子小猪"), (DisplayMode.Hanging, "猪上吊")
     ];
@@ -222,7 +272,7 @@ internal sealed class Controller : IDisposable
     private Vec Anchor()
     {
         var point = Native.Cursor();
-        return settings.Mode == DisplayMode.Ghost ? point : point + new Vec(4, settings.Mode == DisplayMode.Balloon ? -6 : 6);
+        return simulation.IsGhostMode ? point : point + new Vec(4, settings.Mode == DisplayMode.Balloon ? -6 : 6);
     }
     private void Tick()
     {
@@ -303,7 +353,7 @@ internal sealed class Controller : IDisposable
         {
             DisplayMode.Balloon => "显示 / 隐藏猪猪气球", DisplayMode.Net => "显示 / 隐藏网兜小猪",
             DisplayMode.Bamboo => "显示 / 隐藏竹子小猪", DisplayMode.Hanging => "显示 / 隐藏上吊猪",
-            DisplayMode.Ghost => "显示 / 隐藏幽灵猪", _ => "显示 / 隐藏小猪"
+            DisplayMode.Ghost => "显示 / 隐藏幽灵猪", DisplayMode.GhostWave => "显示 / 隐藏小小幽灵猪", _ => "显示 / 隐藏小猪"
         });
         if (visible is Forms.ToolStripMenuItem visibleItem) visibleItem.Checked = settings.Visible;
         visible.Click += (_, _) => SetVisible(!settings.Visible);
@@ -327,7 +377,28 @@ internal sealed class Controller : IDisposable
             sizeMenu.DropDownItems.Add(option);
         }
         menu.Items.Add(sizeMenu);
-        if (settings.Mode != DisplayMode.Ghost)
+        if (PendantSettings.HasHalo(settings.Mode))
+        {
+            var spacingMenu = new Forms.ToolStripMenuItem("光环间距");
+            for (var n = -120; n <= 120; n += 40)
+            {
+                var value = n;
+                var option = new Forms.ToolStripMenuItem($"{n:+0;-0;0} 点") { Checked = Math.Abs(settings.HaloSpacing(settings.Mode) - n) < .1 };
+                option.Click += (_, _) => { settings.SetHaloSpacing(settings.Mode, value); Changed(); };
+                spacingMenu.DropDownItems.Add(option);
+            }
+            menu.Items.Add(spacingMenu);
+            var haloSizeMenu = new Forms.ToolStripMenuItem("光环大小");
+            foreach (var n in new[] { 25, 50, 75, 100, 125, 150, 200, 250, 300 })
+            {
+                var value = n;
+                var option = new Forms.ToolStripMenuItem($"{n}%") { Checked = Math.Abs(settings.HaloSize(settings.Mode) - n) < .1 };
+                option.Click += (_, _) => { settings.SetHaloSize(settings.Mode, value); Changed(); };
+                haloSizeMenu.DropDownItems.Add(option);
+            }
+            menu.Items.Add(haloSizeMenu);
+        }
+        if (!simulation.IsGhostMode)
         {
             var lengthMenu = new Forms.ToolStripMenuItem(settings.Mode == DisplayMode.Bamboo ? "竹子长度" : "绳子长度");
             foreach (var n in new[] { 20, 60, 100, 140, 220, 320, 440, 600, 900, 1200 })
@@ -348,7 +419,7 @@ internal sealed class Controller : IDisposable
         var window = new Window
         {
             Title = "猪猪挂件 · 设置", Width = 490, Height = 610, MinWidth = 420, MinHeight = 460,
-            WindowStartupLocation = WindowStartupLocation.CenterScreen
+            WindowStartupLocation = WindowStartupLocation.CenterScreen, Icon = artwork.AppIcon
         };
         settingsWindow = window;
         var panel = new StackPanel { Margin = new Thickness(18) };
@@ -358,9 +429,14 @@ internal sealed class Controller : IDisposable
         panel.Children.Add(heading);
         var modeBox = new ComboBox { ItemsSource = modes.Select(x => x.title).ToArray(), SelectedIndex = Array.FindIndex(modes, x => x.mode == settings.Mode), Margin = new Thickness(0, 0, 0, 10) };
         panel.Children.Add(modeBox);
-        var visible = new CheckBox { Content = settings.Mode == DisplayMode.Ghost ? "显示幽灵猪" : settings.Mode == DisplayMode.Hanging ? "显示上吊猪" : "显示小猪", IsChecked = settings.Visible, Margin = new Thickness(0, 0, 0, 10) };
+        var visible = new CheckBox { Content = VisibilityTitle(), IsChecked = settings.Visible, Margin = new Thickness(0, 0, 0, 10) };
         panel.Children.Add(visible);
         var dynamic = new StackPanel(); panel.Children.Add(dynamic);
+        string VisibilityTitle() => settings.Mode switch
+        {
+            DisplayMode.Ghost => "显示幽灵猪", DisplayMode.GhostWave => "显示小小幽灵猪",
+            DisplayMode.Hanging => "显示上吊猪", _ => "显示小猪"
+        };
         void AddSlider(string title, double min, double max, double value, Action<double> update, bool integer = false)
         {
             var label = new TextBlock { Text = title + $"：{value:0.##}", Margin = new Thickness(0, 8, 0, 0) };
@@ -375,7 +451,7 @@ internal sealed class Controller : IDisposable
                 AddSlider("气球数量", 1, 8, settings.BalloonCount, v => { settings.BalloonCount = (int)v; simulation.Apply(settings); simulation.Reset(Anchor()); }, true);
             if (settings.Mode == DisplayMode.Bamboo)
                 AddSlider("小猪位置", 0, 100, settings.BambooPosition, v => settings.BambooPosition = v);
-            if (settings.Mode == DisplayMode.Ghost)
+            if (simulation.IsGhostMode)
             {
                 AddSlider("水平偏移", -300, 300, settings.GhostOffsetX, v => settings.GhostOffsetX = v);
                 AddSlider("垂直偏移", -300, 300, settings.GhostOffsetY, v => settings.GhostOffsetY = v);
@@ -392,10 +468,15 @@ internal sealed class Controller : IDisposable
                 };
                 AddSlider(label, min, max, settings.Get(parameter), v => settings.Set(parameter, v));
             }
-            if (settings.Mode == DisplayMode.Ghost)
+            if (simulation.IsGhostMode)
             {
                 var (min, max, _) = PendantSettings.Spec(Parameter.Size);
                 AddSlider("小猪尺寸", min, max, settings.Get(Parameter.Size), v => settings.Set(Parameter.Size, v));
+            }
+            if (PendantSettings.HasHalo(settings.Mode))
+            {
+                AddSlider("光环间距 (点)", -120, 120, settings.HaloSpacing(settings.Mode), v => settings.SetHaloSpacing(settings.Mode, v), true);
+                AddSlider("光环大小 (%)", 25, 300, settings.HaloSize(settings.Mode), v => settings.SetHaloSize(settings.Mode, v), true);
             }
         }
         modeBox.SelectionChanged += (_, _) =>
@@ -403,7 +484,7 @@ internal sealed class Controller : IDisposable
             if (!window.IsLoaded) return;
             settings.Mode = modes[modeBox.SelectedIndex].mode;
             Changed(true); RebuildOverlays();
-            visible.Content = settings.Mode == DisplayMode.Ghost ? "显示幽灵猪" : settings.Mode == DisplayMode.Hanging ? "显示上吊猪" : "显示小猪";
+            visible.Content = VisibilityTitle();
             BuildRows();
         };
         visible.Checked += (_, _) => { if (window.IsLoaded) SetVisible(true); };

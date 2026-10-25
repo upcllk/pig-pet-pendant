@@ -153,13 +153,22 @@ public sealed class GhostBodyAnimation
     private double? actionTime;
     private bool wasBlinking;
     private double drift, hemTime;
+    public double HemPlaybackRate { get; private set; } = 1;
+    public bool IsGesturing => actionTime is not null || Math.Abs(drift) > .015;
     public GhostBodyPose Pose { get; private set; }
-    public void Reset() { actionTime = null; wasBlinking = false; drift = hemTime = 0; Pose = default; }
-    public bool Advance(double elapsed, bool blinking, double horizontalVelocity)
+    public void Reset() { actionTime = null; wasBlinking = false; drift = hemTime = 0; HemPlaybackRate = 1; Pose = default; }
+    public void ResetMotion() => HemPlaybackRate = 1;
+    public bool Advance(double elapsed, bool blinking, double horizontalVelocity, double mouseSpeed = 0)
     {
-        if (!double.IsFinite(elapsed) || elapsed <= 0 || !double.IsFinite(horizontalVelocity)) return false;
+        if (!double.IsFinite(elapsed) || elapsed <= 0 || !double.IsFinite(horizontalVelocity) || !double.IsFinite(mouseSpeed) || mouseSpeed < 0) return false;
         var before = Pose; var step = Math.Min(.1, elapsed);
-        hemTime = (hemTime + step) % GhostBodyPose.HemPeriod;
+        if (elapsed > .25) ResetMotion();
+        var targetRate = elapsed > .25 ? 1 : 1 + 3 * mouseSpeed / (mouseSpeed + 600);
+        const double response = 8;
+        var decay = Math.Exp(-step * response);
+        var hemElapsed = targetRate * step + (HemPlaybackRate - targetRate) * (1 - decay) / response;
+        HemPlaybackRate = targetRate + (HemPlaybackRate - targetRate) * decay;
+        hemTime = (hemTime + hemElapsed) % GhostBodyPose.HemPeriod;
         if (blinking && !wasBlinking && actionTime is null) actionTime = 0;
         wasBlinking = blinking;
         if (actionTime is { } time) actionTime = time + step < 2.4 ? time + step : null;

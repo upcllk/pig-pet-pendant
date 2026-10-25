@@ -45,13 +45,14 @@ internal sealed class OverlayWindow : Window
         var character = artwork.Character(mode, simulation);
         var image = character.First;
         var size = simulation.Settings.Get(Parameter.Size);
-        if (mode == DisplayMode.Ghost)
+        if (mode is DisplayMode.Ghost or DisplayMode.GhostWave)
         {
             var center = P(simulation.GhostPosition, sx, sy);
             var width = size * sx; var height = size * image.PixelHeight / image.PixelWidth * sy;
             var rect = new Rect(center.X - width / 2, center.Y - height / 2, width, height);
+            if (mode == DisplayMode.GhostWave) DrawHalo(dc, mode, new Rect(rect.X, rect.Y - width * .29, width, width * 1.5), width, sy);
             DrawCharacter(dc, character, rect);
-            DrawHalo(dc, DisplayMode.Ghost, rect, width);
+            if (mode == DisplayMode.Ghost) DrawHalo(dc, mode, rect, width, sy);
             return;
         }
         if (mode == DisplayMode.Bamboo)
@@ -95,7 +96,7 @@ internal sealed class OverlayWindow : Window
             else if (mode == DisplayMode.Hanging)
             {
                 var rect = new Rect(bob.X - width / 2, bob.Y - 6 * sy, width, height);
-                DrawCharacter(dc, item, rect); DrawHalo(dc, mode, rect, width);
+                DrawCharacter(dc, item, rect); DrawHalo(dc, mode, rect, width, sy);
             }
             else if (mode == DisplayMode.Rope)
                 DrawCharacter(dc, item, new Rect(bob.X - width * 153 / 297, bob.Y - height * 29 / 266, width, height));
@@ -108,15 +109,18 @@ internal sealed class OverlayWindow : Window
     {
         dc.DrawImage(artwork.Blend(character), rect);
     }
-    private void DrawHalo(DrawingContext dc, DisplayMode mode, Rect rect, double width)
+    private void DrawHalo(DrawingContext dc, DisplayMode mode, Rect rect, double width, double scaleY)
     {
-        var center = mode == DisplayMode.Ghost ? artwork.GhostHaloCenter : artwork.HangingHaloCenter;
+        var center = mode is DisplayMode.Ghost or DisplayMode.GhostWave ? artwork.GhostHaloCenter : artwork.HangingHaloCenter;
         var pose = simulation.Halo.Pose;
         var pivotX = rect.X + rect.Width * center.X;
         var pivotY = rect.Y + rect.Height * center.Y;
-        dc.PushTransform(new TranslateTransform(pose.Offset.X * width, -pose.Offset.Y * width));
-        dc.PushTransform(new RotateTransform(-pose.Angle * 180 / Math.PI, pivotX, pivotY));
-        dc.DrawImage(artwork.Halo(mode), rect);
+        var multiplier = mode == DisplayMode.GhostWave ? 1.3 : 1;
+        var scale = simulation.Settings.HaloSize(mode) / 100;
+        dc.PushTransform(new TranslateTransform(pose.Offset.X * width * multiplier, -pose.Offset.Y * width * multiplier - simulation.Settings.HaloSpacing(mode) * scaleY));
+        dc.PushTransform(new RotateTransform(-pose.Angle * multiplier * 180 / Math.PI, pivotX, pivotY));
+        dc.DrawImage(artwork.Halo(mode), new Rect(pivotX - rect.Width * center.X * scale,
+            pivotY - rect.Height * center.Y * scale, rect.Width * scale, rect.Height * scale));
         dc.Pop(); dc.Pop();
     }
     private void DrawBamboo(DrawingContext dc, System.Windows.Media.Imaging.BitmapSource image, double sx, double sy, double width)

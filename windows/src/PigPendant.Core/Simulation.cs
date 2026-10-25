@@ -9,7 +9,7 @@ public readonly record struct Vec(double X, double Y)
     public static Vec operator /(Vec a, double s) => new(a.X / s, a.Y / s);
 }
 
-public enum DisplayMode { Rope, Balloon, Net, Bamboo, Hanging, Ghost }
+public enum DisplayMode { Rope, Balloon, Net, Bamboo, Hanging, Ghost, GhostWave }
 public enum Parameter { Length, Size, Weight, Elasticity, Sway, Damping, Gravity }
 
 public sealed class PendantSettings
@@ -20,6 +20,8 @@ public sealed class PendantSettings
     public double BambooPosition { get; set; } = 50;
     public double GhostOffsetX { get; set; } = 44;
     public double GhostOffsetY { get; set; } = 32;
+    public Dictionary<DisplayMode, double> HaloSpacings { get; set; } = new();
+    public Dictionary<DisplayMode, double> HaloSizes { get; set; } = new();
     public Dictionary<DisplayMode, Dictionary<Parameter, double>> Values { get; set; } = new();
 
     public static readonly Parameter[] Parameters = Enum.GetValues<Parameter>();
@@ -46,6 +48,19 @@ public sealed class PendantSettings
         if (!Values.TryGetValue(m, out var values)) Values[m] = values = new();
         values[p] = Math.Clamp(value, min, max);
     }
+    public static bool HasHalo(DisplayMode mode) => mode is DisplayMode.Ghost or DisplayMode.GhostWave or DisplayMode.Hanging;
+    public double HaloSpacing(DisplayMode mode) => HaloSpacings.TryGetValue(mode, out var value) ? value : 0;
+    public double HaloSize(DisplayMode mode) => HaloSizes.TryGetValue(mode, out var value) ? value : 100;
+    public void SetHaloSpacing(DisplayMode mode, double value)
+    {
+        if (!HasHalo(mode) || !double.IsFinite(value)) throw new ArgumentOutOfRangeException(nameof(value));
+        HaloSpacings[mode] = Math.Clamp(value, -120, 120);
+    }
+    public void SetHaloSize(DisplayMode mode, double value)
+    {
+        if (!HasHalo(mode) || !double.IsFinite(value)) throw new ArgumentOutOfRangeException(nameof(value));
+        HaloSizes[mode] = Math.Clamp(value, 25, 300);
+    }
     public void Normalize()
     {
         if (!Enum.IsDefined(Mode)) Mode = DisplayMode.Rope;
@@ -53,6 +68,13 @@ public sealed class PendantSettings
         BambooPosition = double.IsFinite(BambooPosition) ? Math.Clamp(BambooPosition, 0, 100) : 50;
         GhostOffsetX = double.IsFinite(GhostOffsetX) ? Math.Clamp(GhostOffsetX, -300, 300) : 44;
         GhostOffsetY = double.IsFinite(GhostOffsetY) ? Math.Clamp(GhostOffsetY, -300, 300) : 32;
+        HaloSpacings ??= new(); HaloSizes ??= new();
+        foreach (var (mode, value) in HaloSpacings.ToArray())
+            if (!HasHalo(mode) || !double.IsFinite(value)) HaloSpacings.Remove(mode);
+            else HaloSpacings[mode] = Math.Clamp(value, -120, 120);
+        foreach (var (mode, value) in HaloSizes.ToArray())
+            if (!HasHalo(mode) || !double.IsFinite(value)) HaloSizes.Remove(mode);
+            else HaloSizes[mode] = Math.Clamp(value, 25, 300);
         Values ??= new();
         foreach (var (mode, values) in Values.ToArray())
         {
@@ -216,6 +238,7 @@ public sealed class PendantSimulation
     public double BambooSway { get; private set; }
     private double bendVelocity, stillTime;
     private Vec bambooMotionAnchor;
+    private Vec ghostMotionAnchor;
     public double AnimationTime { get; private set; }
     private readonly ulong animationSeed = (ulong)Random.Shared.NextInt64();
     private readonly IReadOnlyList<double> ropeDurations;
@@ -225,6 +248,7 @@ public sealed class PendantSimulation
     public GhostBodyAnimation GhostBody { get; } = new();
     public HaloAnimation Halo { get; }
     public IEnumerable<RopePhysics> ActiveRopes => Settings.Mode == DisplayMode.Balloon ? Balloons : [Rope];
+    public bool IsGhostMode => Settings.Mode is DisplayMode.Ghost or DisplayMode.GhostWave;
     public PendantSimulation(PendantSettings settings, IReadOnlyList<double>? ropeFrameDurations = null)
     {
         ropeDurations = ropeFrameDurations ?? Enumerable.Repeat(.04, 75).ToArray();
@@ -271,6 +295,7 @@ public sealed class PendantSimulation
     {
         BambooProgress = 1; BambooSway = 0; bendVelocity = stillTime = 0;
         bambooMotionAnchor = anchor;
+        ghostMotionAnchor = anchor;
         GhostPosition = GhostTarget(anchor);
         AnimationTime = 0;
         RopeAnimation.Reset(); GhostBlink.Reset(); GhostBody.Reset(); Halo.Reset();
@@ -281,16 +306,18 @@ public sealed class PendantSimulation
     {
         if (!double.IsFinite(elapsed) || elapsed <= 0) return;
         var step = Math.Min(.1, elapsed);
-        if (Settings.Mode == DisplayMode.Ghost)
+        if (IsGhostMode)
         {
             var previous = GhostPosition;
             var target = GhostTarget(anchor);
+            var mouseSpeed = elapsed > .25 ? 0 : (anchor - ghostMotionAnchor).Length / elapsed;
+            ghostMotionAnchor = anchor;
             GhostPosition += (target - GhostPosition) * (1 - Math.Exp(-14 * step));
             if ((target - GhostPosition).Length < .15) GhostPosition = target;
             GhostBlink.Advance(elapsed);
             var velocity = elapsed > .25 ? default : (GhostPosition - previous) / elapsed;
-            GhostBody.Advance(elapsed, GhostBlink.IsAnimating, velocity.X);
-            Halo.Advance(elapsed, velocity, GhostBlink.IsAnimating);
+            GhostBody.Advance(elapsed, GhostBlink.IsAnimating, velocity.X, mouseSpeed);
+            Halo.Advance(elapsed, velocity, GhostBlink.IsAnimating || Settings.Mode == DisplayMode.GhostWave && GhostBody.IsGesturing);
             return;
         }
         var previousAnchor = Rope.Nodes[0];

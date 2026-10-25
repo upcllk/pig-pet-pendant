@@ -13,10 +13,12 @@ internal sealed class Artwork
     private readonly Apng rope, ghostBlink;
     private readonly LocalCharacterArtwork balloonCharacter, bambooCharacter, netCharacter, hangingCharacter;
     private readonly LocalCharacterArtwork[] ghostCharacters;
+    private readonly WaveGhostArtwork ghostWaveCharacter;
     private readonly BitmapSource hangingHalo, ghostHalo;
     public (double X, double Y) HangingHaloCenter { get; }
     public (double X, double Y) GhostHaloCenter { get; }
     public IReadOnlyList<double> RopeDelays => rope.Delays;
+    public BitmapSource AppIcon { get; }
     public int RopeFrameCount => rope.Frames.Count;
     public int GhostFrameCount => ghostBlink.Frames.Count;
     public BitmapSource this[DisplayMode mode] => images[mode];
@@ -30,6 +32,7 @@ internal sealed class Artwork
     }
     public Artwork()
     {
+        AppIcon = Load("AppIcon.png");
         images[DisplayMode.Balloon] = Load("balloon.png");
         images[DisplayMode.Bamboo] = Load("bamboo-pig.png");
         using (var stream = Open("rope-pig.png")) rope = new Apng(stream);
@@ -52,6 +55,8 @@ internal sealed class Artwork
         netCharacter = new(images[DisplayMode.Net], DisplayMode.Net);
         hangingCharacter = new(hangingBody, DisplayMode.Hanging);
         ghostCharacters = ghostBlink.Frames.Select(frame => new LocalCharacterArtwork(frame, DisplayMode.Ghost)).ToArray();
+        images[DisplayMode.GhostWave] = Load("ghost-wave.png");
+        ghostWaveCharacter = new WaveGhostArtwork(images[DisplayMode.GhostWave]);
     }
     public BitmapSource Get(DisplayMode mode, double time = 0) => images[mode];
     public (BitmapSource First, BitmapSource? Second, double Blend) Character(DisplayMode mode, PendantSimulation state, int balloonIndex = 0)
@@ -65,6 +70,8 @@ internal sealed class Artwork
                 var blink = state.GhostBlink.Sample;
                 return (ghostCharacters[blink.First].RenderGhost(state.GhostBody.Pose),
                     blink.First == blink.Second ? null : ghostCharacters[blink.Second].RenderGhost(state.GhostBody.Pose), blink.Blend);
+            case DisplayMode.GhostWave:
+                return (ghostWaveCharacter.Render(state.GhostBody.Pose, state.GhostBlink.Sample), null, 0);
             case DisplayMode.Balloon: return (balloonCharacter.Render(state.BalloonAnimations[balloonIndex].LocalPose), null, 0);
             case DisplayMode.Bamboo: return (bambooCharacter.Render(state.RopeAnimation.LocalPose), null, 0);
             case DisplayMode.Net: return (netCharacter.Render(state.RopeAnimation.LocalPose), null, 0);
@@ -72,7 +79,7 @@ internal sealed class Artwork
             default: throw new ArgumentOutOfRangeException(nameof(mode));
         }
     }
-    public BitmapSource Halo(DisplayMode mode) => mode == DisplayMode.Ghost ? ghostHalo : hangingHalo;
+    public BitmapSource Halo(DisplayMode mode) => mode is DisplayMode.Ghost or DisplayMode.GhostWave ? ghostHalo : hangingHalo;
     public BitmapSource Blend((BitmapSource First, BitmapSource? Second, double Blend) character) =>
         frameBlender.Compose(character.First, character.Second, character.Blend);
     internal static (byte[] Pixels, int Width, int Height) Pixels(BitmapSource source)
