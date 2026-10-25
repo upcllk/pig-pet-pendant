@@ -216,7 +216,7 @@ extension PendantCoordinator {
         let restHalo = alphaCentroid(renderedHalo(HaloPose()))
         let movedHalo = alphaCentroid(renderedHalo(movement.pose))
         let displacement = (movedHalo.0 - restHalo.0).magnitude
-        precondition(displacement > 5, "Halo displacement must exceed 2.5 pt at normal 48 pt pendant size")
+        precondition(displacement > 7.5, "Halo displacement must exceed 3.75 pt at normal 48 pt pendant size")
         precondition(abs(movedHalo.1 / restHalo.1 - 1) < 0.08, "Halo motion must not fade or clip the original ring")
         NSLog("PASS: halo normal-size movement %.2f px at 2x, full alpha and uncropped contour", displacement)
         let planeSheet = NSImage(size: NSSize(width: 1200, height: 780))
@@ -290,7 +290,7 @@ extension PendantCoordinator {
             let scene = SceneSnapshot(simulation: preview, artwork: artwork, isVisible: true)
             precondition(scene.haloImage === artwork.hangingLayers.halo)
             precondition(scene.haloPose == preview.haloAnimation.pose)
-            precondition(abs(scene.haloPose.angle) < 0.24 && scene.haloPose.offset.magnitude < 0.096)
+            precondition(abs(scene.haloPose.angle) < 0.31 && scene.haloPose.offset.magnitude < 0.13)
             if let previous = previous {
                 if scene.haloPose != previous { changed += 1 }
                 precondition(abs(scene.haloPose.angle - previous.angle) < 0.05)

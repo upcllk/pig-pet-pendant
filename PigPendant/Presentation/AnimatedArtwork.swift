@@ -6,7 +6,7 @@ struct AnimatedArtwork {
     let frameDurations: [TimeInterval]
     let duration: TimeInterval
 
-    init?(url: URL) {
+    init?(url: URL, cleanNetEdges: Bool = false) {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
               CGImageSourceGetCount(source) > 1 else { return nil }
         var images: [NSImage] = []
@@ -19,7 +19,14 @@ struct AnimatedArtwork {
                   delay.isFinite, delay > 0 else { return nil }
             let size = NSSize(width: image.width, height: image.height)
             if let first = images.first, first.size != size { return nil }
-            images.append(NSImage(cgImage: image, size: size))
+            let displayImage: CGImage
+            if cleanNetEdges {
+                guard let cleaned = NetArtworkCleanup.image(image) else { return nil }
+                displayImage = cleaned
+            } else {
+                displayImage = image
+            }
+            images.append(NSImage(cgImage: displayImage, size: size))
             durations.append(delay)
         }
         frames = images

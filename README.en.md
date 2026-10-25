@@ -14,7 +14,7 @@ A small desktop pig pendant that follows your mouse. The macOS version is availa
 
 - **Rope Pendant**: The default mode. The pig reacts to movement and falling, with randomly spaced blinks, ear movements, and body gestures at rest. Actions return smoothly to rest instead of looping the entire GIF.
 - **Pig Balloons**: Shows 1–8 pig-shaped balloons floating upward; the default is 2. Each has independently timed blinks, gentle ear movements and nose gestures, with movement reactions.
-- **Pig in a Net**: A pig in a net with a looping animation.
+- **Pig in a Net**: A pig in a net with a looping animation and local runtime cleanup of white/gray mesh fringes.
 - **Pig on Bamboo**: The pig hugs a bamboo stalk that bends with mouse movement, with random blinks, ear movements and nose gestures that preserve its grip.
 - **Hanging Pig**: Hangs from a rope with randomly timed ear twitches and nose gestures. Its original halo lags slightly during movement, rebounds after stopping, and occasionally tilts at rest. Cross eyes do not blink; the band, attachment, and original halo artwork are preserved.
 - **Ghost Pig**: Follows the mouse smoothly without a rope.
@@ -56,11 +56,13 @@ Hanging Pig maps blink actions to ear twitches, preserving its cross eyes. Ear/n
 
 GUI checks cover normal-size gestures, protected cross eyes/band/attachment, disjoint halo/body pixels, and color/alpha preservation. Core checks cover halo-only scheduling, 30/60/120/144 Hz inputs, rapid reversals, settling, resume, and mode switching. The light-background pose atlas is exported to `dist/hanging-local-poses.png`; halo scene frames use `dist/hanging-halo-*.png`, with a contact sheet at `dist/hanging-halo-contact.png`. These use automated rendering and synthetic input, not screen recording or confirmation of subjective naturalness.
 
-Halo angle and displacement targets are 60% larger than the initial version, without changing idle gaps, timing, or damping. Movement targets are capped at about 9.6 degrees, with an idle target peak of about 7.3 degrees; rebound may slightly overshoot. A fixed-input render check at 48 pt / 2x requires more than 2.5 pt of halo-center displacement without clipping or alpha loss. Displacement still depends on movement speed.
+Halo amplitude has been tuned following user feedback. This iteration raises movement angle/offset targets by a further 30% and random plane travel by about 40%, without changing gaps, timing, or damping. Movement angle targets are now capped at about 12.5 degrees, with an idle target peak of about 9.5 degrees; rebound may slightly overshoot. A fixed-input render check at 48 pt / 2x requires more than 3.75 pt of halo-center displacement without clipping or alpha loss. Displacement still depends on movement speed.
 
 Idle halo gestures also wander along two oblique axes in the pig's local head plane, with randomized starting directions and a smooth curved return. This is two-dimensional visual motion, without scaling or a claim of 3D simulation. Quiet gaps and movement lag/rebound remain. `dist/hanging-halo-plane.png` shows varied idle poses.
 
 White matte contamination is cleaned only in the runtime body copy, within three source pixels of transparency. Nearby deeper skin colors guide edge color correction and softer outer coverage. Original PNGs, halo glow, and interior facial features are unchanged. `dist/hanging-edge-comparison.png` compares enlarged black/white/gray-background renders; interior highlights are not globally removed or erased by shrinking the whole silhouette.
+
+Net mode cleans neutral/cool pale contamination next to existing blue mesh pixels in each runtime frame, using weighted blue colors within two pixels. Warm pig colors and expressions are protected; transparent mesh holes are not filled, alpha never increases, and mesh lines are not redrawn. The source APNG, all 62 canvases, frame order, and 40 ms timing remain unchanged. GUI checks inspect every frame and the actual loaded images, exporting `dist/net-edge-comparison.png` on black/white backgrounds. Hanging Pig's body was not replaced: its pose and band differ from Rope Pig, and the user deferred compositing a replacement.
 
 ## Known Limitations
 

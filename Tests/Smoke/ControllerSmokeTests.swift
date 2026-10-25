@@ -67,6 +67,7 @@ extension PendantCoordinator {
             tick()
         }
         if mode == .net {
+            smokeCheckNetEdges()
             precondition(netAnimation.frames.count == 62 && abs(netAnimation.duration - 2.48) < 0.0001)
             precondition(netAnimation.frames.allSatisfy { $0.size == NSSize(width: 207, height: 200) })
             var elapsed = 0.0

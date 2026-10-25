@@ -22,9 +22,9 @@ struct ArtworkCatalog {
             guard let image = NSImage(contentsOf: url) else { throw ArtworkError.unreadable(url) }
             return image
         }
-        func animation(_ name: String) throws -> AnimatedArtwork {
+        func animation(_ name: String, cleanNetEdges: Bool = false) throws -> AnimatedArtwork {
             let url = directory.appendingPathComponent(name)
-            guard let animation = AnimatedArtwork(url: url) else { throw ArtworkError.unreadable(url) }
+            guard let animation = AnimatedArtwork(url: url, cleanNetEdges: cleanNetEdges) else { throw ArtworkError.unreadable(url) }
             return animation
         }
         pig = try image("pig.png")
@@ -32,7 +32,7 @@ struct ArtworkCatalog {
         bamboo = try image("bamboo-pig.png")
         hanging = try image("hanging-pig.png")
         ghost = try image("ghost-pig.png")
-        net = try animation("net-pig.png")
+        net = try animation("net-pig.png", cleanNetEdges: true)
         let ropeAnimation = try animation("rope-pig.png")
         guard ropeAnimation.frames.count == 75 else {
             throw ArtworkError.unreadable(directory.appendingPathComponent("rope-pig.png"))
