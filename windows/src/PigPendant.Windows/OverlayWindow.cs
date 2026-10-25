@@ -42,13 +42,16 @@ internal sealed class OverlayWindow : Window
         var transform = source.CompositionTarget.TransformFromDevice;
         var sx = transform.M11; var sy = transform.M22;
         var mode = simulation.Settings.Mode;
-        var image = artwork.Get(mode, simulation.AnimationTime);
+        var character = artwork.Character(mode, simulation);
+        var image = character.First;
         var size = simulation.Settings.Get(Parameter.Size);
         if (mode == DisplayMode.Ghost)
         {
             var center = P(simulation.GhostPosition, sx, sy);
             var width = size * sx; var height = size * image.PixelHeight / image.PixelWidth * sy;
-            dc.DrawImage(image, new Rect(center.X - width / 2, center.Y - height / 2, width, height));
+            var rect = new Rect(center.X - width / 2, center.Y - height / 2, width, height);
+            DrawCharacter(dc, character, rect);
+            DrawHalo(dc, DisplayMode.Ghost, rect, width);
             return;
         }
         if (mode == DisplayMode.Bamboo)
@@ -75,6 +78,8 @@ internal sealed class OverlayWindow : Window
         {
             var rope = ropes[r];
             var bob = P(rope.EndPoint, sx, sy);
+            var item = mode == DisplayMode.Balloon ? artwork.Character(mode, simulation, r) : character;
+            image = item.First;
             var width = (mode == DisplayMode.Balloon ? simulation.BalloonWidth(r) : size) * sx;
             var height = width * image.PixelHeight / image.PixelWidth * sy / sx;
             dc.PushTransform(new RotateTransform((mode == DisplayMode.Balloon ? -.45 : .70) * rope.EndAngle * 180 / Math.PI, bob.X, bob.Y));
@@ -83,20 +88,42 @@ internal sealed class OverlayWindow : Window
                 var knot = Math.Clamp(width * .07, 2, 7);
                 dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromRgb(245, 145, 168)), null,
                     new Rect(bob.X - knot * .3, bob.Y - knot * 1.45, knot * .6, knot * 1.5), knot * .3, knot * .3);
-                dc.DrawImage(image, new Rect(bob.X - width / 2, bob.Y - height - knot, width, height));
+                DrawCharacter(dc, item, new Rect(bob.X - width / 2, bob.Y - height - knot, width, height));
             }
             else if (mode == DisplayMode.Net)
-                dc.DrawImage(image, new Rect(bob.X - width * 140 / 207, bob.Y, width, height));
+                DrawCharacter(dc, item, new Rect(bob.X - width * .52, bob.Y, width, height));
             else if (mode == DisplayMode.Hanging)
-                dc.DrawImage(image, new Rect(bob.X - width / 2, bob.Y - 6 * sy, width, height));
+            {
+                var rect = new Rect(bob.X - width / 2, bob.Y - 6 * sy, width, height);
+                DrawCharacter(dc, item, rect); DrawHalo(dc, mode, rect, width);
+            }
+            else if (mode == DisplayMode.Rope)
+                DrawCharacter(dc, item, new Rect(bob.X - width * 153 / 297, bob.Y - height * 29 / 266, width, height));
             else
-                dc.DrawImage(image, new Rect(bob.X - width / 2, bob.Y - height / 2, width, height));
+                DrawCharacter(dc, item, new Rect(bob.X - width / 2, bob.Y - height / 2, width, height));
             dc.Pop();
         }
     }
+    private static void DrawCharacter(DrawingContext dc, (System.Windows.Media.Imaging.BitmapSource First, System.Windows.Media.Imaging.BitmapSource? Second, double Blend) character, Rect rect)
+    {
+        if (character.Second is null || character.Blend <= 0) { dc.DrawImage(character.First, rect); return; }
+        dc.PushOpacity(1 - character.Blend); dc.DrawImage(character.First, rect); dc.Pop();
+        dc.PushOpacity(character.Blend); dc.DrawImage(character.Second, rect); dc.Pop();
+    }
+    private void DrawHalo(DrawingContext dc, DisplayMode mode, Rect rect, double width)
+    {
+        var center = mode == DisplayMode.Ghost ? artwork.GhostHaloCenter : artwork.HangingHaloCenter;
+        var pose = simulation.Halo.Pose;
+        var pivotX = rect.X + rect.Width * center.X;
+        var pivotY = rect.Y + rect.Height * center.Y;
+        dc.PushTransform(new TranslateTransform(pose.Offset.X * width, -pose.Offset.Y * width));
+        dc.PushTransform(new RotateTransform(-pose.Angle * 180 / Math.PI, pivotX, pivotY));
+        dc.DrawImage(artwork.Halo(mode), rect);
+        dc.Pop(); dc.Pop();
+    }
     private void DrawBamboo(DrawingContext dc, System.Windows.Media.Imaging.BitmapSource image, double sx, double sy, double width)
     {
-        var length = Math.Max(width * 1.5, simulation.Rope.CurrentLength);
+        var length = Math.Max(width * 1.5, simulation.Settings.Get(Parameter.Length));
         var progress = simulation.BambooProgress;
         var angle = -Math.PI / 2 * progress * progress * (3 - 2 * progress) + simulation.BambooSway;
         var turn = Math.PI / 2 * progress * progress * (3 - 2 * progress);

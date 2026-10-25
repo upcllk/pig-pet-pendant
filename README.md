@@ -6,7 +6,7 @@
 
 一款跟随鼠标移动的桌面小猪挂件。提供 macOS 客户端，并新增 Windows 原生客户端源码。
 
-以下模式说明以当前 macOS 客户端为准。Windows 客户端已支持六种模式与单文件 EXE，但本轮 macOS 新增的角色微动作、分层素材、可编辑默认配置和音乐响应尚未移植。
+Windows 客户端同步了六种模式的当前素材、角色微动作、可编辑默认配置与系统音频驱动的托盘图标。两个平台分别使用原生系统界面和音频接口，交互细节仍需分别实机验收。
 
 ![六种模式预览](docs/media/modes.gif)
 
@@ -23,7 +23,7 @@
 
 ## 音乐律动实验
 
-应用启动后会尝试读取系统播放音频，分析低频和中频的能量突变来检测鼓点起音，让菜单栏状态图标在鼓点到来时变大、间隔中回落；桌面挂件尺寸不受影响。这是实时节拍起音估计，不是完整歌曲节拍网格或音乐识别。macOS 14.2 及以上版本首次启动会请求“系统音频录制”权限，仅用于在本机实时分析播放音频中的鼓点以驱动菜单栏图标；不会录制或保存音频，也不请求屏幕录制权限。当前权限或读取状态可在状态栏菜单中查看。
+应用启动后会尝试读取系统播放音频，分析低频和中频的能量突变来检测鼓点起音，让菜单栏或系统托盘图标在鼓点到来时变大、间隔中回落；桌面挂件尺寸不受影响。这是实时节拍起音估计，不是完整歌曲节拍网格或音乐识别。macOS 14.2 及以上版本首次启动会请求“系统音频录制”权限；Windows 使用 WASAPI 回环读取默认输出设备。音频只在本机内存中实时分析，不会录制或保存。
 
 ## 使用
 
@@ -60,7 +60,9 @@ powershell -ExecutionPolicy Bypass -File .\windows\scripts\build.ps1 -Test
 & .\windows\src\PigPendant.Windows\bin\Release\net10.0-windows\PigPendant.Windows.exe
 ```
 
-托盘菜单可切换六种模式、显示/隐藏、重置姿态、打开设置和退出。设置保存在 `%LOCALAPPDATA%\PigPendant\settings.json`。再次启动会通知已运行实例打开设置。
+托盘菜单可切换六种模式、显示/隐藏、重置位置、打开设置和退出；幽灵猪排第二。设置保存在 `%LOCALAPPDATA%\PigPendant\settings.json`。首次启动会从内嵌资源复制 `%LOCALAPPDATA%\PigPendant\default-settings.json`；编辑后点击“恢复默认”才会应用新值，不覆盖此前保存的个人调参。再次启动会通知已运行实例打开设置。
+
+Windows 当前使用与 macOS 相同的绳子 75 帧、新网兜静态图与局部动作、上吊猪棕色绑带及独立光环、幽灵猪分层眨眼和持续下摆，以及气球和竹子小猪的局部动作。托盘音乐响应使用 [NAudio.Wasapi](https://www.nuget.org/packages/NAudio.Wasapi/)；开发时 NuGet 还原依赖，发布包内包含所需库，其许可可从设置窗口查看。若默认输出设备不可用，挂件仍可运行，托盘图标保持基础缩放。
 
 单文件自包含发布使用：
 
@@ -68,7 +70,7 @@ powershell -ExecutionPolicy Bypass -File .\windows\scripts\build.ps1 -Test
 powershell -ExecutionPolicy Bypass -File .\windows\scripts\build.ps1 -Test -Publish
 ```
 
-发布结果为 `dist/PigPendant-Windows-win-x64.exe`，约 79 MB；素材、.NET 运行时与应用代码都打包在这一个文件中，用户双击即可运行，不需要安装 .NET SDK。首次启动时 .NET 会把必要的原生组件解包到用户临时目录；设置仍保存在 `%LOCALAPPDATA%\PigPendant\settings.json`。当前只发布 Windows x64，未做代码签名。
+发布结果为 `dist/PigPendant-Windows-win-x64.exe`，本次约 87 MB；素材、.NET 运行时、应用代码与音频库都打包在这一个文件中，用户双击即可运行，不需要安装 .NET SDK。首次启动时 .NET 会把必要的原生组件解包到用户临时目录。当前只发布 Windows x64，未做代码签名。
 
 ### macOS 角色动画与素材
 
@@ -113,6 +115,7 @@ swift -O tools/prepare-ghost-blink.swift /path/to/blink_keys_8 \
 ## 已知限制
 
 - Windows 版的多屏混合 DPI、真实跨进程点击穿透、焦点、睡眠恢复、Explorer 重启以及长期性能尚待实机验收。
+- Windows 版的动画自然度、真实音乐鼓点响应以及不同音频设备切换仍需实机验收；当前自动检查覆盖构建、素材、六模式启动、动画状态与合成低频起音。
 - 气球之间没有碰撞检测，也没有屏幕边界限制。
 - macOS 没有受支持的接口读取其他应用的全局鼠标指针显隐状态，因此全屏视频隐藏指针时，挂件可能仍显示在画面上。
 - 应用不申请辅助功能或屏幕录制权限，不向网络发送请求。

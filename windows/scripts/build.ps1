@@ -5,10 +5,10 @@ $app = Join-Path $root 'windows/src/PigPendant.Windows/PigPendant.Windows.csproj
 $checks = Join-Path $root 'windows/tests/PigPendant.Core.Checks/PigPendant.Core.Checks.csproj'
 $output = Join-Path $root 'dist/windows/single-file/win-x64'
 $dotnet = 'dotnet'
-& $dotnet build $app -c Release
+& $dotnet build $app -c Release -p:NuGetAudit=false
 if ($LASTEXITCODE -ne 0) { throw 'Windows build failed' }
 if ($Test) {
-    & $dotnet build $app -c Release -p:DefineConstants=TESTING
+    & $dotnet build $app -c Release -p:DefineConstants=TESTING -p:NuGetAudit=false
     if ($LASTEXITCODE -ne 0) { throw 'Windows smoke build failed' }
     & $dotnet run --project $checks -c Release
     if ($LASTEXITCODE -ne 0) { throw 'Core checks failed' }

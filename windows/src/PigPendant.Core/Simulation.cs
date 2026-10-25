@@ -10,7 +10,7 @@ public readonly record struct Vec(double X, double Y)
 }
 
 public enum DisplayMode { Rope, Balloon, Net, Bamboo, Hanging, Ghost }
-public enum Parameter { Length, Size, Weight, Elasticity, Damping, Gravity }
+public enum Parameter { Length, Size, Weight, Elasticity, Sway, Damping, Gravity }
 
 public sealed class PendantSettings
 {
@@ -29,6 +29,7 @@ public sealed class PendantSettings
         Parameter.Size => (16, 256, 48),
         Parameter.Weight => (0, 200, 65),
         Parameter.Elasticity => (0, 200, 55),
+        Parameter.Sway => (0, 200, 100),
         Parameter.Damping => (0.2, 8, -60 * Math.Log(0.985)),
         _ => (100, 10000, 1350)
     };
@@ -109,6 +110,29 @@ public sealed class RopePhysics
         Array.Copy(Nodes, previous, Nodes.Length);
         accumulator = 0;
         lastAnchor = Nodes[0];
+    }
+    public bool IsSettled
+    {
+        get
+        {
+            if (Math.Abs(Length - CurrentLength) >= .01) return false;
+            var axis = Direction;
+            var displacement = EndPoint - Nodes[0];
+            var drop = displacement.X * axis.X + displacement.Y * axis.Y;
+            if (drop < CurrentLength * .98 || drop > CurrentLength * 1.12 + .001) return false;
+            for (var i = 1; i <= Segments; i++)
+            {
+                var offset = Nodes[i] - Nodes[0];
+                if (Math.Abs(offset.X * axis.Y - offset.Y * axis.X) > .2 || (Nodes[i] - previous[i]).Length * 120 > .5) return false;
+            }
+            return true;
+        }
+    }
+    public void ApplySwingImpulse(Vec endVelocity)
+    {
+        if (!double.IsFinite(endVelocity.X + endVelocity.Y)) return;
+        for (var i = 1; i <= Segments; i++) previous[i] = Nodes[i] - endVelocity * ((double)i / Segments / 120);
+        accumulator = 0;
     }
     public void Advance(Vec anchor, double timeStep)
     {
@@ -193,8 +217,22 @@ public sealed class PendantSimulation
     private double bendVelocity, stillTime;
     private Vec bambooMotionAnchor;
     public double AnimationTime { get; private set; }
+    private readonly ulong animationSeed = (ulong)Random.Shared.NextInt64();
+    private readonly IReadOnlyList<double> ropeDurations;
+    public RopeCharacterAnimation RopeAnimation { get; private set; }
+    public List<RopeCharacterAnimation> BalloonAnimations { get; } = new();
+    public GhostBlinkAnimation GhostBlink { get; }
+    public GhostBodyAnimation GhostBody { get; } = new();
+    public HaloAnimation Halo { get; }
     public IEnumerable<RopePhysics> ActiveRopes => Settings.Mode == DisplayMode.Balloon ? Balloons : [Rope];
-    public PendantSimulation(PendantSettings settings) { Settings = settings; Apply(settings); }
+    public PendantSimulation(PendantSettings settings, IReadOnlyList<double>? ropeFrameDurations = null)
+    {
+        ropeDurations = ropeFrameDurations ?? Enumerable.Repeat(.04, 75).ToArray();
+        RopeAnimation = new(ropeDurations, animationSeed);
+        GhostBlink = new(animationSeed + 130363);
+        Halo = new(animationSeed + 104729);
+        Settings = settings; Apply(settings);
+    }
     public void Apply(PendantSettings settings)
     {
         Settings = settings;
@@ -207,6 +245,12 @@ public sealed class PendantSimulation
         {
             Balloons.Clear(); Balloons.Add(Rope);
             for (var i = 1; i < settings.BalloonCount; i++) Balloons.Add(new RopePhysics());
+        }
+        if (BalloonAnimations.Count != settings.BalloonCount)
+        {
+            BalloonAnimations.Clear();
+            for (var i = 0; i < settings.BalloonCount; i++)
+                BalloonAnimations.Add(new RopeCharacterAnimation(ropeDurations, unchecked(animationSeed + (ulong)(i + 1) * 0x9E3779B97F4A7C15UL)));
         }
         for (var i = 0; i < Balloons.Count; i++)
         {
@@ -229,22 +273,30 @@ public sealed class PendantSimulation
         bambooMotionAnchor = anchor;
         GhostPosition = GhostTarget(anchor);
         AnimationTime = 0;
+        RopeAnimation.Reset(); GhostBlink.Reset(); GhostBody.Reset(); Halo.Reset();
+        foreach (var animation in BalloonAnimations) animation.Reset();
         foreach (var rope in ActiveRopes) rope.Reset(anchor);
     }
     public void Advance(Vec anchor, double elapsed)
     {
         if (!double.IsFinite(elapsed) || elapsed <= 0) return;
-        if (Settings.Mode == DisplayMode.Net) AnimationTime += Math.Min(.1, elapsed);
+        var step = Math.Min(.1, elapsed);
         if (Settings.Mode == DisplayMode.Ghost)
         {
+            var previous = GhostPosition;
             var target = GhostTarget(anchor);
-            GhostPosition += (target - GhostPosition) * (1 - Math.Exp(-14 * Math.Min(.1, elapsed)));
+            GhostPosition += (target - GhostPosition) * (1 - Math.Exp(-14 * step));
             if ((target - GhostPosition).Length < .15) GhostPosition = target;
+            GhostBlink.Advance(elapsed);
+            var velocity = elapsed > .25 ? default : (GhostPosition - previous) / elapsed;
+            GhostBody.Advance(elapsed, GhostBlink.IsAnimating, velocity.X);
+            Halo.Advance(elapsed, velocity, GhostBlink.IsAnimating);
             return;
         }
+        var previousAnchor = Rope.Nodes[0];
+        var previousEnds = ActiveRopes.Select(r => r.EndPoint).ToArray();
         if (Settings.Mode == DisplayMode.Bamboo)
         {
-            var step = Math.Min(.1, elapsed);
             var moving = (anchor - bambooMotionAnchor).Length >= 2;
             if (moving) bambooMotionAnchor = anchor;
             stillTime = moving ? 0 : stillTime + step;
@@ -258,6 +310,31 @@ public sealed class PendantSimulation
             if (BambooProgress == 0 && bendVelocity < 0 || BambooProgress == 1 && bendVelocity > 0) bendVelocity = 0;
         }
         foreach (var rope in ActiveRopes) rope.Advance(anchor, elapsed);
+        var anchorVelocity = elapsed > .25 ? default : (anchor - previousAnchor) / elapsed;
+        if (Settings.Mode == DisplayMode.Balloon)
+        {
+            for (var i = 0; i < Balloons.Count; i++)
+            {
+                var bobVelocity = elapsed > .25 ? default : (Balloons[i].EndPoint - previousEnds[i]) / elapsed;
+                BalloonAnimations[i].Advance(elapsed, anchorVelocity, bobVelocity);
+            }
+        }
+        else
+        {
+            var bobVelocity = elapsed > .25 ? default : (Rope.EndPoint - previousEnds[0]) / elapsed;
+            var previousAction = RopeAnimation.Action;
+            RopeAnimation.Advance(elapsed, anchorVelocity, bobVelocity);
+            if (Settings.Mode == DisplayMode.Rope && previousAction != CharacterAction.Stretch &&
+                RopeAnimation.Action == CharacterAction.Stretch && Rope.IsSettled && Settings.Get(Parameter.Sway) > 0)
+                Rope.ApplySwingImpulse(new Vec(150 * Settings.Get(Parameter.Sway) / 100, 0));
+            if (Settings.Mode == DisplayMode.Hanging)
+            {
+                var angle = Rope.EndAngle * -.70;
+                var local = new Vec(bobVelocity.X * Math.Cos(angle) + bobVelocity.Y * Math.Sin(angle),
+                    -bobVelocity.X * Math.Sin(angle) + bobVelocity.Y * Math.Cos(angle));
+                Halo.Advance(elapsed, local, RopeAnimation.IsAnimating);
+            }
+        }
         if (Settings.Mode == DisplayMode.Bamboo)
             BambooSway += (Rope.EndAngle * -.70 - BambooSway) * (1 - Math.Exp(-12 * Math.Min(.1, elapsed)));
     }

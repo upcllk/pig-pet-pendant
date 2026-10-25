@@ -4,7 +4,7 @@
 
 # Pig Pet Pendant
 
-A small desktop pig pendant that follows your mouse. Native macOS and Windows clients are available. The Windows client supports six modes and a self-contained single-file EXE, but the newer macOS character animations, layered artwork, editable defaults, and audio response have not yet been ported.
+A small desktop pig pendant that follows your mouse. Native macOS and Windows clients are available. The Windows client now includes the six current character modes, layered artwork, motion, editable defaults, and system-audio-reactive tray icon in a self-contained single-file EXE.
 
 ![Preview of six modes](docs/media/modes.gif)
 
@@ -88,7 +88,7 @@ The old `ghost-pig.png` remains reference-only. Build checks package all three n
 
 ## Known Limitations
 
-- A Windows executable is not currently available.
+- A Windows x64 single-file EXE can be built with `powershell -ExecutionPolicy Bypass -File .\windows\scripts\build.ps1 -Test -Publish`. Real-world multi-monitor, input pass-through, animation feel, and audio-device switching still need hands-on validation.
 - Balloons do not collide with each other and are not constrained by screen boundaries.
 - macOS has no supported API for reading another app's global cursor visibility, so the pendant may remain visible over fullscreen video after the cursor is hidden.
 - The app does not request Accessibility or Screen Recording permissions and does not send network requests.

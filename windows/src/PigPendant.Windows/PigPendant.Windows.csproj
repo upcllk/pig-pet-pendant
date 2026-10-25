@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
+    <Version>0.2.0</Version>
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
@@ -10,7 +11,10 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../PigPendant.Core/PigPendant.Core.csproj" />
-    <EmbeddedResource Include="../../../PigPendant/Resources/*.png" LogicalName="PigPendant.Resources.%(Filename)%(Extension)" />
-    <EmbeddedResource Include="../../../PigPendant/Resources/*.gif" LogicalName="PigPendant.Resources.%(Filename)%(Extension)" />
+    <PackageReference Include="NAudio.Wasapi" Version="3.3.0" />
+    <EmbeddedResource Include="../../../PigPendant/Resources/balloon.png;../../../PigPendant/Resources/bamboo-pig.png;../../../PigPendant/Resources/rope-pig.png;../../../PigPendant/Resources/net-pig-custom.png;../../../PigPendant/Resources/hanging-pig-custom.png;../../../PigPendant/Resources/ghost-blink.png;../../../PigPendant/Resources/ghost-halo.png" LogicalName="PigPendant.Resources.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../../PigPendant/Resources/status-pig-spin.gif" LogicalName="PigPendant.Resources.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../../PigPendant/Resources/default-settings.json" LogicalName="PigPendant.Resources.default-settings.json" />
+    <EmbeddedResource Include="../../licenses/NAudio.txt" LogicalName="PigPendant.Licenses.NAudio.txt" />
   </ItemGroup>
 </Project>
