@@ -20,7 +20,7 @@
     },
     "ghostWave": {
       "length": 140,
-      "size": 48,
+      "size": 96,
       "weight": 65,
       "elasticity": 55,
       "sway": 100,

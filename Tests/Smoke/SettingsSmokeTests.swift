@@ -110,7 +110,7 @@ extension SettingsWindowController {
         modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .ghostWave)!
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.mode == .ghostWave && model.displayImage === model.artwork.ghostWave)
-        precondition(visibility.title == "显示波浪幽灵猪" && countRow.isHidden && bambooPositionRow.isHidden)
+        precondition(visibility.title == "显示小小幽灵猪" && countRow.isHidden && bambooPositionRow.isHidden)
         precondition(window?.contentView?.frame.height == 390)
         precondition(ghostOffsetRows.allSatisfy { !$0.row.isHidden })
         precondition(parameterRows.allSatisfy { $0.row.isHidden == ($0.parameter != .size) })

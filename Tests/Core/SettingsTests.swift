@@ -42,6 +42,12 @@ final class SettingsTests {
         try expectEqual(settings[.horizontal], 44)
         try expectEqual(settings[.vertical], 32)
         try expectEqual(GhostOffsetAxis.range, -300...300)
+        try expectEqual(DisplayMode.ghostWave.title, "小小幽灵猪")
+        try expectEqual(DisplayMode.ghostWave.visibilityMenuTitle, "显示 / 隐藏小小幽灵猪")
+        let bundledDefaultsURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent("PigPendant/Resources/default-settings.json")
+        let bundledDefaults = try SettingsConfiguration.load(from: bundledDefaultsURL)
+        try expectEqual(bundledDefaults[.size, mode: .ghostWave], 96)
         for mode in DisplayMode.allCases {
             for parameter in ParameterID.allCases {
                 try expectEqual(settings[parameter, mode: mode], parameter.defaultValue)

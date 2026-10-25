@@ -8,13 +8,13 @@ A small desktop pig pendant that follows your mouse. The macOS version is availa
 
 ![Preview of the original six modes](docs/media/modes.gif)
 
-*This preview does not yet include the newly added Wave Ghost mode. It uses app artwork and is not a screen recording.*
+*This preview does not yet include the newly added Little Ghost Pig mode. It uses app artwork and is not a screen recording.*
 
 ## Modes
 
 - **Rope Pendant**: The default mode. The pig reacts to movement and falling, with randomly spaced blinks, ear movements, and body gestures at rest. After the rope settles, a body gesture can nudge the pig into a short swing; its amplitude is adjustable from 0–200% in Settings. Actions return smoothly to rest instead of looping the entire GIF.
 - **Ghost Pig**: The second mode in the mode list. Follows the mouse without a rope, with random progressive blinks and ear/hand gestures, continuously flowing rounded ghost feet and an independently drifting, tilting, rebounding halo.
-- **Wave Ghost**: A separately saved mode that keeps the original Ghost Pig. Uses the user's square transparent artwork, reuses and independently positions the original halo, and adds random blinks, more visible ear motion, and a continuously moving wavy hem.
+- **Little Ghost Pig**: A separately saved mode with a default size of 96 pt that keeps the original Ghost Pig. Uses the user's square transparent artwork, reuses and independently positions the original halo, and adds random blinks, more visible ear motion, and a continuously moving wavy hem.
 - **Pig Balloons**: Shows 1–8 pig-shaped balloons floating upward; the default is 2. Each has independently timed blinks, gentle ear movements and nose gestures, with movement reactions.
 - **Pig in a Net**: Uses the user's manually cleaned transparent image, removing only the arrowed extra foot's pink and dark pixels in the display copy. The original PNG, other facial features, blue mesh, and transparent holes remain unchanged; the old 62-frame loop is no longer used.
 - **Pig on Bamboo**: The pig hugs a bamboo stalk that bends with mouse movement, with random blinks, ear movements and nose gestures that preserve its grip.
@@ -26,7 +26,7 @@ At launch, the app detects drum onsets from changes in low- and mid-frequency en
 
 ## Usage
 
-Click the pig icon in the menu bar to switch modes or open **Settings**. The original Ghost Pig is second in the mode list, followed by Wave Ghost. The menu keeps only actionable mode, visibility, adjustment, reset, and quit items; it omits mode descriptions and audio status. Settings are saved automatically. Closing the Settings window does not quit the app; select **Quit Pig Pet Pendant** to exit.
+Click the pig icon in the menu bar to switch modes or open **Settings**. The original Ghost Pig is second in the mode list, followed by Little Ghost Pig. The menu keeps only actionable mode, visibility, adjustment, reset, and quit items; it omits mode descriptions and audio status. Settings are saved automatically. Closing the Settings window does not quit the app; select **Quit Pig Pet Pendant** to exit.
 
 Initial parameters for each mode, balloon count, bamboo position, and ghost offsets are stored in `~/Library/Application Support/PigPendant/default-settings.json`. The file is copied from the app bundle on first launch. When an upgrade adds a mode, a complete legacy configuration is migrated by adding that mode's bundled defaults without replacing existing mode values or other settings; other invalid configurations still report an error. Edit the JSON manually, then click **Restore Defaults** in Settings to apply the new values. Existing saved adjustments are not overwritten by editing the file or updating the app; restoring defaults applies the file values. All seven parameters for every mode are required and must be within the ranges shown in Settings.
 
@@ -69,7 +69,7 @@ With user approval, the new net image has locally generated ear/nose gestures in
 
 Hanging Pig's purple band is tinted only in the display copy, matching the rendered sRGB brown binding sampled from original rope frame 0 while retaining shading. Source PNGs remain unchanged. GUI checks verify only band RGB changes, with alpha, other body pixels, and the halo preserved; Settings and the pendant share the same colors.
 
-Wave Ghost uses `PigPendant/Resources/ghost-wave.png` as an unchanged bundled source. Its local-motion coordinates are measured for this silhouette rather than reused from the original ghost. The original `ghost-halo.png` remains an independent layer; Wave Ghost adjusts only its drawing anchor and display amplitude, leaving the source and original mode untouched. Progressive eye closure, local ear movement, and a continuous traveling hem wave are checked at 48 pt; the snout is protected, and motion pauses/resumes with hide and system sleep. The four-panel GPT action reference defines motion limits only; it is not used as an animation frame sequence.
+Little Ghost Pig uses `PigPendant/Resources/ghost-wave.png` as an unchanged bundled source, with a default size of 96 pt. Its local-motion coordinates are measured for this silhouette rather than reused from the original ghost. The original `ghost-halo.png` remains an independent layer; Little Ghost Pig adjusts only its drawing anchor and display amplitude, leaving the source and original mode untouched. Progressive eye closure, local ear movement, and a continuous traveling hem wave are checked at 48 pt; the snout is protected, and motion pauses/resumes with hide and system sleep. The four-panel GPT action reference defines motion limits only; it is not used as an animation frame sequence.
 
 ### Layered Ghost Pig blinks
 
