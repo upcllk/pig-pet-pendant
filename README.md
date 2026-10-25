@@ -73,6 +73,8 @@ powershell -ExecutionPolicy Bypass -File .\windows\scripts\build.ps1 -Test -Publ
 
 发布结果为 `dist/PigPendant-Windows-win-x64.exe`，本次约 87 MB；素材、.NET 运行时、应用代码与音频库都打包在这一个文件中，用户双击即可运行，不需要安装 .NET SDK。首次启动时 .NET 会把必要的原生组件解包到用户临时目录。当前只发布 Windows x64，未做代码签名。
 
+`v0.2.2` 起，推送新版本标签会运行 `.github/workflows/release.yml`：分别在 Windows x64 与 macOS arm64 构建并检查，从同一标签生成单文件 EXE、DMG 和 macOS ZIP。两边都成功后才发布同一个 GitHub Release，并附上 `SHA256SUMS.txt`；某一边失败时不会发布不完整版本。macOS 包仍是临时签名、未经 Apple 公证，Windows EXE 也未签名。
+
 ### macOS 角色动画与素材
 
 绳子小猪的独立透明素材 `PigPendant/Resources/rope-pig.png` 保留原 GIF 全部 75 帧、每帧 40 毫秒；只去除上方长绳及远离角色的游离点，统一悬挂接点，不重绘角色，原静态 `pig.png` 也保留不变。播放时按状态选择短动作，用相近姿态和短暂帧间混合代替首尾硬切。物理静止时仍可随机做小动作；等待期间降低更新频率，隐藏或系统睡眠时暂停。可用 `swift tools/extract-rope-pig.swift source.gif PigPendant/Resources/rope-pig.png` 重新提取原素材。完整帧索引图、接缝分析、动作划分与复现方法见 [角色动画资料](docs/ROPE_ANIMATION.md)。

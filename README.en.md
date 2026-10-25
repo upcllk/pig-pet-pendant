@@ -6,6 +6,8 @@
 
 A small desktop pig pendant that follows your mouse. Native macOS and Windows clients are available. The Windows client now includes all seven character modes, layered artwork, motion, editable defaults, and system-audio-reactive tray icon in a self-contained single-file EXE.
 
+Starting with `v0.2.2`, a release tag builds the Windows x64 EXE and macOS arm64 DMG/ZIP on their respective GitHub Actions runners. The workflow publishes one Release with checksums only after both builds and checks pass.
+
 ![Preview of the original six modes](docs/media/modes.gif)
 
 *This preview does not yet include the newly added Little Ghost Pig mode. It uses app artwork and is not a screen recording.*
