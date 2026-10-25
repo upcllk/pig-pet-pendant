@@ -35,7 +35,7 @@ final class PendantSimulation {
     }
     var idleInterval: TimeInterval {
         if settings.mode == .net { return min(1.0 / 15.0, timeline.frameDurations.min()!) }
-        if (settings.mode == .rope || settings.mode == .bamboo) && ropeAnimation.isAnimating {
+        if [.rope, .bamboo, .hanging].contains(settings.mode) && ropeAnimation.isAnimating {
             return 1.0 / 60.0
         }
         if settings.mode == .balloon && balloonAnimations.contains(where: \.isAnimating) { return 1.0 / 60.0 }
@@ -186,7 +186,7 @@ final class PendantSimulation {
     @discardableResult
     private func advanceCharacterAnimations(anchor: V2, previousAnchor: V2, previousEndPoints: [V2],
                                              elapsed: TimeInterval) -> Bool {
-        guard [.rope, .bamboo, .balloon].contains(settings.mode), elapsed.isFinite, elapsed > 0 else { return false }
+        guard [.rope, .bamboo, .balloon, .hanging].contains(settings.mode), elapsed.isFinite, elapsed > 0 else { return false }
         let anchorVelocity = elapsed > 0.25 ? V2(0, 0) : (anchor - previousAnchor) / CGFloat(elapsed)
         if settings.mode == .balloon {
             var changed = false
@@ -201,7 +201,7 @@ final class PendantSimulation {
         }
         let before = ropeAnimation.localPose
         let bobVelocity = elapsed > 0.25 ? V2(0, 0) : (physics.endPoint - previousEndPoints[0]) / CGFloat(elapsed)
-        if settings.mode == .bamboo {
+        if settings.mode == .bamboo || settings.mode == .hanging {
             ropeAnimation.advance(elapsed: elapsed, anchorVelocity: anchorVelocity, bobVelocity: bobVelocity)
             return ropeAnimation.localPose != before
         }

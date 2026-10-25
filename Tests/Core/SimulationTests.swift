@@ -172,7 +172,7 @@ final class SimulationTests {
     }
 
     func testLocalCharactersAnimateWithoutWakingPhysics() throws {
-        for mode in [DisplayMode.balloon, .bamboo] {
+        for mode in [DisplayMode.balloon, .bamboo, .hanging] {
             for count in [1, 8] {
                 var settings = PendantSettings()
                 settings.mode = mode
@@ -218,6 +218,21 @@ final class SimulationTests {
                 simulation.apply(other)
                 try expect(simulation.balloonAnimations.allSatisfy { !$0.isAnimating })
                 try expectEqual(simulation.ropeAnimation.localPose, .rest)
+                if mode == .hanging {
+                    for falling in [false, true] {
+                        let reaction = PendantSimulation(settings: settings, frameDurations: durations,
+                                                         ropeFrameDurations: ropeDurations, animationSeed: 2026)
+                        reaction.reset(anchor: anchor)
+                        var sawReaction = false
+                        for frame in 1...180 {
+                            let distance = CGFloat(min(frame, 30)) * 6
+                            let moved = anchor + (falling ? V2(0, -distance) : V2(distance, 0))
+                            reaction.advance(anchor: moved, elapsed: 1.0 / 60)
+                            sawReaction = sawReaction || reaction.ropeAnimation.action == (falling ? .falling : .moving)
+                        }
+                        try expect(sawReaction)
+                    }
+                }
             }
         }
     }

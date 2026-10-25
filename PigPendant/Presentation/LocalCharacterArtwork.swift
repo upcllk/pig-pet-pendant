@@ -36,6 +36,8 @@ final class LocalCharacterArtwork {
     }
 
     func image(for pose: LocalCharacterPose) -> NSImage {
+        let pose = mode == .hanging && pose.gesture == .blink
+            ? LocalCharacterPose(gesture: .ears, step: pose.step) : pose
         guard pose.step > 0 && pose.step < LocalCharacterPose.steps else { return restImage }
         let blink = pose.blink
         let earAngle = pose.earAngle
@@ -83,6 +85,7 @@ final class LocalCharacterArtwork {
 
     // Coordinates are normalized source pixels, with y increasing downward.
     private func sourcePoint(_ point: CGPoint, blink: Double, earAngle: Double, nuzzle: Double) -> CGPoint {
+        if mode == .hanging { return hangingSourcePoint(point, earAngle: earAngle, nuzzle: nuzzle) }
         var result = point
         if blink > 0 {
             let eyes: [CGPoint] = mode == .balloon
@@ -131,5 +134,35 @@ final class LocalCharacterArtwork {
             }
         }
         return result
+    }
+
+    private func hangingSourcePoint(_ point: CGPoint, earAngle: Double, nuzzle: Double) -> CGPoint {
+        if earAngle != 0 {
+            for (index, ear) in [
+                (center: CGPoint(x: 0.196, y: 0.378), root: CGPoint(x: 0.232, y: 0.408),
+                 radius: CGSize(width: 0.050, height: 0.074)),
+                (center: CGPoint(x: 0.800, y: 0.331), root: CGPoint(x: 0.757, y: 0.374),
+                 radius: CGSize(width: 0.086, height: 0.089))
+            ].enumerated() {
+                let radius = hypot((point.x - ear.center.x) / ear.radius.width,
+                                   (point.y - ear.center.y) / ear.radius.height)
+                guard radius < 1 else { continue }
+                let angle = earAngle * 1.8 * pow(1 - radius * radius, 2) * (index == 0 ? 1 : -1)
+                let dx = point.x - ear.root.x
+                let dy = point.y - ear.root.y
+                return CGPoint(x: ear.root.x + dx * cos(angle) - dy * sin(angle),
+                               y: ear.root.y + dx * sin(angle) + dy * cos(angle))
+            }
+        }
+        if nuzzle > 0 {
+            let center = CGPoint(x: 0.543, y: 0.216)
+            let radius = hypot((point.x - center.x) / 0.108, (point.y - center.y) / 0.075)
+            if radius < 1 {
+                let amount = nuzzle * pow(1 - radius * radius, 2)
+                return CGPoint(x: center.x + (point.x - center.x) / (1 + 0.10 * amount) - 0.018 * amount,
+                               y: center.y + (point.y - center.y) / (1 + 0.08 * amount) + 0.026 * amount)
+            }
+        }
+        return point
     }
 }

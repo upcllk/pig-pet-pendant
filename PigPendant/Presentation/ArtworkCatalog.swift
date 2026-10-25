@@ -12,6 +12,7 @@ struct ArtworkCatalog {
     let rope: AnimatedArtwork
     let balloonCharacter: LocalCharacterArtwork
     let bambooCharacter: LocalCharacterArtwork
+    let hangingCharacter: LocalCharacterArtwork
 
     init(resourceURL: URL) throws {
         let directory = resourceURL.deletingLastPathComponent()
@@ -38,6 +39,7 @@ struct ArtworkCatalog {
         rope = ropeAnimation
         balloonCharacter = try LocalCharacterArtwork(image: balloon, mode: .balloon)
         bambooCharacter = try LocalCharacterArtwork(image: bamboo, mode: .bamboo)
+        hangingCharacter = try LocalCharacterArtwork(image: hanging, mode: .hanging)
     }
 
     func image(mode: DisplayMode, frameIndex: Int) -> NSImage {

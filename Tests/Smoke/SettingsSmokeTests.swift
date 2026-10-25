@@ -220,6 +220,7 @@ extension SettingsWindowController {
         precondition(model.mode == .hanging && model.displayImage === model.hangingImage)
         precondition(visibility.title == "显示上吊猪" && countRow.isHidden && bambooPositionRow.isHidden)
         precondition(window?.contentView?.frame.height == 510 && model.physics.endPoint.y < model.physics.nodes[0].y)
+        model.smokeCheck()
         modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .ghost)!
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.mode == .ghost && model.displayImage === model.ghostImage)
