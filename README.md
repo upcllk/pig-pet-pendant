@@ -65,6 +65,6 @@ GUI 检查需要已登录的桌面会话，会短暂显示测试挂件后自动�
 
 ## 相关文档
 
-- [角色微动作 skill](.github/skills/character-micro-animation/SKILL.md)：项目级复用流程，包含原帧编排、静态图局部变形、状态驱动与验证。支持项目技能的 Copilot 客户端可发现并按任务相关性加载；也可在支持技能斜杠调用的客户端中输入 `/character-micro-animation`。发现不等于必定调用，新增后若未出现，可新建会话或重新加载窗口；[AGENTS.md](AGENTS.md) 提供直接读取的兜底入口。目录与按需加载规则见 [VS Code 官方说明](https://code.visualstudio.com/docs/copilot/customization/agent-skills)。本项目不安装到全局技能目录。
+- [角色微动作 skill](.agents/skills/character-micro-animation/SKILL.md)：原帧编排、局部变形、状态驱动与验证流程，统一在项目 `.agents/skills/` 维护一份，供 Copilot、Codex 与 DeepSeekHarness 发现，不向 `.github/skills/`、`.codex/` 或 `.dsh/skills/` 复制。Copilot 与 Codex 的目录支持见 [VS Code 官方说明](https://code.visualstudio.com/docs/copilot/customization/agent-skills)及 [Codex 官方说明](https://developers.openai.com/codex/skills/)；DeepSeekHarness 的目录支持已核对本机 `0.2.1-rc.2` 文件系统技能提供器，其默认项目扫描包含 `.agents/skills/`。这不代表所有版本、配置或客户端都已实测调用：发现后仍按任务相关性加载，不保证每次自动调用。若未出现，可新建会话或重启/重新加载客户端；[AGENTS.md](AGENTS.md) 提供直接读取的兜底入口。Copilot 支持时可用 `/character-micro-animation`，Codex 可用 `$character-micro-animation`。不安装到全局目录。
 - [Windows 移植计划](docs/WINDOWS_PORT_PLAN.md)
 - [开发经验与踩坑记录](docs/DEVELOPMENT_LEARNINGS.md)
