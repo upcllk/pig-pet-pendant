@@ -119,6 +119,8 @@ swift -O tools/prepare-ghost-blink.swift /path/to/blink_keys_8 \
 
 原 `ghost-pig.png` 保留作参考，不参与当前显示。打包检查三份新 PNG；核心测试验证随机间隔、闭眼时长、输入帧率、静止下摆时钟/循环接缝、转向收敛与跟随恢复，GUI 检查源像素、真实眼形、正常尺寸耳手位移、四个圆弧脚各自的轮廓起伏及错峰、上半身保护、无重复光环、主体混合不变淡及独立动画不裁切。`dist/ghost-layered-contact.png` 为黑白底眨眼关键帧对照，`dist/ghost-body-motion-contact.png` 为黑白底联动姿态及 48 点尺寸对照，`dist/ghost-layered-preview.png` 为 16 秒应用绘制路径的分层动画预览；`dist/ghost-hem-flow-preview.png` 单独展示黑白底、放大及 48 点尺寸下的连续波浪脚（均为合成输入，非录屏）。这些检查不代替用户实测自然度。
 
+macOS 两种幽灵猪的下摆在零相位也继续计算空间行波，不在循环交界回退原图。GUI 回归逐一绘制完整 192 段相位，分别在待机和耳朵/移动姿态下比较进入、离开零相位的颜色与 Alpha 差异，避免每圈闪回原始腿形。`dist/previews/ghost-hem-loop-preview.png` 与 `dist/previews/ghost-wave-hem-loop-preview.png` 是实际绘制路径的 3.2 秒黑白底循环预览，含 48 点与放大尺寸；同目录的 `ghost-hem-seam-contact.png` 与 `ghost-wave-hem-seam-contact.png` 展示交界前后三帧（合成输入，非实机录屏）。
+
 ## 已知限制
 
 - Windows 版的多屏混合 DPI、真实跨进程点击穿透、焦点、睡眠恢复、Explorer 重启以及长期性能尚待实机验收。

@@ -43,8 +43,6 @@ final class WaveGhostArtwork {
 
     func image(for pose: GhostBodyPose, blinkSample: CharacterFrameSample) -> NSImage {
         let blink = Self.blinkAmount(for: blinkSample)
-        guard pose.step > 0 || pose.drift != 0 || blink > 0 ||
-                pose.hemStep != 0 else { return restImage }
         let blinkStep = Int((blink * 72).rounded())
         let key = NSNumber(value: pose.key * 73 + blinkStep)
         return render(key: key) { self.sourcePoint($0, pose: pose, blink: Double(blinkStep) / 72) }
@@ -133,7 +131,7 @@ final class WaveGhostArtwork {
                              y: ear.root.y + dx * sin(angle) + dy * cos(angle))
         }
 
-        if pose.hemPhase != 0 && result.y > 0.69 {
+        if result.y > 0.69 {
             let t = min(1, max(0, (result.y - 0.69) / 0.18))
             let weight = t * t * (3 - 2 * t)
             let wave = sin(pose.hemPhase * .pi * 2 - result.x * .pi * 4.4)

@@ -2,6 +2,9 @@ import AppKit
 
 extension PendantCoordinator {
     func smokeCheckWaveGhostAnimation() {
+        smokeCheckGhostHemLoop(name: "ghost-wave", aspectRatio: 1) {
+            artwork.ghostWaveCharacter.image(for: $0, blinkSample: .rest)
+        }
         precondition(artwork.ghostWave.size == NSSize(width: 768, height: 768))
         guard let bundled = Bundle.main.resourceURL?.appendingPathComponent("ghost-wave.png"),
               let bundledImage = NSImage(contentsOf: bundled),

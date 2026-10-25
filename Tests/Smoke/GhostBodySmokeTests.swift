@@ -62,6 +62,9 @@ extension PendantCoordinator {
 
     func smokeCheckGhostBody() {
         let character = artwork.ghostCharacters[0]
+        smokeCheckGhostHemLoop(name: "ghost", aspectRatio: 1.5) {
+            character.image(for: $0)
+        }
         func raster(_ image: NSImage, width: Int) -> NSBitmapImageRep {
             guard let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: width * 3 / 2,
                                                bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true,
