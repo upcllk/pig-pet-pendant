@@ -34,6 +34,18 @@ internal static class Program
                     if (artwork.Get(mode, 0).PixelWidth <= 0) throw new InvalidDataException($"Artwork {mode}");
                 using (var notice = typeof(Program).Assembly.GetManifestResourceStream("PigPendant.Licenses.NAudio.txt"))
                     if (notice is null || notice.Length < 500) throw new InvalidDataException("NAudio license notice");
+                var opaqueRed = Artwork.Bitmap([0, 0, 255, 255], 1, 1);
+                var opaqueBlue = Artwork.Bitmap([255, 0, 0, 255], 1, 1);
+                var blender = new FrameBlender();
+                var halfway = blender.Compose(opaqueRed, opaqueBlue, .5);
+                var mixed = Artwork.Pixels(halfway).Pixels;
+                if (mixed[3] != 255 || mixed[0] is < 127 or > 128 || mixed[2] is < 127 or > 128 ||
+                    !ReferenceEquals(halfway, blender.Compose(opaqueRed, opaqueBlue, .5)))
+                    throw new InvalidDataException("Opaque crossfade changed alpha or missed cache");
+                var transparent = Artwork.Bitmap([0, 0, 0, 0], 1, 1);
+                var edge = Artwork.Pixels(blender.Compose(transparent, opaqueBlue, .5)).Pixels;
+                if (edge[3] is < 127 or > 128 || edge[0] is < 127 or > 128)
+                    throw new InvalidDataException("Premultiplied edge blend changed alpha");
                 var previousConfig = Environment.GetEnvironmentVariable("PIGPENDANT_CONFIG_DIR");
                 var checkDirectory = Path.Combine(Path.GetTempPath(), "PigPendant-settings-check-" + Guid.NewGuid().ToString("N"));
                 try

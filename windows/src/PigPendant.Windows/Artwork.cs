@@ -8,6 +8,7 @@ namespace PigPendant.Windows;
 
 internal sealed class Artwork
 {
+    private readonly FrameBlender frameBlender = new();
     private readonly Dictionary<DisplayMode, BitmapSource> images = new();
     private readonly Apng rope, ghostBlink;
     private readonly LocalCharacterArtwork balloonCharacter, bambooCharacter, netCharacter, hangingCharacter;
@@ -72,6 +73,8 @@ internal sealed class Artwork
         }
     }
     public BitmapSource Halo(DisplayMode mode) => mode == DisplayMode.Ghost ? ghostHalo : hangingHalo;
+    public BitmapSource Blend((BitmapSource First, BitmapSource? Second, double Blend) character) =>
+        frameBlender.Compose(character.First, character.Second, character.Blend);
     internal static (byte[] Pixels, int Width, int Height) Pixels(BitmapSource source)
     {
         var converted = new FormatConvertedBitmap(source, PixelFormats.Pbgra32, null, 0); converted.Freeze();

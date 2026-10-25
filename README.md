@@ -62,7 +62,7 @@ powershell -ExecutionPolicy Bypass -File .\windows\scripts\build.ps1 -Test
 
 托盘菜单可切换六种模式、显示/隐藏、重置位置、打开设置和退出；幽灵猪排第二。设置保存在 `%LOCALAPPDATA%\PigPendant\settings.json`。首次启动会从内嵌资源复制 `%LOCALAPPDATA%\PigPendant\default-settings.json`；编辑后点击“恢复默认”才会应用新值，不覆盖此前保存的个人调参。再次启动会通知已运行实例打开设置。
 
-Windows 当前使用与 macOS 相同的绳子 75 帧、新网兜静态图与局部动作、上吊猪棕色绑带及独立光环、幽灵猪分层眨眼和持续下摆，以及气球和竹子小猪的局部动作。托盘音乐响应使用 [NAudio.Wasapi](https://www.nuget.org/packages/NAudio.Wasapi/)；开发时 NuGet 还原依赖，发布包内包含所需库，其许可可从设置窗口查看。若默认输出设备不可用，挂件仍可运行，托盘图标保持基础缩放。
+Windows 当前使用与 macOS 相同的绳子 75 帧、新网兜静态图与局部动作、上吊猪棕色绑带及独立光环、幽灵猪分层眨眼和持续下摆，以及气球和竹子小猪的局部动作。绳子和幽灵的帧间过渡先混合预乘 Alpha 像素，再一次绘制，避免不透明主体在视频等动态背景上过渡时变淡。托盘音乐响应使用 [NAudio.Wasapi](https://www.nuget.org/packages/NAudio.Wasapi/)；开发时 NuGet 还原依赖，发布包内包含所需库，其许可可从设置窗口查看。若默认输出设备不可用，挂件仍可运行，托盘图标保持基础缩放。
 
 单文件自包含发布使用：
 

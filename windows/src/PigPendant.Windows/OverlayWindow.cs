@@ -104,11 +104,9 @@ internal sealed class OverlayWindow : Window
             dc.Pop();
         }
     }
-    private static void DrawCharacter(DrawingContext dc, (System.Windows.Media.Imaging.BitmapSource First, System.Windows.Media.Imaging.BitmapSource? Second, double Blend) character, Rect rect)
+    private void DrawCharacter(DrawingContext dc, (System.Windows.Media.Imaging.BitmapSource First, System.Windows.Media.Imaging.BitmapSource? Second, double Blend) character, Rect rect)
     {
-        if (character.Second is null || character.Blend <= 0) { dc.DrawImage(character.First, rect); return; }
-        dc.PushOpacity(1 - character.Blend); dc.DrawImage(character.First, rect); dc.Pop();
-        dc.PushOpacity(character.Blend); dc.DrawImage(character.Second, rect); dc.Pop();
+        dc.DrawImage(artwork.Blend(character), rect);
     }
     private void DrawHalo(DrawingContext dc, DisplayMode mode, Rect rect, double width)
     {
