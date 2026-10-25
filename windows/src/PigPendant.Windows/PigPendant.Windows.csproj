@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <Version>0.2.2</Version>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>$(MSBuildProjectDirectory)/obj/PigPendant.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../PigPendant.Core/PigPendant.Core.csproj" />
+    <PackageReference Include="NAudio.Wasapi" Version="3.3.0" />
+    <EmbeddedResource Include="../../../PigPendant/Resources/balloon.png;../../../PigPendant/Resources/bamboo-pig.png;../../../PigPendant/Resources/rope-pig.png;../../../PigPendant/Resources/net-pig-custom.png;../../../PigPendant/Resources/hanging-pig-custom.png;../../../PigPendant/Resources/ghost-blink.png;../../../PigPendant/Resources/ghost-halo.png;../../../PigPendant/Resources/ghost-wave.png" LogicalName="PigPendant.Resources.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../../PigPendant/Resources/status-pig-spin.gif" LogicalName="PigPendant.Resources.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../../PigPendant/Resources/AppIcon.png" LogicalName="PigPendant.Resources.AppIcon.png" />
+    <EmbeddedResource Include="../../../PigPendant/Resources/default-settings.json" LogicalName="PigPendant.Resources.default-settings.json" />
+    <EmbeddedResource Include="../../licenses/NAudio.txt" LogicalName="PigPendant.Licenses.NAudio.txt" />
+  </ItemGroup>
+  <Target Name="GenerateWindowsIcon" BeforeTargets="CoreCompile" Inputs="../../../PigPendant/Resources/AppIcon.png;../../scripts/create-icon.ps1" Outputs="$(ApplicationIcon)">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)/../../scripts/create-icon.ps1&quot; -Source &quot;$(MSBuildProjectDirectory)/../../../PigPendant/Resources/AppIcon.png&quot; -Destination &quot;$(ApplicationIcon)&quot;" />
+  </Target>
+</Project>
