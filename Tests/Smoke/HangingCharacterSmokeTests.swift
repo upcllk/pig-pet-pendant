@@ -2,6 +2,7 @@ import AppKit
 
 extension PendantCoordinator {
     func smokeCheckHangingCharacter() {
+        smokeCheckHangingHalo()
         let character = artwork.hangingCharacter
         func bitmap(_ image: NSImage, displaySize: Bool = false) -> NSBitmapImageRep {
             if !displaySize {
@@ -114,20 +115,130 @@ extension PendantCoordinator {
         precondition(sawEar && sawNose)
         let held = simulation.ropeAnimation.elapsed
         let sample = simulation.ropeAnimation.localPose
+        let heldHalo = simulation.haloAnimation.pose
         toggleVisible()
         tick(at: lastTick + 2)
         precondition(timer == nil && simulation.ropeAnimation.elapsed == held)
+        precondition(simulation.haloAnimation.pose == heldHalo)
         toggleVisible()
         suspend()
         tick(at: lastTick + 2)
         precondition(timer == nil && simulation.ropeAnimation.elapsed == held)
+        precondition(simulation.haloAnimation.pose == heldHalo)
         resume()
         precondition(simulation.ropeAnimation.localPose == sample)
+        precondition(simulation.haloAnimation.pose == heldHalo)
         tick(at: lastTick + 0.05)
         precondition(simulation.ropeAnimation.elapsed > held)
         simulation.restartAnimation()
         reset()
         tick()
         NSLog("PASS: hanging local gestures, protected cross eyes/band/halo/attachment, scene mapping, idle playback and pause/resume")
+    }
+
+    private func smokeCheckHangingHalo() {
+        func bitmap(_ image: NSImage) -> NSBitmapImageRep {
+            guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+                preconditionFailure("Cannot inspect hanging halo layers")
+            }
+            return NSBitmapImageRep(cgImage: cg)
+        }
+        let source = bitmap(artwork.hanging)
+        let body = bitmap(artwork.hangingLayers.body)
+        let halo = bitmap(artwork.hangingLayers.halo)
+        var count = 0
+        var soft = 0
+        for y in 0..<source.pixelsHigh {
+            for x in 0..<source.pixelsWide {
+                guard let original = source.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB),
+                      let b = body.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB),
+                      let h = halo.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else {
+                    preconditionFailure("Cannot normalize halo pixel colors")
+                }
+                precondition(!(b.alphaComponent > 0 && h.alphaComponent > 0), "Body and halo must not overlap")
+                if h.alphaComponent > 0 {
+                    if h != original || b.alphaComponent != 0 {
+                        NSLog("Halo copy mismatch at %d,%d: %@ -> %@", x, y, original, h)
+                        preconditionFailure("Halo pixels must be copied, not redrawn")
+                    }
+                    count += 1
+                    if h.alphaComponent < 0.999 { soft += 1 }
+                } else {
+                    if b != original {
+                        NSLog("Body copy mismatch at %d,%d: %@ -> %@", x, y, original, b)
+                        preconditionFailure("Halo extraction must preserve every body pixel")
+                    }
+                }
+            }
+        }
+        NSLog("Halo split pixel count=%d soft=%d", count, soft)
+        precondition(count == 4814 && soft > 100)
+        var settings = self.settings
+        do {
+            try settings.set(140, for: .size)
+            try settings.set(180, for: .length)
+        } catch { preconditionFailure("Cannot configure halo preview: \(error)") }
+        let preview = PendantSimulation(settings: settings, frameDurations: artwork.net.frameDurations,
+                                        ropeFrameDurations: artwork.rope.frameDurations, animationSeed: 17)
+        let anchor = V2(320, 500)
+        preview.reset(anchor: anchor)
+        let view = PigOverlayView(frame: NSRect(x: 0, y: 0, width: 760, height: 600))
+        var previous: HaloPose?
+        var changed = 0
+        var rebound = false
+        var previews: [NSImage] = []
+        for frame in 0..<240 {
+            let time = Double(frame + 1) / 60
+            let target = anchor + V2(min(90, max(0, time - 0.5) * 300), -min(80, max(0, time - 1.7) * 300))
+            preview.advance(anchor: target, elapsed: 1.0 / 60)
+            let scene = SceneSnapshot(simulation: preview, artwork: artwork, isVisible: true)
+            precondition(scene.haloImage === artwork.hangingLayers.halo)
+            precondition(scene.haloPose == preview.haloAnimation.pose)
+            precondition(abs(scene.haloPose.angle) < 0.15 && scene.haloPose.offset.magnitude < 0.06)
+            if let previous = previous {
+                if scene.haloPose != previous { changed += 1 }
+                precondition(abs(scene.haloPose.angle - previous.angle) < 0.05)
+                rebound = rebound || (time > 1.2 && scene.haloPose.angle > 0.001)
+            }
+            previous = scene.haloPose
+            if frame % 15 == 0 {
+                view.scene = scene
+                guard let image = view.bitmapImageRepForCachingDisplay(in: view.bounds) else {
+                    preconditionFailure("Cannot render hanging halo scene")
+                }
+                view.cacheDisplay(in: view.bounds, to: image)
+                let previewImage = NSImage(size: view.bounds.size)
+                previewImage.addRepresentation(image)
+                previews.append(previewImage)
+                guard let png = image.representation(using: .png, properties: [:]) else {
+                    preconditionFailure("Cannot encode hanging halo scene")
+                }
+                do {
+                    try png.write(to: Bundle.main.bundleURL.deletingLastPathComponent()
+                        .appendingPathComponent(String(format: "hanging-halo-%04d.png", frame)))
+                } catch { preconditionFailure("Cannot save halo preview: \(error)") }
+            }
+        }
+        precondition(changed > 100 && rebound)
+        let sheet = NSImage(size: NSSize(width: 1200, height: 1040))
+        sheet.lockFocus()
+        NSColor(calibratedWhite: 0.96, alpha: 1).setFill()
+        NSRect(x: 0, y: 0, width: 1200, height: 1040).fill()
+        for (index, image) in previews.enumerated() {
+            let rect = NSRect(x: CGFloat(index % 4) * 300 + 5, y: 1040 - CGFloat(index / 4 + 1) * 260 + 25,
+                              width: 290, height: 229)
+            image.draw(in: rect)
+            String(format: "%.2f s", Double(index) * 0.25).draw(at: NSPoint(x: rect.minX, y: rect.minY - 18),
+                                                              withAttributes: [.foregroundColor: NSColor.darkGray])
+        }
+        sheet.unlockFocus()
+        guard let tiff = sheet.tiffRepresentation, let bitmap = NSBitmapImageRep(data: tiff),
+              let png = bitmap.representation(using: .png, properties: [:]) else {
+            preconditionFailure("Cannot encode halo scene contact sheet")
+        }
+        do {
+            try png.write(to: Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("hanging-halo-contact.png"))
+        } catch { preconditionFailure("Cannot save halo scene contact sheet: \(error)") }
+        NSLog("PASS: halo 4814 disjoint original pixels, soft alpha, body preservation, real scene lag/rebound, bounded motion")
     }
 }

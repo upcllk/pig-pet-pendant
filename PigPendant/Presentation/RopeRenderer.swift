@@ -62,6 +62,17 @@ enum RopeRenderer {
                 } else {
                     scene.displayImage.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
                 }
+                if let halo = scene.haloImage {
+                    let pivot = CGPoint(x: rect.minX + rect.width * scene.haloCenter.x,
+                                        y: rect.minY + rect.height * scene.haloCenter.y)
+                    context.saveGState()
+                    context.translateBy(x: pivot.x + scene.haloPose.offset.x * width,
+                                        y: pivot.y + scene.haloPose.offset.y * width)
+                    context.rotate(by: scene.haloPose.angle)
+                    halo.draw(in: rect.offsetBy(dx: -pivot.x, dy: -pivot.y),
+                              from: .zero, operation: .sourceOver, fraction: 1)
+                    context.restoreGState()
+                }
                 context.restoreGState()
                 continue
             }

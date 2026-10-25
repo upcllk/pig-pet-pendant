@@ -12,6 +12,7 @@ final class PendantSimulation {
     private(set) var timeline: AnimationTimeline
     private(set) var ropeAnimation: RopeCharacterAnimation
     private(set) var balloonAnimations: [RopeCharacterAnimation] = []
+    private(set) var haloAnimation: HaloAnimation
     private let characterFrameDurations: [TimeInterval]
     private let characterSeed: UInt64
     private(set) var isIdle = false
@@ -23,6 +24,7 @@ final class PendantSimulation {
         characterFrameDurations = ropeFrameDurations
         characterSeed = animationSeed
         ropeAnimation = RopeCharacterAnimation(frameDurations: ropeFrameDurations, seed: animationSeed)
+        haloAnimation = HaloAnimation(seed: animationSeed &+ 104729)
         apply(settings)
     }
 
@@ -39,6 +41,7 @@ final class PendantSimulation {
             return 1.0 / 60.0
         }
         if settings.mode == .balloon && balloonAnimations.contains(where: \.isAnimating) { return 1.0 / 60.0 }
+        if settings.mode == .hanging && haloAnimation.isAnimating { return 1.0 / 60.0 }
         return 1.0 / 15.0
     }
     var updateInterval: TimeInterval { isIdle ? idleInterval : 1.0 / 60.0 }
@@ -78,6 +81,7 @@ final class PendantSimulation {
     func restartAnimation() {
         timeline.reset()
         ropeAnimation.reset()
+        haloAnimation.reset()
         for index in balloonAnimations.indices { balloonAnimations[index].reset() }
     }
 
@@ -154,8 +158,16 @@ final class PendantSimulation {
         let bambooSettled = settings.mode != .bamboo || bambooBend.isSettled
         let swaySettled = settings.mode != .bamboo || abs(physics.endAngle * -0.70 - bambooSway) < 0.01
         if isIdle && anchorUnchanged && bambooSettled && swaySettled {
+            let previousAction = ropeAnimation.action
             let artworkChanged = advanceCharacterAnimations(anchor: anchor, previousAnchor: previousAnchor,
                                                              previousEndPoints: previousEndPoints, elapsed: elapsed)
+            if settings.mode == .rope, physics.isSettled,
+               previousAction != .stretch, ropeAnimation.action == .stretch {
+                let forward = V2(-physics.direction.y, physics.direction.x)
+                physics.applyEndImpulse(forward * 150)
+                isIdle = false
+                return true
+            }
             return artworkChanged || timeline.frameIndex != previousFrame
         }
         isIdle = false
@@ -203,16 +215,16 @@ final class PendantSimulation {
         let bobVelocity = elapsed > 0.25 ? V2(0, 0) : (physics.endPoint - previousEndPoints[0]) / CGFloat(elapsed)
         if settings.mode == .bamboo || settings.mode == .hanging {
             ropeAnimation.advance(elapsed: elapsed, anchorVelocity: anchorVelocity, bobVelocity: bobVelocity)
-            return ropeAnimation.localPose != before
+            var haloChanged = false
+            if settings.mode == .hanging {
+                let angle = physics.endAngle * -0.70
+                let localVelocity = V2(bobVelocity.x * cos(angle) + bobVelocity.y * sin(angle),
+                                       -bobVelocity.x * sin(angle) + bobVelocity.y * cos(angle))
+                haloChanged = haloAnimation.advance(elapsed: elapsed, localVelocity: localVelocity,
+                                                     characterActive: ropeAnimation.isAnimating)
+            }
+            return ropeAnimation.localPose != before || haloChanged
         }
         return ropeAnimation.advance(elapsed: elapsed, anchorVelocity: anchorVelocity, bobVelocity: bobVelocity)
     }
 }
-            let previousAction = ropeAnimation.action
-            if settings.mode == .rope, physics.isSettled,
-               previousAction != .stretch, ropeAnimation.action == .stretch {
-                let forward = V2(-physics.direction.y, physics.direction.x)
-                physics.applyEndImpulse(forward * 150)
-                isIdle = false
-                return true
-            }

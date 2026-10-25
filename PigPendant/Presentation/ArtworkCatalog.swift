@@ -13,6 +13,7 @@ struct ArtworkCatalog {
     let balloonCharacter: LocalCharacterArtwork
     let bambooCharacter: LocalCharacterArtwork
     let hangingCharacter: LocalCharacterArtwork
+    let hangingLayers: HangingArtworkLayers
 
     init(resourceURL: URL) throws {
         let directory = resourceURL.deletingLastPathComponent()
@@ -39,7 +40,9 @@ struct ArtworkCatalog {
         rope = ropeAnimation
         balloonCharacter = try LocalCharacterArtwork(image: balloon, mode: .balloon)
         bambooCharacter = try LocalCharacterArtwork(image: bamboo, mode: .bamboo)
-        hangingCharacter = try LocalCharacterArtwork(image: hanging, mode: .hanging)
+        let layers = try HangingArtworkLayers(image: hanging)
+        hangingLayers = layers
+        hangingCharacter = try LocalCharacterArtwork(image: layers.body, mode: .hanging)
     }
 
     func image(mode: DisplayMode, frameIndex: Int) -> NSImage {
@@ -56,10 +59,12 @@ struct ArtworkCatalog {
 
 enum ArtworkError: LocalizedError {
     case unreadable(URL)
+    case invalidHangingLayers
 
     var errorDescription: String? {
         switch self {
         case .unreadable(let url): return "无法读取或解码素材：\(url.lastPathComponent)"
+        case .invalidHangingLayers: return "无法从猪上吊原素材安全分离光环，请检查素材尺寸及透明连通区域。"
         }
     }
 }

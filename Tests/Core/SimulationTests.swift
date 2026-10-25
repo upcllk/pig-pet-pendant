@@ -247,7 +247,8 @@ final class SimulationTests {
                         sawAnimation[index] = sawAnimation[index] || players[index].localPose != .rest
                     }
                     sawDifferentPoses = sawDifferentPoses || Set(players.map(\.localPose)).count > 1
-                    let animating = players.contains(where: \.isAnimating)
+                    let animating = players.contains(where: \.isAnimating) ||
+                        (mode == .hanging && simulation.haloAnimation.isAnimating)
                     sawWaiting = sawWaiting || !animating
                     try expectEqual(simulation.updateInterval, animating ? 1.0 / 60 : 1.0 / 15)
                     try expect(simulation.isIdle)

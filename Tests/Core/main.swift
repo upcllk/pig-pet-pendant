@@ -6,6 +6,7 @@ let settings = SettingsTests()
 let simulation = SimulationTests()
 let audio = AudioReactiveTests()
 let character = RopeCharacterAnimationTests()
+let halo = HaloAnimationTests()
 let settingsChecks: [Check] = [
     ("settings.defaults-and-storage-keys", settings.testDefaultsAndOriginalStorageKeys),
     ("settings.audio-reactive-scale-bounds", {
@@ -42,13 +43,16 @@ let audioChecks: [Check] = [
     ("audio.steady-tone-does-not-repeat-beats", audio.testSteadyToneDoesNotProduceRepeatedPulses)
 ]
 let simulationChecks: [Check] = [
+    ("halo.lag-rebound-settling-frame-rates", halo.testLagReboundAndSettlingAcrossFrameRates),
+    ("halo.idle-spacing-invalid-input", halo.testIdleSpacingAndInvalidInput),
+    ("halo.simulation-scheduling-resume-mode-reset", halo.testSimulationSchedulingResumeAndModeReset),
     ("simulation.eight-balloon-anchor-and-activity", simulation.testEightBalloonsShareAnchorAndNonFirstActivityPreventsIdle),
     ("simulation.count-extremes-and-mode-directions", simulation.testBalloonCountExtremesAndNonBalloonModesUseOneRope),
     ("simulation.net-idle-animation", simulation.testNetAnimationContinuesWithoutIntegratingSettledRope),
+    ("simulation.settled-rope-nudge-swing", simulation.testSettledRopeNudgeTriggersSwingOnlyDuringStretchAction),
     ("simulation.rope-idle-animation", simulation.testRopeCharacterAnimationContinuesWithoutIntegratingSettledRope),
     ("simulation.rope-animation-clock-and-physics", simulation.testRopeAnimationClockAndPhysicsAcrossFrameRates),
     ("simulation.local-characters-independent-of-physics", simulation.testLocalCharactersAnimateWithoutWakingPhysics),
-    ("simulation.settled-rope-nudge-swing", simulation.testSettledRopeNudgeTriggersSwingOnlyDuringStretchAction),
     ("character.local-pose-continuity", character.testLocalPoseReturnsSmoothlyToRest),
     ("character.local-blink-progression-and-hold", character.testLocalBlinkHasProgressiveClosureHoldAndReopening),
     ("character.random-idle-gaps-and-actions", character.testIdleActionsHaveRandomGapsAndDoNotRepeat),

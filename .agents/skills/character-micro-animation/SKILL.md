@@ -29,6 +29,7 @@ description: '设计、实现和验证现有角色素材的微动作与状态驱
 2. 标明允许变形与受保护区域，包括相邻五官、轮廓、绳结、脚部、抱持接点。
 3. 在原图副本上做连续局部变形，影响范围边缘平滑衰减，避免裂口、拉尖和污染相邻部位。
 4. 明确工作图的重采样尺寸；“保护像素不变”必须说明是相对原图还是相对重采样后的待机副本。
+5. 独立配件优先检查透明连通区域，再用蒙版分层；本项目光环分离时需保留原颜色空间，不能只复制 RGB 数值后换成设备色空间。验证分层互不重叠、合起来覆盖原像素、柔边 Alpha 和主体均保留，避免双影或误挖主体。
 
 ## 2. 设计时间节奏与动作幅度
 
@@ -79,5 +80,7 @@ description: '设计、实现和验证现有角色素材的微动作与状态驱
 - [局部像素变形及缓存](../../../PigPendant/Presentation/LocalCharacterArtwork.swift)
 - [核心动作测试](../../../Tests/Core/RopeCharacterAnimationTests.swift)
 - [正常尺寸实绘与保护区域检查](../../../Tests/Smoke/LocalCharacterSmokeTests.swift)
+- [原光环透明连通区域分层](../../../PigPendant/Presentation/HangingArtworkLayers.swift)
+- [光环独立阻尼视觉跟随](../../../PigPendant/Core/HaloAnimation.swift)
 
 需要代码事实时读取相关实现，不把本文中的示例参数视为永远不变的真源。

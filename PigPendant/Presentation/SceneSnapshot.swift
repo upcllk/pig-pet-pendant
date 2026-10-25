@@ -15,6 +15,9 @@ struct SceneSnapshot {
     let displayImage: NSImage
     let nextDisplayImage: NSImage?
     let imageBlend: CGFloat
+    let haloImage: NSImage?
+    let haloCenter: CGPoint
+    let haloPose: HaloPose
     let ropes: [RopeSnapshot]
     let bambooPose: BambooPose?
     let ghostPosition: V2?
@@ -34,6 +37,9 @@ struct SceneSnapshot {
         nextDisplayImage = mode == .rope && sample.firstIndex != sample.secondIndex
             ? artwork.rope.frames[sample.secondIndex] : nil
         imageBlend = mode == .rope ? CGFloat(sample.fraction) : 0
+        haloImage = mode == .hanging ? artwork.hangingLayers.halo : nil
+        haloCenter = artwork.hangingLayers.center
+        haloPose = simulation.haloAnimation.pose
         ropes = simulation.activeRopes.enumerated().map { index, rope in
             RopeSnapshot(nodes: rope.nodes, endPoint: rope.endPoint, endAngle: rope.endAngle,
                          width: simulation.balloonWidth(at: index),

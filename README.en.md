@@ -16,7 +16,7 @@ A small desktop pig pendant that follows your mouse. The macOS version is availa
 - **Pig Balloons**: Shows 1–8 pig-shaped balloons floating upward; the default is 2. Each has independently timed blinks, gentle ear movements and nose gestures, with movement reactions.
 - **Pig in a Net**: A pig in a net with a looping animation.
 - **Pig on Bamboo**: The pig hugs a bamboo stalk that bends with mouse movement, with random blinks, ear movements and nose gestures that preserve its grip.
-- **Hanging Pig**: Hangs from a rope with randomly timed ear twitches and nose gestures, reacting to movement and falling. Cross eyes do not blink; the purple band, attachment, and soft closed halo remain unchanged.
+- **Hanging Pig**: Hangs from a rope with randomly timed ear twitches and nose gestures. Its original halo lags slightly during movement, rebounds after stopping, and occasionally tilts at rest. Cross eyes do not blink; the band, attachment, and original halo artwork are preserved.
 - **Ghost Pig**: Follows the mouse smoothly without a rope.
 
 ## Music Reactive Experiment
@@ -52,7 +52,9 @@ Balloon and bamboo characters share the action scheduler, not the rope pig's fra
 
 Local gestures use 72 phase intervals and update at 60 Hz during playback; this is neither 72 FPS nor additional source artwork frames. Blinks progressively close, hold for about 0.2 seconds, reopen more slowly, and return to rest. Ears pivot around their roots, and nose gestures have a more visible local displacement. GUI checks also measure eye-height progression and ear/nose displacement at 48 pt with 2x pixels, rather than relying on enlarged previews. Original-frame rope animation is unaffected.
 
-Hanging Pig maps blink actions to ear twitches, preserving its cross eyes. Ear/nose warps use its own source coordinates without modifying the original image; body motion remains driven by existing rope physics, and the halo has no independent animation. Local gestures continue at physical rest and pause while hidden or asleep. GUI checks measure normal-size feature displacement and protect cross eyes, the band, halo, and bottom attachment pixels. The light-background atlas is exported to `dist/hanging-local-poses.png` (automated rendering, not a recording).
+Hanging Pig maps blink actions to ear twitches, preserving its cross eyes. Ear/nose warps use its own source coordinates without modifying the original image; body motion remains driven by existing rope physics. The halo is separated by transparent connected components and masks that preserve its original color space, soft alpha, and closed contour without redrawing or leaving a duplicate. An independent damped visual follower adds small lag, rebound, and relative lift during downward motion; this does not apply forces to the rope or claim physical halo simulation. An occasional idle tilt starts after roughly 5–9 seconds accumulated only while the character and halo are quiet. It does not continuously spin or flash. Halo activity keeps animation updates running without waking settled rope physics, and hiding/sleep pauses it while preserving the pose.
+
+GUI checks cover normal-size gestures, protected cross eyes/band/attachment, disjoint halo/body pixels, and color/alpha preservation. Core checks cover halo-only scheduling, 30/60/120/144 Hz inputs, rapid reversals, settling, resume, and mode switching. The light-background pose atlas is exported to `dist/hanging-local-poses.png`; halo scene frames use `dist/hanging-halo-*.png`, with a contact sheet at `dist/hanging-halo-contact.png`. These use automated rendering and synthetic input, not screen recording or confirmation of subjective naturalness.
 
 ## Known Limitations
 
