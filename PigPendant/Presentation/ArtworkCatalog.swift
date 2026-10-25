@@ -43,7 +43,7 @@ struct ArtworkCatalog {
               let cropped = netCG.cropping(to: CGRect(x: 256, y: 0, width: 512, height: 768)) else {
             throw ArtworkError.unreadable(directory.appendingPathComponent("net-pig-custom.png"))
         }
-        netImage = try NetPigArtwork.removeOpenEye(
+        netImage = try NetPigArtwork.removeExtraFoot(
             NSImage(cgImage: cropped, size: NSSize(width: 512, height: 768))
         )
         let ghostAnimation = try animation("ghost-blink.png")
@@ -118,7 +118,7 @@ enum ArtworkError: LocalizedError {
         case .unreadable(let url): return "无法读取或解码素材：\(url.lastPathComponent)"
         case .invalidHangingLayers: return "无法从猪上吊原素材安全分离光环，请检查素材尺寸及透明连通区域。"
         case .invalidBandTint: return "无法匹配绳子挂件绑绳颜色或定位猪上吊绑带，请检查参考素材。"
-        case .invalidNetRetouch: return "无法仅移除网兜小猪素材中箭头所指的黑色眼点。"
+        case .invalidNetRetouch: return "无法仅移除网兜小猪素材中箭头所指的多余肢体。"
         }
     }
 }

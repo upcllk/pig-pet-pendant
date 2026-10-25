@@ -94,7 +94,8 @@ extension PendantCoordinator {
         }
         let full = NSBitmapImageRep(cgImage: netCG)
         let crop = NSBitmapImageRep(cgImage: cropCG)
-        var removedEyePixels = 0
+        var removedPinkPixels = 0
+        var removedDarkPixels = 0
         for y in 0..<768 {
             for x in 0..<768 {
                 if x < 256 {
@@ -103,21 +104,42 @@ extension PendantCoordinator {
                               full.colorAt(x: x, y: y)!.alphaComponent)
                         preconditionFailure("Cropping nearly transparent padding must not cut off visible artwork")
                     }
-                } else if (550..<605).contains(x) && (398..<448).contains(y) {
+                } else if (504..<600).contains(x) && (398..<446).contains(y) {
                     let sourcePixel = full.colorAt(x: x, y: y)!.usingColorSpace(.deviceRGB)!
                     let resultPixel = crop.colorAt(x: x - 256, y: y)!.usingColorSpace(.deviceRGB)!
-                    let wasEye = sourcePixel.alphaComponent > 0.1 &&
+                    let isBlueMesh = sourcePixel.alphaComponent > 0.1 &&
+                        sourcePixel.blueComponent > sourcePixel.redComponent + 0.04
+                    let wasPinkFoot = !isBlueMesh && sourcePixel.alphaComponent > 0.1 &&
+                        sourcePixel.redComponent > sourcePixel.greenComponent + 0.10 &&
+                        sourcePixel.blueComponent > sourcePixel.greenComponent + 0.02
+                    let wasDarkFoot = !isBlueMesh && sourcePixel.alphaComponent > 0.1 &&
                         sourcePixel.redComponent < 0.68 &&
                         sourcePixel.greenComponent < 0.58 &&
                         sourcePixel.blueComponent < 0.50
-                    if wasEye {
-                        precondition(resultPixel.redComponent > resultPixel.greenComponent &&
-                                     resultPixel.alphaComponent == sourcePixel.alphaComponent,
-                                     "Only the open black eye is filled with the surrounding skin color")
-                        removedEyePixels += 1
+                    if wasPinkFoot || wasDarkFoot {
+                        if resultPixel.alphaComponent >= 0.01 {
+                            NSLog("Net foot pixel remains at %d,%d pink=%d dark=%d source=%@ result=%@",
+                                  x, y, wasPinkFoot ? 1 : 0, wasDarkFoot ? 1 : 0,
+                                  String(describing: sourcePixel), String(describing: resultPixel))
+                            preconditionFailure("The marked pink and dark extra-foot pixels must be removed")
+                        }
+                        if wasPinkFoot { removedPinkPixels += 1 }
+                        if wasDarkFoot { removedDarkPixels += 1 }
                     } else {
-                        precondition(sourcePixel == resultPixel,
-                                     "Only the indicated black eye may change; retain the mesh and nearby face pixels")
+                        if sourcePixel != resultPixel {
+                            NSLog("Unexpected net artwork change at %d,%d blue=%d source=%@ result=%@",
+                                  x, y, isBlueMesh ? 1 : 0,
+                                  String(describing: sourcePixel), String(describing: resultPixel))
+                            preconditionFailure("Only the marked extra foot may change")
+                        }
+                    }
+                    if sourcePixel.alphaComponent > 0.1 &&
+                        sourcePixel.blueComponent > sourcePixel.redComponent + 0.04 {
+                        if sourcePixel != resultPixel {
+                            NSLog("Blue mesh pixel changed at %d,%d source=%@ result=%@",
+                                  x, y, String(describing: sourcePixel), String(describing: resultPixel))
+                            preconditionFailure("Blue mesh pixels must remain unchanged")
+                        }
                     }
                 } else {
                     if full.colorAt(x: x, y: y) != crop.colorAt(x: x - 256, y: y) {
@@ -129,9 +151,9 @@ extension PendantCoordinator {
                 }
             }
         }
-        precondition(removedEyePixels > 250)
-        NSLog("PASS: user 768px artwork, source-preserving disjoint halo/body layers (%d halo pixels), only indicated net eye removed (%d pixels)",
-              haloPixels, removedEyePixels)
+        precondition(removedPinkPixels > 30 && removedDarkPixels > 750)
+        NSLog("PASS: user 768px artwork, source-preserving disjoint halo/body layers (%d halo pixels), marked net foot removed (pink=%d, dark=%d pixels)",
+              haloPixels, removedPinkPixels, removedDarkPixels)
     }
 
     func smokeCheckCustomCharacter() {
