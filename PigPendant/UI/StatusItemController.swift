@@ -7,15 +7,12 @@ final class StatusItemController: NSObject {
     private let statusFrames: [NSImage]
     private var iconTimer: Timer?
     private(set) var iconRotation: CGFloat = 0
-    private let iconRotationPeriod: TimeInterval = 1.2
+    private var iconAudioScale: CGFloat = 1
+    private var previousIconElapsed: TimeInterval = 0
+    private let iconRotationPeriod: TimeInterval = 2.4
     private let iconAnimationStartTime = ProcessInfo.processInfo.systemUptime
-    private let iconCanvasSize: CGFloat = 42
-    private let iconFrameSize: CGFloat = 28
-    private var scaleStart: CGFloat = 1
-    private var scaleTarget: CGFloat = 1
-    private var scaleTransitionStart: TimeInterval = 0
-    private var scaleTransitionDuration: TimeInterval = 1.6
-    private var nextScaleTransition: TimeInterval = 0.6
+    private let iconCanvasSize: CGFloat = 54.6
+    private let iconFrameSize: CGFloat = 36.4
 
     init(controller: PendantCoordinator, statusFrames: [NSImage], openSettings: @escaping () -> Void) {
         self.controller = controller
@@ -42,32 +39,24 @@ final class StatusItemController: NSObject {
             let phase = elapsed.truncatingRemainder(dividingBy: self.iconRotationPeriod) / self.iconRotationPeriod
             self.iconRotation = CGFloat(phase * 2 * .pi)
             let frameIndex = min(Int(phase * Double(self.statusFrames.count)), self.statusFrames.count - 1)
-            let scale = self.iconScale(at: elapsed)
-            self.statusItem.button?.image = self.makeStatusFrame(frameIndex, scale: scale)
+            let step = max(0, elapsed - self.previousIconElapsed)
+            self.previousIconElapsed = elapsed
+            self.iconAudioScale = AudioReactiveScale.smoothed(
+                current: self.iconAudioScale, target: self.controller.audioReactiveScale, elapsed: step
+            )
+            self.statusItem.button?.image = self.makeStatusFrame(frameIndex, scale: self.iconAudioScale)
         }
         iconTimer = timer
         RunLoop.main.add(timer, forMode: .common)
     }
 
-    private func iconScale(at elapsed: TimeInterval) -> CGFloat {
-        if elapsed >= nextScaleTransition {
-            scaleStart = scaleTarget
-            scaleTarget = CGFloat.random(in: 0.6...1.4)
-            scaleTransitionStart = elapsed
-            scaleTransitionDuration = Double.random(in: 1.4...2.2)
-            nextScaleTransition = elapsed + scaleTransitionDuration + Double.random(in: 0.2...0.6)
-        }
-        let progress = min(1, max(0, (elapsed - scaleTransitionStart) / scaleTransitionDuration))
-        let eased = progress * progress * (3 - 2 * progress)
-        return scaleStart + (scaleTarget - scaleStart) * CGFloat(eased)
-    }
-
     private func makeStatusFrame(_ frameIndex: Int, scale: CGFloat) -> NSImage {
         let image = NSImage(size: NSSize(width: iconCanvasSize, height: iconCanvasSize))
         image.lockFocus()
-        let size = iconFrameSize * scale
+        let size = min(iconCanvasSize, iconFrameSize * scale)
         let origin = (iconCanvasSize - size) / 2
-        statusFrames[frameIndex].draw(in: CGRect(x: origin, y: origin, width: size, height: size))
+        statusFrames[frameIndex].draw(in: CGRect(x: origin, y: origin,
+                                                 width: size, height: size))
         image.unlockFocus()
         image.isTemplate = false
         return image
@@ -143,15 +132,12 @@ final class StatusItemController: NSObject {
         let reset = NSMenuItem(title: controller.mode.resetPoseTitle, action: #selector(resetPig), keyEquivalent: "")
         reset.target = self
         menu.addItem(reset)
-        let detail = NSMenuItem(title: controller.mode.menuDescription(balloonCount: controller.balloonCount),
-                                action: nil, keyEquivalent: "")
-        detail.isEnabled = false
-        menu.addItem(detail)
         menu.addItem(.separator())
         let quit = NSMenuItem(title: "退出猪猪挂件", action: #selector(quitApp), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
         statusItem.menu = menu
+        statusItem.button?.toolTip = "猪猪挂件"
     }
 
     @objc private func togglePig() { controller.toggleVisible() }

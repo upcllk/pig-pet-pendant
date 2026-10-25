@@ -2,85 +2,6 @@ import AppKit
 import Foundation
 
 extension SettingsWindowController {
-    private func checkHangingArtwork() {
-        guard let cgImage = model.hangingImage.cgImage(forProposedRect: nil, context: nil, hints: nil),
-              cgImage.width == 360, cgImage.height == 384 else {
-            preconditionFailure("Hanging pig artwork dimensions are invalid")
-        }
-        let bitmap = NSBitmapImageRep(cgImage: cgImage)
-        let haloXRange = 235..<356
-        let haloYRange = 201..<344
-        var translucentHaloPixels = 0
-        var opaqueHaloPixels = 0
-        for y in 0..<bitmap.pixelsHigh {
-            for x in 0..<bitmap.pixelsWide {
-                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else {
-                    preconditionFailure("Cannot inspect hanging pig artwork")
-                }
-                if color.alphaComponent > 0 {
-                    if haloXRange.contains(x) && haloYRange.contains(y) {
-                        if color.alphaComponent < 0.999 {
-                            translucentHaloPixels += 1
-                        } else {
-                            opaqueHaloPixels += 1
-                        }
-                    } else {
-                        precondition(color.alphaComponent > 0.999, "Hanging pig body must not be translucent")
-                    }
-                }
-            }
-        }
-        precondition(translucentHaloPixels > 100 && opaqueHaloPixels > 0, "Hanging pig halo must retain soft edges")
-
-        let xOrigin = 210
-        let yOrigin = 180
-        let width = 150
-        let height = 180
-        var halo = [Bool](repeating: false, count: width * height)
-        for y in 0..<height {
-            for x in 0..<width {
-                guard let color = bitmap.colorAt(x: x + xOrigin, y: y + yOrigin)?
-                    .usingColorSpace(.deviceRGB) else {
-                    preconditionFailure("Cannot inspect hanging pig halo")
-                }
-                halo[y * width + x] = color.alphaComponent > 0.5
-                    && color.redComponent > 245.0 / 255
-                    && color.greenComponent > 220.0 / 255
-                    && color.blueComponent < 230.0 / 255
-            }
-        }
-
-        var outside = [Bool](repeating: false, count: halo.count)
-        var queue: [Int] = []
-        for y in 0..<height {
-            for x in 0..<width where x == 0 || x == width - 1 || y == 0 || y == height - 1 {
-                let index = y * width + x
-                if !halo[index] && !outside[index] {
-                    outside[index] = true
-                    queue.append(index)
-                }
-            }
-        }
-        var cursor = 0
-        while cursor < queue.count {
-            let index = queue[cursor]
-            cursor += 1
-            let x = index % width
-            let y = index / width
-            for (nextX, nextY) in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
-            where nextX >= 0 && nextX < width && nextY >= 0 && nextY < height {
-                let next = nextY * width + nextX
-                if !halo[next] && !outside[next] {
-                    outside[next] = true
-                    queue.append(next)
-                }
-            }
-        }
-        let enclosedHaloPixels = halo.indices.filter { !halo[$0] && !outside[$0] }.count
-        precondition(enclosedHaloPixels > 0, "Hanging pig halo must be a closed loop")
-        NSLog("PASS: hanging pig foreground opacity and closed halo")
-    }
-
     private func captureSettingsSnapshot(named filename: String) {
         guard let content = window?.contentView,
               let bitmap = content.bitmapImageRepForCachingDisplay(in: content.bounds) else {
@@ -101,6 +22,7 @@ extension SettingsWindowController {
         precondition(countRow.isHidden == (model.mode != .balloon))
         precondition(bambooPositionRow.isHidden == (model.mode != .bamboo))
         precondition(ghostOffsetRows.allSatisfy { $0.row.isHidden == (model.mode != .ghost) })
+        precondition(parameterRows.first { $0.parameter == .sway }?.row.isHidden == (model.mode != .rope))
         content.cacheDisplay(in: content.bounds, to: bitmap)
         guard let png = bitmap.representation(using: .png, properties: [:]) else {
             preconditionFailure("Cannot encode settings snapshot")
@@ -110,7 +32,7 @@ extension SettingsWindowController {
     }
 
     func smokeCheck() {
-        checkHangingArtwork()
+        model.smokeCheckCustomArtworkResources()
         let defaults = model.validationDefaults
         let legacyKeys = ParameterID.allCases.map(\.storageKey)
         let modeParameterKeys = DisplayMode.allCases.flatMap { mode in
@@ -127,7 +49,8 @@ extension SettingsWindowController {
                 (mode, Dictionary(uniqueKeysWithValues: ParameterID.allCases.map { ($0, model.settings[$0, mode: mode]) }))
             })
         let values = [Double(model.physics.length), Double(model.pigSize), Double(model.physics.gravity),
-                  model.dampingRate, Double(model.physics.weight), Double(model.physics.elasticity)]
+                  model.dampingRate, Double(model.physics.weight), Double(model.physics.elasticity),
+                  model.settings[.sway]]
         defer {
             model.changeLength(CGFloat(values[0]))
             model.changeSize(CGFloat(values[1]))
@@ -135,6 +58,7 @@ extension SettingsWindowController {
             model.changeDamping(values[3])
             model.changeWeight(values[4])
             model.changeElasticity(values[5])
+            model.changeParameter(.sway, value: values[6])
             model.changeBambooPosition(originalBambooPosition)
             for axis in GhostOffsetAxis.allCases {
                 model.changeGhostOffset(axis, value: originalGhostOffsets[axis]!)
@@ -147,31 +71,41 @@ extension SettingsWindowController {
         }
         showWindow(nil)
         precondition(window?.isVisible == true && window?.canBecomeKey == true)
+        precondition(modeControl.label(forSegment: 0) == DisplayMode.rope.title &&
+                     modeControl.label(forSegment: 1) == DisplayMode.ghost.title)
         modeControl.selectedSegment = 0
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.activeRopes.count == 1 && model.physics.endPoint.y < model.physics.nodes[0].y)
-        precondition(model.displayImage === model.pigImage && image.image === model.pigImage)
-        precondition(!countStepper.isEnabled && parameterLabels[5].stringValue == "重力")
-        precondition(countRow.isHidden && window?.contentView?.frame.height == 510)
+        precondition(model.displayImage === model.ropeAnimation.frames[0] && image.image === model.displayImage)
+        precondition(!countStepper.isEnabled && parameterLabels[6].stringValue == "重力")
+        precondition(countRow.isHidden && window?.contentView?.frame.height == 550)
         precondition(bambooPositionRow.isHidden)
         precondition(ghostOffsetRows.allSatisfy(\.row.isHidden))
         precondition(parameterRows.allSatisfy { !$0.row.isHidden })
+        let swayRow = parameterRows.first { $0.parameter == .sway }!
+        precondition(swayRow.slider.minValue == 0 && swayRow.slider.maxValue == 200)
+        precondition(swayRow.slider.doubleValue == originalModeParameters[.rope]![.sway]!)
+        swayRow.slider.doubleValue = 175
+        swayRow.slider.sendAction(swayRow.slider.action, to: swayRow.slider.target)
+        precondition(model.settings[.sway] == 175 && swayRow.readout.stringValue == "175%")
+        precondition(defaults.double(forKey: ParameterID.sway.storageKey(for: .rope)) == 175)
         precondition(defaults.string(forKey: "DisplayMode") == "rope")
-        modeControl.selectedSegment = 2
+        modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .net)!
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.mode == .net && model.activeRopes.count == 1)
         precondition(model.physics.endPoint.y < model.physics.nodes[0].y)
-        precondition(model.displayImage === model.netAnimation.frames[0])
+        precondition(model.displayImage === model.artwork.netImage)
         precondition(image.image === model.displayImage && !countStepper.isEnabled)
         precondition(countRow.isHidden && window?.contentView?.frame.height == 510)
         precondition(bambooPositionRow.isHidden)
         precondition(ghostOffsetRows.allSatisfy(\.row.isHidden))
-        precondition(parameterLabels[5].stringValue == "重力")
+        precondition(parameterLabels[6].stringValue == "重力")
+        precondition(swayRow.row.isHidden)
         precondition(defaults.string(forKey: "DisplayMode") == "net")
         precondition(model.physics.length == CGFloat(originalModeParameters[.net]![.length]!))
         precondition(model.pigSize == CGFloat(originalModeParameters[.net]![.size]!))
         model.smokeCheck()
-        modeControl.selectedSegment = 3
+        modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .bamboo)!
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.mode == .bamboo && model.activeRopes.count == 1)
         precondition(model.displayImage === model.bambooImage && image.image === model.bambooImage)
@@ -186,19 +120,25 @@ extension SettingsWindowController {
         model.changeMode(.rope)
         refresh()
         precondition(bambooPositionRow.isHidden)
+        precondition(!swayRow.row.isHidden && swayRow.slider.doubleValue == 175)
         model.changeMode(.bamboo)
         refresh()
+        precondition(swayRow.row.isHidden &&
+                     swayRow.slider.doubleValue == originalModeParameters[.bamboo]![.sway]!)
         precondition(!bambooPositionRow.isHidden && bambooPositionSlider.doubleValue == 73)
         precondition(parameterLabels[0].stringValue == "竹子长度" && parameterLabels[3].stringValue == "竹子弹性")
         precondition(model.physics.length == CGFloat(originalModeParameters[.bamboo]![.length]!))
         precondition(model.pigSize == CGFloat(originalModeParameters[.bamboo]![.size]!))
         precondition(model.physics.weight == CGFloat(originalModeParameters[.bamboo]![.weight]!))
         precondition(model.physics.elasticity == CGFloat(originalModeParameters[.bamboo]![.elasticity]!))
+        model.smokeCheck()
         modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .hanging)!
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.mode == .hanging && model.displayImage === model.hangingImage)
         precondition(visibility.title == "显示上吊猪" && countRow.isHidden && bambooPositionRow.isHidden)
+        precondition(swayRow.row.isHidden)
         precondition(window?.contentView?.frame.height == 510 && model.physics.endPoint.y < model.physics.nodes[0].y)
+        model.smokeCheck()
         modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .ghost)!
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.mode == .ghost && model.displayImage === model.ghostImage)
@@ -233,10 +173,10 @@ extension SettingsWindowController {
         precondition(ghostOffsetRows.allSatisfy { !$0.row.isHidden })
         precondition(ghostOffsetRows[0].slider.doubleValue == 81 && ghostOffsetRows[1].slider.doubleValue == -45)
         precondition(model.settings[.size] == 72)
-        modeControl.selectedSegment = 1
+        modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: .balloon)!
         modeControl.sendAction(modeControl.action, to: modeControl.target)
         precondition(model.displayImage === model.balloonImage && image.image === model.balloonImage)
-        precondition(countStepper.isEnabled && parameterLabels[5].stringValue == "浮力")
+        precondition(countStepper.isEnabled && parameterLabels[6].stringValue == "浮力")
         precondition(!countRow.isHidden && window?.contentView?.frame.height == 550)
         precondition(model.settings[.size] == originalModeParameters[.balloon]![.size]!)
         precondition(defaults.string(forKey: "DisplayMode") == "balloon")
@@ -257,6 +197,7 @@ extension SettingsWindowController {
             slider.doubleValue = slider.minValue
             slider.sendAction(slider.action, to: slider.target)
         }
+        precondition(model.settings[.sway] == 0)
         precondition(model.physics.length == 20 && model.pigSize == 16 && model.physics.gravity == 100)
         precondition(model.physics.weight == 0 && model.physics.elasticity == 0)
         precondition(abs(model.dampingRate - 0.2) < 0.0001)
@@ -266,7 +207,7 @@ extension SettingsWindowController {
         precondition(defaults.double(forKey: ParameterID.damping.storageKey(for: .balloon)) == 0.2)
         precondition(defaults.double(forKey: ParameterID.weight.storageKey(for: .balloon)) == 0)
         precondition(defaults.double(forKey: ParameterID.elasticity.storageKey(for: .balloon)) == 0)
-        let targets: [Double] = [1200, 256, 200, 200, 8, 10000]
+        let targets: [Double] = [1200, 256, 200, 200, 200, 8, 10000]
         for (index, value) in targets.enumerated() {
             sliders[index].doubleValue = value
             sliders[index].sendAction(sliders[index].action, to: sliders[index].target)
@@ -280,6 +221,7 @@ extension SettingsWindowController {
         precondition(defaults.double(forKey: ParameterID.damping.storageKey(for: .balloon)) == 8)
         precondition(defaults.double(forKey: ParameterID.weight.storageKey(for: .balloon)) == 200)
         precondition(defaults.double(forKey: ParameterID.elasticity.storageKey(for: .balloon)) == 200)
+        precondition(defaults.double(forKey: ParameterID.sway.storageKey(for: .balloon)) == 200)
         toggleVisibility()
         precondition(!model.isVisible)
         toggleVisibility()
@@ -290,6 +232,8 @@ extension SettingsWindowController {
         precondition(model.balloonCount == 2 && model.balloons.count == 2)
         precondition(model.pigSize == 48 && model.physics.length == 140 && model.physics.gravity == 1350)
         precondition(model.physics.weight == 65 && model.physics.elasticity == 55)
+        precondition(model.settings[.sway] == 100 &&
+                     defaults.double(forKey: ParameterID.sway.storageKey(for: .rope)) == 100)
         precondition(abs(Double(model.physics.dampingPerFrame) - 0.985) < 0.0001)
         precondition(model.settings.bambooPosition == 50 && defaults.double(forKey: "BambooPigPosition") == 50)
         precondition(model.settings[.horizontal] == 44 && defaults.double(forKey: "GhostOffsetX") == 44)
@@ -387,6 +331,6 @@ extension SettingsWindowController {
             let previewURL = Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent(filename)
             do { try png.write(to: previewURL) } catch { preconditionFailure("Mode snapshot: \(error)") }
         }
-        NSLog("PASS: six-mode switch, bamboo artwork and idle/resume, 62-frame net animation, idle playback, pause/resume, separate artwork, ghost following and offsets, balloon counts 1–8, persistence, defaults, layout, all mode snapshots and close")
+        NSLog("PASS: six-mode switch, custom net/hanging artwork and local actions, idle playback, pause/resume, separate artwork, ghost following and offsets, balloon counts 1–8, persistence, defaults, layout, all mode snapshots and close")
     }
 }

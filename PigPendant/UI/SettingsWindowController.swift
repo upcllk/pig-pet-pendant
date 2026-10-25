@@ -43,11 +43,11 @@ final class SettingsWindowController: NSWindowController {
 
     init(model: PendantCoordinator) {
         self.model = model
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 550),
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 510),
                               styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
         window.title = "猪猪挂件设置"
         window.isReleasedWhenClosed = false
-        window.contentView = SettingsBackgroundView(frame: NSRect(x: 0, y: 0, width: 480, height: 550))
+        window.contentView = SettingsBackgroundView(frame: NSRect(x: 0, y: 0, width: 480, height: 510))
         super.init(window: window)
         window.center()
         buildContent()
@@ -192,11 +192,13 @@ final class SettingsWindowController: NSWindowController {
         let isBalloon = model.mode == .balloon
         let isBamboo = model.mode == .bamboo
         let isGhost = model.mode == .ghost
+        let isRope = model.mode == .rope
         modeControl.selectedSegment = DisplayMode.allCases.firstIndex(of: model.mode) ?? 0
         visibility.title = model.mode.visibilityCheckboxTitle
         image.image = model.displayImage
         for row in parameterRows {
-            row.row.isHidden = isGhost && row.parameter != .size
+            row.row.isHidden = (isGhost && row.parameter != .size) ||
+                (row.parameter == .sway && !isRope)
             row.label.stringValue = row.parameter.title(mode: model.mode)
             let help = row.parameter.help(mode: model.mode)
             row.slider.toolTip = help
@@ -218,17 +220,17 @@ final class SettingsWindowController: NSWindowController {
         bambooPositionSlider.doubleValue = model.settings.bambooPosition
         bambooPositionReadout.stringValue = String(format: "%.0f%%", model.settings.bambooPosition)
         countReadout.textColor = isBalloon ? .labelColor : .secondaryLabelColor
+        countStepper.integerValue = model.balloonCount
+        countReadout.stringValue = "\(model.balloonCount) 只"
+        visibility.state = model.isVisible ? .on : .off
         if let window = window {
-            let height: CGFloat = isBalloon || isBamboo ? 550 : isGhost ? 390 : 510
+            let height: CGFloat = isBalloon || isBamboo || isRope ? 550 : isGhost ? 390 : 510
             if window.contentView?.frame.height != height {
                 let topLeft = NSPoint(x: window.frame.minX, y: window.frame.maxY)
                 window.setContentSize(NSSize(width: 480, height: height))
                 window.setFrameTopLeftPoint(topLeft)
             }
         }
-        countStepper.integerValue = model.balloonCount
-        countReadout.stringValue = "\(model.balloonCount) 只"
-        visibility.state = model.isVisible ? .on : .off
     }
 
     @objc private func changeDisplayMode() {

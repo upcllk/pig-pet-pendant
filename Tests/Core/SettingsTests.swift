@@ -9,7 +9,7 @@ final class SettingsTests {
     func setUpWithError() throws {
         domain = "local.pigpendant.unit-tests.\(UUID().uuidString)"
         defaults = try requireValue(UserDefaults(suiteName: domain))
-        store = SettingsStore(defaults: defaults)
+        store = try SettingsStore(defaults: defaults)
     }
 
     func tearDown() throws {
@@ -31,12 +31,13 @@ final class SettingsTests {
     func testDefaultsAndOriginalStorageKeys() throws {
         let settings = store.load()
         try expectEqual(settings.mode, .rope)
+        try expectEqual(Array(DisplayMode.allCases.prefix(2)), [.rope, .ghost])
         try expectEqual(settings.balloonCount, 2)
         try expectEqual(ParameterID.allCases.map(\.storageKey),
-                       ["RopeLength", "PigSize", "Weight", "Elasticity", "DampingRate", "Gravity"])
-        try expectEqual(ParameterID.allCases.map { settings[$0] }, [140, 48, 65, 55, -60 * log(0.985), 1350])
+                       ["RopeLength", "PigSize", "Weight", "Elasticity", "NudgeSwingAmplitude", "DampingRate", "Gravity"])
+        try expectEqual(ParameterID.allCases.map { settings[$0] }, [140, 48, 65, 55, 100, -60 * log(0.985), 1350])
         try expectEqual(PendantSettings.countRange, 1...8)
-        try expectEqual(ParameterID.allCases.map(\.range), [20...1200, 16...256, 0...200, 0...200, 0.2...8, 100...10000])
+        try expectEqual(ParameterID.allCases.map(\.range), [20...1200, 16...256, 0...200, 0...200, 0...200, 0.2...8, 100...10000])
         try expectEqual(GhostOffsetAxis.allCases.map(\.storageKey), ["GhostOffsetX", "GhostOffsetY"])
         try expectEqual(settings[.horizontal], 44)
         try expectEqual(settings[.vertical], 32)
@@ -47,6 +48,43 @@ final class SettingsTests {
                 try expectEqual(defaults.double(forKey: parameter.storageKey(for: mode)), parameter.defaultValue)
             }
         }
+    }
+
+    func testEditableConfigurationProvidesModeSpecificRestoreDefaults() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("pig-pendant-settings-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let parameters = Dictionary(uniqueKeysWithValues: DisplayMode.allCases.map { mode in
+            (mode.rawValue, Dictionary(uniqueKeysWithValues: ParameterID.allCases.map {
+                ($0.configurationKey, $0.defaultValue + (mode == .net ? 1 : 0))
+            }))
+        })
+        let configuration: [String: Any] = [
+            "parameters": parameters,
+            "balloonCount": 5,
+            "bambooPosition": 67,
+            "ghostOffsets": ["horizontal": 81, "vertical": -45]
+        ]
+        try JSONSerialization.data(withJSONObject: configuration, options: [.sortedKeys]).write(to: url)
+        let configuredStore = try SettingsStore(defaults: defaults, configurationURL: url)
+        let configured = configuredStore.load()
+        try expectEqual(configured[.length, mode: .net], 141)
+        try expectEqual(configured[.length, mode: .rope], 140)
+        try expectEqual(configured.balloonCount, 5)
+        try expectEqual(configured.bambooPosition, 67)
+        try expectEqual(configured[.horizontal], 81)
+        try expectEqual(configured[.vertical], -45)
+        defaults.set(222, forKey: ParameterID.length.storageKey(for: .net))
+        try expectEqual(configuredStore.load()[.length, mode: .net], 222)
+        try expectEqual(configuredStore.defaultSettings[.length, mode: .net], 141)
+    }
+
+    func testInvalidEditableConfigurationIsRejected() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("pig-pendant-settings-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try Data("{}".utf8).write(to: url)
+        try expectThrows(try SettingsStore(defaults: defaults, configurationURL: url))
     }
 
     func testFiniteValuesClampAtBothBounds() throws {
@@ -111,16 +149,24 @@ final class SettingsTests {
     }
 
     func testLegacySharedParametersMigrateToEachMode() throws {
-        let legacyValues = [333.0, 88, 77, 44, 1.25, 1700]
-        for (index, parameter) in ParameterID.allCases.enumerated() {
-            defaults.set(legacyValues[index], forKey: parameter.storageKey)
+        let legacyValues: [ParameterID: Double] = [
+            .length: 333,
+            .size: 88,
+            .weight: 77,
+            .elasticity: 44,
+            .damping: 1.25,
+            .gravity: 1700
+        ]
+        for (parameter, value) in legacyValues {
+            defaults.set(value, forKey: parameter.storageKey)
         }
 
         let settings = store.load()
         for mode in DisplayMode.allCases {
-            for (index, parameter) in ParameterID.allCases.enumerated() {
-                try expectEqual(settings[parameter, mode: mode], legacyValues[index])
-                try expectEqual(defaults.double(forKey: parameter.storageKey(for: mode)), legacyValues[index])
+            for parameter in ParameterID.allCases {
+                let expected = legacyValues[parameter] ?? parameter.defaultValue
+                try expectEqual(settings[parameter, mode: mode], expected)
+                try expectEqual(defaults.double(forKey: parameter.storageKey(for: mode)), expected)
             }
         }
 
@@ -130,7 +176,7 @@ final class SettingsTests {
         let reloaded = store.load()
         try expectEqual(reloaded[.length, mode: .rope], 555)
         for mode in DisplayMode.allCases where mode != .rope {
-            try expectEqual(reloaded[.length, mode: mode], legacyValues[0])
+            try expectEqual(reloaded[.length, mode: mode], legacyValues[.length]!)
         }
     }
 
@@ -187,6 +233,11 @@ final class SettingsTests {
         try expectEqual(ParameterID.elasticity.title(mode: .bamboo), "竹子弹性")
         try expectEqual(ParameterID.gravity.title(mode: .balloon), "浮力")
         try expectEqual(ParameterID.gravity.title(mode: .net), "重力")
+        try expectEqual(ParameterID.sway.title(mode: .rope), "拱身晃动")
+        try expectEqual(ParameterID.sway.range, 0...200)
+        try expectEqual(ParameterID.sway.defaultValue, 100)
+        try expectEqual(ParameterID.sway.readout(125), "125%")
+        try expectEqual(ParameterID.sway.storageKey(for: .rope), "NudgeSwingAmplitude.rope")
         try expectEqual(ParameterID.length.storageKey, "RopeLength")
         try expectEqual(ParameterID.length.storageKey(for: .rope), "RopeLength.rope")
         try expectEqual(ParameterID.length.storageKey(for: .balloon), "RopeLength.balloon")

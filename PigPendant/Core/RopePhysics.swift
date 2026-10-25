@@ -47,6 +47,16 @@ final class RopePhysics {
         lastAnchor = nodes.first
     }
 
+    func applySwingImpulse(_ endVelocity: V2) {
+        guard nodes.count == segments + 1, previous.count == nodes.count,
+              endVelocity.x.isFinite, endVelocity.y.isFinite else { return }
+        for index in 1...segments {
+            let distanceRatio = CGFloat(index) / CGFloat(segments)
+            previous[index] = nodes[index] - endVelocity * (distanceRatio * fixedStep)
+        }
+        accumulator = 0
+    }
+
     func advance(anchor: V2, timeStep: CGFloat) {
         if nodes.count != segments + 1 { reset(anchor: anchor) }
         guard anchor.x.isFinite, anchor.y.isFinite, timeStep.isFinite, timeStep > 0 else { return }

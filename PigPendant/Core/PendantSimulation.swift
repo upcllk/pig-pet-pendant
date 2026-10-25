@@ -10,11 +10,25 @@ final class PendantSimulation {
     private(set) var balloons: [RopePhysics] = []
     private(set) var settings: PendantSettings
     private(set) var timeline: AnimationTimeline
+    private(set) var ropeAnimation: RopeCharacterAnimation
+    private(set) var balloonAnimations: [RopeCharacterAnimation] = []
+    private(set) var haloAnimation: HaloAnimation
+    private(set) var ghostBlink: GhostBlinkAnimation
+    private(set) var ghostBody = GhostBodyAnimation()
+    private let characterFrameDurations: [TimeInterval]
+    private let characterSeed: UInt64
     private(set) var isIdle = false
 
-    init(settings: PendantSettings, frameDurations: [TimeInterval]) {
+    init(settings: PendantSettings, frameDurations: [TimeInterval], ropeFrameDurations: [TimeInterval],
+         animationSeed: UInt64 = UInt64.random(in: 0...UInt64.max),
+         ghostFrameDurations: [TimeInterval] = GhostBlinkAnimation.keyDurations) {
         self.settings = settings
         timeline = AnimationTimeline(frameDurations: frameDurations)
+        characterFrameDurations = ropeFrameDurations
+        characterSeed = animationSeed
+        ropeAnimation = RopeCharacterAnimation(frameDurations: ropeFrameDurations, seed: animationSeed)
+        haloAnimation = HaloAnimation(seed: animationSeed &+ 104729)
+        ghostBlink = GhostBlinkAnimation(frameDurations: ghostFrameDurations, seed: animationSeed &+ 130363)
         apply(settings)
     }
 
@@ -26,9 +40,19 @@ final class PendantSimulation {
                    initialPosition: CGFloat(settings.bambooPosition / 100))
     }
     var idleInterval: TimeInterval {
-        settings.mode == .net ? min(1.0 / 15.0, timeline.frameDurations.min()!) : 1.0 / 15.0
+        if [.rope, .bamboo, .hanging, .net].contains(settings.mode) && ropeAnimation.isAnimating {
+            return 1.0 / 60.0
+        }
+        if settings.mode == .balloon && balloonAnimations.contains(where: \.isAnimating) { return 1.0 / 60.0 }
+        if settings.mode == .ghost { return 1.0 / 60.0 }
+        if [.hanging, .ghost].contains(settings.mode) && haloAnimation.isAnimating { return 1.0 / 60.0 }
+        return 1.0 / 15.0
     }
     var updateInterval: TimeInterval { isIdle ? idleInterval : 1.0 / 60.0 }
+    var artworkFrameIndex: Int {
+        settings.mode == .ghost ? ghostBlink.sample.firstIndex :
+            settings.mode == .rope ? ropeAnimation.sample.firstIndex : timeline.frameIndex
+    }
 
     func apply(_ settings: PendantSettings) {
         let modeChanged = self.settings.mode != settings.mode
@@ -41,7 +65,15 @@ final class PendantSimulation {
         if balloons.count != settings.balloonCount {
             balloons = [physics] + (1..<settings.balloonCount).map { _ in RopePhysics() }
         }
-        if modeChanged { timeline.reset() }
+        if balloonAnimations.count != settings.balloonCount {
+            balloonAnimations = (0..<settings.balloonCount).map { index in
+                RopeCharacterAnimation(frameDurations: characterFrameDurations,
+                                       seed: characterSeed &+ (UInt64(index + 1) &* 0x9E3779B97F4A7C15))
+            }
+        }
+        if modeChanged {
+            restartAnimation()
+        }
     }
 
     func balloonWidth(at index: Int) -> CGFloat {
@@ -53,7 +85,14 @@ final class PendantSimulation {
         balloons = [physics] + (1..<settings.balloonCount).map { _ in RopePhysics() }
     }
 
-    func restartAnimation() { timeline.reset() }
+    func restartAnimation() {
+        timeline.reset()
+        ropeAnimation.reset()
+        haloAnimation.reset()
+        ghostBlink.reset()
+        ghostBody.reset()
+        for index in balloonAnimations.indices { balloonAnimations[index].reset() }
+    }
 
     private func updateBalloonParameters() {
         guard settings.mode == .balloon else {
@@ -79,6 +118,8 @@ final class PendantSimulation {
         bambooSway = 0
         bambooMotionAnchor = anchor
         ghostPosition = ghostTarget(anchor)
+        ropeAnimation.resetMotion()
+        for index in balloonAnimations.indices { balloonAnimations[index].resetMotion() }
         updateBalloonParameters()
         for rope in activeRopes { rope.reset(anchor: anchor) }
         isIdle = false
@@ -89,15 +130,11 @@ final class PendantSimulation {
     @discardableResult
     func advance(anchor: V2, elapsed: TimeInterval) -> Bool {
         let previousFrame = timeline.frameIndex
-        if settings.mode == .net { timeline.advance(elapsed: elapsed) }
+        let previousAnchor = physics.nodes.first ?? anchor
+        let previousEndPoints = activeRopes.map(\.endPoint)
         if settings.mode == .ghost {
             let delta = ghostTarget(anchor) - ghostPosition
             guard delta.x.isFinite, delta.y.isFinite, elapsed.isFinite, elapsed > 0 else { return false }
-            guard delta.magnitude >= 0.15 else {
-                ghostPosition = ghostTarget(anchor)
-                isIdle = true
-                return false
-            }
             let previousPosition = ghostPosition
             let step = min(0.1, CGFloat(elapsed))
             let blend = 1 - CGFloat(exp(Double(-14 * step)))
@@ -108,7 +145,13 @@ final class PendantSimulation {
             } else {
                 isIdle = false
             }
-            return (ghostPosition - previousPosition).magnitude > 0
+            let blinkChanged = ghostBlink.advance(elapsed: elapsed)
+            let velocity = elapsed > 0.25 ? V2(0, 0) : (ghostPosition - previousPosition) / CGFloat(elapsed)
+            let bodyChanged = ghostBody.advance(elapsed: elapsed, blinking: ghostBlink.isAnimating,
+                                                horizontalVelocity: Double(velocity.x))
+            let haloChanged = haloAnimation.advance(elapsed: elapsed, localVelocity: velocity,
+                                                      characterActive: ghostBlink.isAnimating)
+            return (ghostPosition - previousPosition).magnitude > 0 || blinkChanged || bodyChanged || haloChanged
         }
         let movementTolerance: CGFloat = settings.mode == .bamboo ? 1 : 0.01
         let anchorUnchanged = activeRopes.allSatisfy {
@@ -124,11 +167,24 @@ final class PendantSimulation {
         let bambooSettled = settings.mode != .bamboo || bambooBend.isSettled
         let swaySettled = settings.mode != .bamboo || abs(physics.endAngle * -0.70 - bambooSway) < 0.01
         if isIdle && anchorUnchanged && bambooSettled && swaySettled {
-            return timeline.frameIndex != previousFrame
+            let previousAction = ropeAnimation.action
+            let artworkChanged = advanceCharacterAnimations(anchor: anchor, previousAnchor: previousAnchor,
+                                                             previousEndPoints: previousEndPoints, elapsed: elapsed)
+            if settings.mode == .rope, physics.isSettled,
+               previousAction != .stretch, ropeAnimation.action == .stretch,
+               settings[.sway] > 0 {
+                let forward = V2(-physics.direction.y, physics.direction.x)
+                physics.applySwingImpulse(forward * (150 * CGFloat(settings[.sway] / 100)))
+                isIdle = false
+                return true
+            }
+            return artworkChanged || timeline.frameIndex != previousFrame
         }
         isIdle = false
         updateBalloonParameters()
         for rope in activeRopes { rope.advance(anchor: anchor, timeStep: CGFloat(elapsed)) }
+        advanceCharacterAnimations(anchor: anchor, previousAnchor: previousAnchor,
+                                   previousEndPoints: previousEndPoints, elapsed: elapsed)
         if settings.mode == .bamboo, elapsed.isFinite, elapsed > 0 {
             let response = CGFloat(12)
             let step = min(0.1, CGFloat(elapsed))
@@ -147,5 +203,38 @@ final class PendantSimulation {
 
     private func ghostTarget(_ anchor: V2) -> V2 {
         anchor + V2(CGFloat(settings[.horizontal]), CGFloat(settings[.vertical]))
+    }
+
+    @discardableResult
+    private func advanceCharacterAnimations(anchor: V2, previousAnchor: V2, previousEndPoints: [V2],
+                                             elapsed: TimeInterval) -> Bool {
+        guard [.rope, .bamboo, .balloon, .hanging, .net].contains(settings.mode), elapsed.isFinite, elapsed > 0 else { return false }
+        let anchorVelocity = elapsed > 0.25 ? V2(0, 0) : (anchor - previousAnchor) / CGFloat(elapsed)
+        if settings.mode == .balloon {
+            var changed = false
+            for index in balloons.indices {
+                let before = balloonAnimations[index].localPose
+                let velocity = elapsed > 0.25 ? V2(0, 0)
+                    : (balloons[index].endPoint - previousEndPoints[index]) / CGFloat(elapsed)
+                balloonAnimations[index].advance(elapsed: elapsed, anchorVelocity: anchorVelocity, bobVelocity: velocity)
+                changed = balloonAnimations[index].localPose != before || changed
+            }
+            return changed
+        }
+        let before = ropeAnimation.localPose
+        let bobVelocity = elapsed > 0.25 ? V2(0, 0) : (physics.endPoint - previousEndPoints[0]) / CGFloat(elapsed)
+        if [.bamboo, .hanging, .net].contains(settings.mode) {
+            ropeAnimation.advance(elapsed: elapsed, anchorVelocity: anchorVelocity, bobVelocity: bobVelocity)
+            var haloChanged = false
+            if settings.mode == .hanging {
+                let angle = physics.endAngle * -0.70
+                let localVelocity = V2(bobVelocity.x * cos(angle) + bobVelocity.y * sin(angle),
+                                       -bobVelocity.x * sin(angle) + bobVelocity.y * cos(angle))
+                haloChanged = haloAnimation.advance(elapsed: elapsed, localVelocity: localVelocity,
+                                                     characterActive: ropeAnimation.isAnimating)
+            }
+            return ropeAnimation.localPose != before || haloChanged
+        }
+        return ropeAnimation.advance(elapsed: elapsed, anchorVelocity: anchorVelocity, bobVelocity: bobVelocity)
     }
 }

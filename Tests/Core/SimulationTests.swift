@@ -4,12 +4,13 @@ import Foundation
 final class SimulationTests {
     private let anchor = V2(-500, 300)
     private let durations = Array(repeating: 0.04, count: 62)
+    private let ropeDurations = Array(repeating: 0.04, count: 75)
 
     func testEightBalloonsShareAnchorAndNonFirstActivityPreventsIdle() throws {
         var settings = PendantSettings()
         settings.mode = .balloon
         settings.setCount(8)
-        let simulation = PendantSimulation(settings: settings, frameDurations: durations)
+        let simulation = PendantSimulation(settings: settings, frameDurations: durations, ropeFrameDurations: ropeDurations)
         simulation.reset(anchor: anchor)
         try expectEqual(simulation.activeRopes.count, 8)
         for rope in simulation.activeRopes {
@@ -35,7 +36,7 @@ final class SimulationTests {
             settings.setCount(count)
             for mode in DisplayMode.allCases {
                 settings.mode = mode
-                let simulation = PendantSimulation(settings: settings, frameDurations: durations)
+                let simulation = PendantSimulation(settings: settings, frameDurations: durations, ropeFrameDurations: ropeDurations)
                 simulation.reset(anchor: anchor)
                 try expectEqual(simulation.activeRopes.count, mode == .balloon ? count : 1)
                 try expectEqual(simulation.settings.balloonCount, count)
@@ -47,24 +48,175 @@ final class SimulationTests {
     func testNetAnimationContinuesWithoutIntegratingSettledRope() throws {
         var settings = PendantSettings()
         settings.mode = .net
-        let simulation = PendantSimulation(settings: settings, frameDurations: durations)
+        let simulation = PendantSimulation(settings: settings, frameDurations: durations, ropeFrameDurations: ropeDurations)
         simulation.reset(anchor: anchor)
         simulation.advance(anchor: anchor, elapsed: 0.01)
         try expect(simulation.isIdle)
         let nodes = simulation.physics.nodes
-        let frame = simulation.timeline.frameIndex
-        try expect(simulation.advance(anchor: anchor, elapsed: 0.045))
-        try expectNotEqual(simulation.timeline.frameIndex, frame)
+        try expectEqual(simulation.updateInterval, 1.0 / 15)
+        for _ in 0..<300 {
+            simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
+            if simulation.ropeAnimation.isAnimating { break }
+        }
+        try expect(simulation.ropeAnimation.isAnimating)
+        let pose = simulation.ropeAnimation.localPose
+        for _ in 0..<6 { simulation.advance(anchor: anchor, elapsed: 1.0 / 60) }
+        try expectNotEqual(simulation.ropeAnimation.localPose, pose)
         for (before, after) in zip(nodes, simulation.physics.nodes) {
             try expectEqual((after - before).magnitude, 0)
         }
-        try expectEqual(simulation.updateInterval, 0.04)
+        try expectEqual(simulation.updateInterval, 1.0 / 60)
+    }
+
+    func testSettledRopeNudgeTriggersSwingOnlyDuringStretchAction() throws {
+        var nudgedSimulation: PendantSimulation?
+        for seed in 0..<32 {
+            let candidate = PendantSimulation(settings: PendantSettings(), frameDurations: durations,
+                                              ropeFrameDurations: ropeDurations, animationSeed: UInt64(seed))
+            candidate.reset(anchor: anchor)
+            candidate.advance(anchor: anchor, elapsed: 1.0 / 60)
+            try expect(candidate.isIdle)
+            for _ in 0..<1200 {
+                let wasIdle = candidate.isIdle
+                candidate.advance(anchor: anchor, elapsed: 1.0 / 60)
+                if wasIdle && !candidate.isIdle {
+                    if candidate.ropeAnimation.action == .stretch {
+                        nudgedSimulation = candidate
+                    }
+                    break
+                }
+            }
+            if nudgedSimulation != nil { break }
+        }
+        guard let simulation = nudgedSimulation else {
+            throw CheckFailure(description: "No settled-rope nudge was triggered by the seeded stretch actions")
+        }
+
+        let restingNodes = simulation.physics.nodes
+        var maximumHorizontalDisplacement = Array(repeating: CGFloat(0), count: restingNodes.count)
+        for _ in 0..<60 {
+            simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
+            for index in simulation.physics.nodes.indices {
+                maximumHorizontalDisplacement[index] = max(
+                    maximumHorizontalDisplacement[index],
+                    abs(simulation.physics.nodes[index].x - restingNodes[index].x)
+                )
+            }
+        }
+        try expectGreaterThan(maximumHorizontalDisplacement[3], 1)
+        try expectGreaterThan(maximumHorizontalDisplacement[6], 3)
+        try expectGreaterThan(maximumHorizontalDisplacement[9], 4)
+        try expectGreaterThan(maximumHorizontalDisplacement[12], 5)
+        try expectEqual(simulation.physics.nodes[0].x, anchor.x)
+
+        for _ in 0..<720 {
+            simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
+            if simulation.isIdle { break }
+        }
+        try expect(simulation.isIdle)
+    }
+
+    func testSettledRopeSwingAmplitudeScalesAndCanBeDisabled() throws {
+        func peakDisplacement(amplitude: Double, seed: UInt64) throws -> CGFloat? {
+            var settings = PendantSettings()
+            try settings.set(amplitude, for: .sway)
+            let simulation = PendantSimulation(settings: settings, frameDurations: durations,
+                                               ropeFrameDurations: ropeDurations, animationSeed: seed)
+            simulation.reset(anchor: anchor)
+            simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
+            let restingX = simulation.physics.endPoint.x
+            for _ in 0..<1200 {
+                let wasIdle = simulation.isIdle
+                simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
+                if wasIdle && !simulation.isIdle {
+                    guard simulation.ropeAnimation.action == .stretch else { continue }
+                    var peak: CGFloat = 0
+                    for _ in 0..<60 {
+                        simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
+                        peak = max(peak, abs(simulation.physics.endPoint.x - restingX))
+                    }
+                    return peak
+                }
+            }
+            return nil
+        }
+
+        var comparison: (seed: UInt64, defaultPeak: CGFloat)?
+        for seed in 0..<32 {
+            if let peak = try peakDisplacement(amplitude: 100, seed: UInt64(seed)) {
+                comparison = (UInt64(seed), peak)
+                break
+            }
+        }
+        guard let comparison,
+              let amplifiedPeak = try peakDisplacement(amplitude: 200, seed: comparison.seed) else {
+            throw CheckFailure(description: "No seeded stretch action could compare nudge amplitudes")
+        }
+        let defaultPeak = comparison.defaultPeak
+        try expectGreaterThan(defaultPeak, 5)
+        try expectGreaterThan(amplifiedPeak, defaultPeak * 1.5)
+
+        var disabledSettings = PendantSettings()
+        try disabledSettings.set(0, for: .sway)
+        let disabled = PendantSimulation(settings: disabledSettings, frameDurations: durations,
+                                         ropeFrameDurations: ropeDurations, animationSeed: 2026)
+        disabled.reset(anchor: anchor)
+        disabled.advance(anchor: anchor, elapsed: 1.0 / 60)
+        let restingEnd = disabled.physics.endPoint
+        for _ in 0..<1200 {
+            disabled.advance(anchor: anchor, elapsed: 1.0 / 60)
+        }
+        try expect(disabled.isIdle)
+        try expectEqual((disabled.physics.endPoint - restingEnd).magnitude, 0)
+    }
+
+    func testRopeCharacterAnimationContinuesWithoutIntegratingSettledRope() throws {
+        var selectedSimulation: PendantSimulation?
+        for seed in 0..<32 {
+            let candidate = PendantSimulation(settings: PendantSettings(), frameDurations: durations,
+                                              ropeFrameDurations: ropeDurations, animationSeed: UInt64(seed))
+            candidate.reset(anchor: anchor)
+            candidate.advance(anchor: anchor, elapsed: 1.0 / 60.0)
+            for _ in 0..<300 {
+                candidate.advance(anchor: anchor, elapsed: 1.0 / 60)
+                if candidate.ropeAnimation.isAnimating {
+                    if candidate.ropeAnimation.action != .stretch { selectedSimulation = candidate }
+                    break
+                }
+            }
+            if selectedSimulation != nil { break }
+        }
+        guard let simulation = selectedSimulation else {
+            throw CheckFailure(description: "No seeded non-stretch idle animation was selected")
+        }
+        let nodes = simulation.physics.nodes
+        let sample = simulation.ropeAnimation.sample
+        try expect(simulation.advance(anchor: anchor, elapsed: 1.0 / 60))
+        try expect(simulation.isIdle)
+        try expectNotEqual(simulation.ropeAnimation.sample, sample)
+        try expectEqual(simulation.updateInterval, 1.0 / 60)
+        for (before, after) in zip(nodes, simulation.physics.nodes) {
+            try expectEqual((after - before).magnitude, 0)
+        }
+
+        var otherMode = simulation.settings
+        otherMode.mode = .balloon
+        simulation.apply(otherMode)
+        try expectEqual(simulation.timeline.frameIndex, 0)
+        try expectEqual(simulation.updateInterval, 1.0 / 15.0)
+        otherMode.mode = .net
+        simulation.apply(otherMode)
+        try expectEqual(simulation.timeline.frameDurations.count, 62)
+        otherMode.mode = .rope
+        simulation.apply(otherMode)
+        try expectEqual(simulation.ropeAnimation.sample, .rest)
+        try expect(!simulation.ropeAnimation.isAnimating)
     }
 
     func testGhostFollowsNearbyWithoutUsingRopeMotion() throws {
         var settings = PendantSettings()
         settings.mode = .ghost
-        let simulation = PendantSimulation(settings: settings, frameDurations: durations)
+        let simulation = PendantSimulation(settings: settings, frameDurations: durations, ropeFrameDurations: ropeDurations)
         simulation.reset(anchor: anchor)
         let initialPosition = simulation.ghostPosition
         try expectEqual(initialPosition.x, anchor.x + 44)
@@ -97,10 +249,32 @@ final class SimulationTests {
         try expectEqual(simulation.ghostPosition.y, movedAnchor.y + 96)
     }
 
+    func testRopeAnimationClockAndPhysicsAcrossFrameRates() throws {
+        for rate in [25, 30, 60, 120, 144] {
+            var settings = PendantSettings()
+            settings.mode = .hanging
+            let simulation = PendantSimulation(settings: settings, frameDurations: durations,
+                                               ropeFrameDurations: ropeDurations)
+            simulation.reset(anchor: anchor)
+            simulation.advance(anchor: anchor, elapsed: 0.01)
+            try expect(simulation.isIdle)
+            let nodes = simulation.physics.nodes
+            for _ in 0..<(rate * 3 + rate / 2) {
+                simulation.advance(anchor: anchor, elapsed: 1.0 / Double(rate))
+            }
+            let elapsed = 0.01 + Double(rate * 3 + rate / 2) / Double(rate)
+            try expectEqual(simulation.ropeAnimation.elapsed, elapsed, accuracy: 0.000001)
+            try expect(simulation.isIdle)
+            for (before, after) in zip(nodes, simulation.physics.nodes) {
+                try expectEqual((after - before).magnitude, 0)
+            }
+        }
+    }
+
     func testBambooBendMustCompleteBeforeIdleAndMovementWakesIt() throws {
         var settings = PendantSettings()
         settings.mode = .bamboo
-        let simulation = PendantSimulation(settings: settings, frameDurations: durations)
+        let simulation = PendantSimulation(settings: settings, frameDurations: durations, ropeFrameDurations: ropeDurations)
         simulation.reset(anchor: anchor)
         simulation.bambooBend = BambooBend(progress: 0)
         simulation.advance(anchor: anchor, elapsed: 0.05)
@@ -108,16 +282,83 @@ final class SimulationTests {
         for _ in 0..<50 { simulation.advance(anchor: anchor, elapsed: 0.05) }
         try expect(simulation.isIdle)
         try expect(simulation.bambooBend.isSettled)
-        try expectEqual(simulation.updateInterval, 1.0 / 15)
+        try expectEqual(simulation.updateInterval, simulation.idleInterval)
         simulation.advance(anchor: anchor + V2(20, 0), elapsed: 0.05)
         try expect(!(simulation.isIdle))
         try expectLessThan(simulation.bambooBend.progress, 1)
     }
 
+    func testLocalCharactersAnimateWithoutWakingPhysics() throws {
+        for mode in [DisplayMode.balloon, .bamboo, .hanging, .net] {
+            for count in [1, 8] {
+                var settings = PendantSettings()
+                settings.mode = mode
+                settings.setCount(count)
+                let simulation = PendantSimulation(settings: settings, frameDurations: durations,
+                                                   ropeFrameDurations: ropeDurations, animationSeed: 2026)
+                simulation.reset(anchor: anchor)
+                for _ in 0..<7200 {
+                    simulation.advance(anchor: anchor, elapsed: simulation.physics.fixedStep)
+                    if simulation.isIdle { break }
+                }
+                if !simulation.isIdle {
+                    throw CheckFailure(description: "Local animation fixture did not settle: mode=\(mode), count=\(count)")
+                }
+                let heldNodes = simulation.activeRopes.map(\.nodes)
+                var sawAnimation = Array(repeating: false, count: mode == .balloon ? count : 1)
+                var sawDifferentPoses = false
+                var sawWaiting = false
+                for _ in 0..<1200 {
+                    simulation.advance(anchor: anchor, elapsed: 1.0 / 60)
+                    let players = mode == .balloon ? simulation.balloonAnimations : [simulation.ropeAnimation]
+                    for index in players.indices {
+                        sawAnimation[index] = sawAnimation[index] || players[index].localPose != .rest
+                    }
+                    sawDifferentPoses = sawDifferentPoses || Set(players.map(\.localPose)).count > 1
+                    let animating = players.contains(where: \.isAnimating) ||
+                        (mode == .hanging && simulation.haloAnimation.isAnimating)
+                    sawWaiting = sawWaiting || !animating
+                    try expectEqual(simulation.updateInterval, animating ? 1.0 / 60 : 1.0 / 15)
+                    try expect(simulation.isIdle)
+                    for (rope, nodes) in zip(simulation.activeRopes, heldNodes) {
+                        try expect(zip(rope.nodes, nodes).allSatisfy { ($0 - $1).magnitude == 0 })
+                    }
+                }
+                try expect(sawAnimation.allSatisfy { $0 } && sawWaiting)
+                if mode == .balloon && count == 8 { try expect(sawDifferentPoses) }
+                let heldPoses = simulation.balloonAnimations.map(\.localPose)
+                let heldBambooPose = simulation.ropeAnimation.localPose
+                simulation.reset(anchor: anchor)
+                try expectEqual(simulation.balloonAnimations.map(\.localPose), heldPoses)
+                try expectEqual(simulation.ropeAnimation.localPose, heldBambooPose)
+                var other = simulation.settings
+                other.mode = .net
+                simulation.apply(other)
+                try expect(simulation.balloonAnimations.allSatisfy { !$0.isAnimating })
+                try expectEqual(simulation.ropeAnimation.localPose, .rest)
+                if mode == .hanging || mode == .net {
+                    for falling in [false, true] {
+                        let reaction = PendantSimulation(settings: settings, frameDurations: durations,
+                                                         ropeFrameDurations: ropeDurations, animationSeed: 2026)
+                        reaction.reset(anchor: anchor)
+                        var sawReaction = false
+                        for frame in 1...180 {
+                            let distance = CGFloat(min(frame, 30)) * 6
+                            let moved = anchor + (falling ? V2(0, -distance) : V2(distance, 0))
+                            reaction.advance(anchor: moved, elapsed: 1.0 / 60)
+                            sawReaction = sawReaction || reaction.ropeAnimation.action == (falling ? .falling : .moving)
+                        }
+                        try expect(sawReaction)
+                    }
+                }
+            }
+        }
+    }
+
     func testBambooVerticalShakesHaveNoPoseCuts() throws {
         var settings = PendantSettings()
         settings.mode = .bamboo
-        let simulation = PendantSimulation(settings: settings, frameDurations: durations)
+        let simulation = PendantSimulation(settings: settings, frameDurations: durations, ropeFrameDurations: ropeDurations)
         var anchor = V2(-400, 200)
         simulation.reset(anchor: anchor)
         simulation.bambooBend = BambooBend(progress: 0.55)
@@ -156,7 +397,7 @@ final class SimulationTests {
     }
 
     func testLengthChangesPreservePoseAndTransitionSmoothly() throws {
-        let simulation = PendantSimulation(settings: PendantSettings(), frameDurations: durations)
+        let simulation = PendantSimulation(settings: PendantSettings(), frameDurations: durations, ropeFrameDurations: ropeDurations)
         simulation.reset(anchor: anchor)
         let initialNode = simulation.physics.nodes[1]
 
@@ -195,7 +436,7 @@ final class SimulationTests {
 
         var lengthSamples: [CGFloat] = []
         for rate in [30, 60, 120, 144] {
-            let candidate = PendantSimulation(settings: PendantSettings(), frameDurations: durations)
+            let candidate = PendantSimulation(settings: PendantSettings(), frameDurations: durations, ropeFrameDurations: ropeDurations)
             candidate.reset(anchor: anchor)
             var candidateSettings = candidate.settings
             try candidateSettings.set(600, for: .length)
@@ -221,7 +462,7 @@ final class SimulationTests {
             try settings.set(777 + Double(index), for: .length, mode: mode)
             try settings.set(188 + Double(index), for: .weight, mode: mode)
         }
-        let simulation = PendantSimulation(settings: settings, frameDurations: durations)
+        let simulation = PendantSimulation(settings: settings, frameDurations: durations, ropeFrameDurations: ropeDurations)
         for (index, mode) in DisplayMode.allCases.enumerated() {
             settings.mode = mode
             simulation.apply(settings)

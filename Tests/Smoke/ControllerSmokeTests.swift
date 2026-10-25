@@ -32,7 +32,16 @@ extension PendantCoordinator {
         precondition(timer != nil)
         reset()
         tick()
-        precondition(isIdle && timerInterval == idleTimerInterval)
+        if !isIdle || timerInterval != idleTimerInterval {
+            NSLog("Controller reset check %@ count=%d idle=%d timer=%.6f expected=%.6f settled=%@",
+                  mode.rawValue, balloonCount, isIdle ? 1 : 0, timerInterval, idleTimerInterval,
+                  simulation.activeRopes.map { $0.isSettled ? "yes" : "no" }.joined(separator: ","))
+            preconditionFailure("Controller reset must reach the idle schedule")
+        }
+        if mode == .rope { smokeCheckRopeAnimation() }
+        if mode == .balloon || mode == .bamboo { smokeCheckLocalCharacters() }
+        if mode == .hanging || mode == .net { smokeCheckCustomCharacter() }
+        if mode == .ghost { smokeCheckGhostAnimation() }
         if mode == .bamboo {
             let savedLength = physics.length
             physics.length = 180
@@ -64,19 +73,10 @@ extension PendantCoordinator {
             tick()
         }
         if mode == .net {
-            precondition(netAnimation.frames.count == 62 && abs(netAnimation.duration - 2.48) < 0.0001)
-            precondition(netAnimation.frames.allSatisfy { $0.size == NSSize(width: 207, height: 200) })
-            var elapsed = 0.0
-            for (index, delay) in netAnimation.frameDurations.enumerated() {
-                precondition(abs(delay - 0.04) < 0.0001)
-                precondition(netAnimation.frameIndex(at: elapsed + delay * 0.5) == index)
-                elapsed += delay
-            }
-            precondition(netAnimation.frameIndex(at: netAnimation.duration + 0.02) == 0)
-            let frame = netFrameIndex
+            precondition(artwork.netImage.size == NSSize(width: 512, height: 768))
             let heldNodes = physics.nodes
             tick(at: lastTick + 0.045)
-            precondition(isIdle && netFrameIndex != frame)
+            precondition(isIdle)
             precondition(zip(physics.nodes, heldNodes).allSatisfy { ($0 - $1).magnitude < 0.0001 })
             reset()
         }
@@ -85,7 +85,7 @@ extension PendantCoordinator {
             precondition(displayImage === bambooImage && physics.endPoint.y < physics.nodes[0].y)
             let heldNodes = physics.nodes
             tick(at: lastTick + 0.08)
-            precondition(isIdle && timerInterval == 1.0 / 15.0)
+            precondition(isIdle && timerInterval == idleTimerInterval)
             precondition(zip(physics.nodes, heldNodes).allSatisfy { ($0 - $1).magnitude < 0.0001 })
             bambooBend = BambooBend(progress: 0)
             tick(at: lastTick + 0.05)

@@ -4,6 +4,12 @@ final class PendantCoordinator {
     private(set) var settings: PendantSettings
     private(set) var isVisible = true
     private var isSuspended = false
+    private let audioMonitor = AudioLevelMonitor()
+    private var lastBeatStrength = 0.0
+    private var lastBeatTime: TimeInterval?
+    private var isAudioPermissionPending = false
+    private var audioMonitoringGeneration = 0
+    private(set) var audioStatus = "正在启动系统音频律动…"
     private let store: SettingsStore
     let simulation: PendantSimulation
     let artwork: ArtworkCatalog
@@ -18,15 +24,36 @@ final class PendantCoordinator {
     var mode: DisplayMode { settings.mode }
     var balloonCount: Int { settings.balloonCount }
     var pigSize: CGFloat { CGFloat(settings[.size]) }
-    var displayImage: NSImage { artwork.image(mode: mode, frameIndex: simulation.timeline.frameIndex) }
+    var audioReactiveScale: CGFloat {
+        guard let lastBeatTime = lastBeatTime else { return AudioReactiveScale.minimumScale }
+        return AudioReactiveScale.scale(
+            forBeatStrength: lastBeatStrength,
+            elapsed: ProcessInfo.processInfo.systemUptime - lastBeatTime
+        )
+    }
+    var displayImage: NSImage { artwork.image(mode: mode, frameIndex: simulation.artworkFrameIndex) }
 
-    init(resourceURL: URL, defaults: UserDefaults = .standard) throws {
+    init(resourceURL: URL, defaults: UserDefaults = .standard,
+         settingsConfigurationURL: URL? = nil) throws {
         artwork = try ArtworkCatalog(resourceURL: resourceURL)
-        store = SettingsStore(defaults: defaults)
+        store = try SettingsStore(defaults: defaults, configurationURL: settingsConfigurationURL)
         settings = store.load()
-        simulation = PendantSimulation(settings: settings, frameDurations: artwork.net.frameDurations)
+        simulation = PendantSimulation(settings: settings, frameDurations: artwork.net.frameDurations,
+                                       ropeFrameDurations: artwork.rope.frameDurations,
+                                       ghostFrameDurations: artwork.ghostBlink.frameDurations)
+        audioMonitor.onBeat = { [weak self] strength in
+            guard let self = self, !self.isSuspended else { return }
+            let now = ProcessInfo.processInfo.systemUptime
+            let elapsed = self.lastBeatTime.map { now - $0 } ?? .infinity
+            let remainingPulse = AudioReactiveScale.decayedBeatStrength(
+                self.lastBeatStrength, elapsed: elapsed
+            )
+            self.lastBeatStrength = max(remainingPulse, strength)
+            self.lastBeatTime = now
+        }
         driver.onTick = { [weak self] time in self?.tick(at: time) }
         rebuildWindows()
+        startAudioMonitoring()
     }
 
     func ropeAnchor() -> V2 {
@@ -78,11 +105,53 @@ final class PendantCoordinator {
     func suspend() {
         isSuspended = true
         driver.stop()
+        audioMonitoringGeneration += 1
+        isAudioPermissionPending = false
+        audioMonitor.stop()
+        lastBeatStrength = 0
+        lastBeatTime = nil
     }
 
     func resume() {
         isSuspended = false
         reset()
+        startAudioMonitoring()
+    }
+
+    private func startAudioMonitoring() {
+        guard !isSuspended, !isAudioPermissionPending else { return }
+        #if TESTING
+        audioStatus = "GUI 测试期间跳过系统音频读取"
+        return
+        #else
+        isAudioPermissionPending = true
+        audioStatus = "正在请求系统音频权限…"
+        onChange?()
+        audioMonitoringGeneration += 1
+        let generation = audioMonitoringGeneration
+        audioMonitor.start { [weak self] result in
+            guard let self = self else { return }
+            guard self.audioMonitoringGeneration == generation else { return }
+            self.isAudioPermissionPending = false
+            guard !self.isSuspended else {
+                self.audioMonitor.stop()
+                self.audioStatus = "系统音频律动已暂停"
+                self.onChange?()
+                return
+            }
+            switch result {
+            case .success:
+                self.audioStatus = "正在检测系统播放音频中的节拍（仅实时，不录制）"
+            case .failure(let error):
+                self.audioMonitor.stop()
+                self.lastBeatStrength = 0
+                self.lastBeatTime = nil
+                self.audioStatus = error.localizedDescription
+                NSLog("Audio-reactive mode could not start: %@", error.localizedDescription)
+            }
+            self.onChange?()
+        }
+        #endif
     }
 
     func changeParameter(_ parameter: ParameterID, value: Double) {
@@ -99,6 +168,7 @@ final class PendantCoordinator {
             simulation.wake()
             schedule()
         case .size: redraw()
+        case .sway: break
         case .gravity, .damping, .weight, .elasticity:
             simulation.wake()
             schedule()
@@ -155,7 +225,9 @@ final class PendantCoordinator {
     func changeLength(_ value: CGFloat) { changeParameter(.length, value: Double(value)) }
 
     func restoreDefaults() {
-        settings = PendantSettings()
+        settings = store.defaultSettings
+        lastBeatStrength = 0
+        lastBeatTime = nil
         for mode in DisplayMode.allCases {
             for parameter in ParameterID.allCases {
                 store.save(settings, parameter: parameter, mode: mode)

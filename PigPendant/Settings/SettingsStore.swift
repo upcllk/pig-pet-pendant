@@ -2,13 +2,15 @@ import Foundation
 
 final class SettingsStore {
     let defaults: UserDefaults
+    let defaultSettings: PendantSettings
 
-    init(defaults: UserDefaults) {
+    init(defaults: UserDefaults, configurationURL: URL? = nil) throws {
         self.defaults = defaults
+        defaultSettings = try SettingsConfiguration.load(from: configurationURL)
     }
 
     func load() -> PendantSettings {
-        var settings = PendantSettings()
+        var settings = defaultSettings
         loadBambooPosition(into: &settings)
         if let raw = defaults.string(forKey: "DisplayMode") {
             if let mode = DisplayMode(rawValue: raw) {
@@ -24,7 +26,7 @@ final class SettingsStore {
             let legacyValue = needsMigration ? loadLegacyValue(for: parameter) : nil
             for mode in DisplayMode.allCases {
                 let key = parameter.storageKey(for: mode)
-                let fallback = legacyValue ?? parameter.defaultValue
+                let fallback = legacyValue ?? defaultSettings[parameter, mode: mode]
                 guard let saved = defaults.object(forKey: key) else {
                     applyMigrationFallback(fallback, parameter: parameter, mode: mode, key: key, settings: &settings)
                     continue

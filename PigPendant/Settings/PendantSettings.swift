@@ -1,7 +1,7 @@
 import Foundation
 
 enum ParameterID: Int, CaseIterable {
-    case length, size, weight, elasticity, damping, gravity
+    case length, size, weight, elasticity, sway, damping, gravity
 
     var storageKey: String {
         switch self {
@@ -9,8 +9,21 @@ enum ParameterID: Int, CaseIterable {
         case .size: return "PigSize"
         case .weight: return "Weight"
         case .elasticity: return "Elasticity"
+        case .sway: return "NudgeSwingAmplitude"
         case .damping: return "DampingRate"
         case .gravity: return "Gravity"
+        }
+    }
+
+    var configurationKey: String {
+        switch self {
+        case .length: return "length"
+        case .size: return "size"
+        case .weight: return "weight"
+        case .elasticity: return "elasticity"
+        case .sway: return "sway"
+        case .damping: return "damping"
+        case .gravity: return "gravity"
         }
     }
 
@@ -22,7 +35,7 @@ enum ParameterID: Int, CaseIterable {
         switch self {
         case .length: return 20...1200
         case .size: return 16...256
-        case .weight, .elasticity: return 0...200
+        case .weight, .elasticity, .sway: return 0...200
         case .damping: return 0.2...8
         case .gravity: return 100...10000
         }
@@ -34,6 +47,7 @@ enum ParameterID: Int, CaseIterable {
         case .size: return 48
         case .weight: return 65
         case .elasticity: return 55
+        case .sway: return 100
         case .damping: return -60 * log(0.985)
         case .gravity: return 1350
         }
@@ -45,6 +59,7 @@ enum ParameterID: Int, CaseIterable {
         case .size: return "小猪尺寸"
         case .weight: return "重量感"
         case .elasticity: return mode == .bamboo ? "竹子弹性" : "绳子弹性"
+        case .sway: return "拱身晃动"
         case .damping: return "摆动衰减"
         case .gravity: return mode == .balloon ? "浮力" : "重力"
         }
@@ -62,6 +77,7 @@ enum ParameterID: Int, CaseIterable {
             return mode == .bamboo
                 ? "调节参考绳的受力响应以影响摆动；竹子显示弧长固定，非真实竹竿力学模拟"
                 : "数值越大越容易伸长，最多额外伸长百分之十二"
+        case .sway: return "绳子静止后小猪轻拱时带起的前后摆动幅度；0%关闭，100%为默认幅度"
         case .damping: return "数值越小，摆动持续越久"
         case .gravity:
             return mode == .balloon
@@ -74,6 +90,7 @@ enum ParameterID: Int, CaseIterable {
         switch self {
         case .length, .size: return String(format: "%.0f 点", value)
         case .weight, .elasticity: return String(format: "%.0f", value)
+        case .sway: return String(format: "%.0f%%", value)
         case .damping: return String(format: "%.2f /s", value)
         case .gravity: return String(format: "%.0f pt/s²", value)
         }
@@ -90,6 +107,13 @@ enum GhostOffsetAxis: Int, CaseIterable {
         switch self {
         case .horizontal: return "GhostOffsetX"
         case .vertical: return "GhostOffsetY"
+        }
+    }
+
+    var configurationKey: String {
+        switch self {
+        case .horizontal: return "horizontal"
+        case .vertical: return "vertical"
         }
     }
 

@@ -1,0 +1,2140 @@
+{
+  "canvas" : [
+    297,
+    266
+  ],
+  "duration" : 2.9999999329447746,
+  "featureSize" : [
+    99,
+    89
+  ],
+  "frameCount" : 75,
+  "frames" : [
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 0,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 10.284133469526727,
+          "index" : 28
+        },
+        {
+          "difference" : 12.36374985813188,
+          "index" : 51
+        },
+        {
+          "difference" : 12.536630348428101,
+          "index" : 6
+        },
+        {
+          "difference" : 12.822494609011462,
+          "index" : 29
+        },
+        {
+          "difference" : 15.098484848484848,
+          "index" : 27
+        }
+      ],
+      "nextFrameDifference" : 6.4814436499829755,
+      "startTime" : 0
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 1,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.467483827034389,
+          "index" : 28
+        },
+        {
+          "difference" : 12.285325161729656,
+          "index" : 51
+        },
+        {
+          "difference" : 13.021365338781068,
+          "index" : 27
+        },
+        {
+          "difference" : 16.230734309385994,
+          "index" : 29
+        },
+        {
+          "difference" : 18.618743615934626,
+          "index" : 70
+        }
+      ],
+      "nextFrameDifference" : 6.106344342299399,
+      "startTime" : 0.03999999910593033
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 2,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.654664623765747,
+          "index" : 27
+        },
+        {
+          "difference" : 14.21598002496879,
+          "index" : 51
+        },
+        {
+          "difference" : 14.716831233685166,
+          "index" : 28
+        },
+        {
+          "difference" : 16.00561797752809,
+          "index" : 50
+        },
+        {
+          "difference" : 18.53668709567586,
+          "index" : 70
+        }
+      ],
+      "nextFrameDifference" : 2.8283112019067076,
+      "startTime" : 0.07999999821186066
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 3,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.517307910566338,
+          "index" : 27
+        },
+        {
+          "difference" : 14.186216093519464,
+          "index" : 28
+        },
+        {
+          "difference" : 14.208914992622859,
+          "index" : 51
+        },
+        {
+          "difference" : 16.77735217341959,
+          "index" : 50
+        },
+        {
+          "difference" : 18.688457609805923,
+          "index" : 26
+        }
+      ],
+      "nextFrameDifference" : 6.799284984678243,
+      "startTime" : 0.11999999731779099
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 4,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.378958120531154,
+          "index" : 27
+        },
+        {
+          "difference" : 11.493842923618205,
+          "index" : 28
+        },
+        {
+          "difference" : 12.391981613891726,
+          "index" : 51
+        },
+        {
+          "difference" : 15.72043468391783,
+          "index" : 29
+        },
+        {
+          "difference" : 16.288786743842923,
+          "index" : 70
+        }
+      ],
+      "nextFrameDifference" : 7.561882873680626,
+      "startTime" : 0.1599999964237213
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 5,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.52054250368857,
+          "index" : 28
+        },
+        {
+          "difference" : 13.144450119169221,
+          "index" : 69
+        },
+        {
+          "difference" : 13.58682328907048,
+          "index" : 29
+        },
+        {
+          "difference" : 14.17177391896493,
+          "index" : 51
+        },
+        {
+          "difference" : 14.312421972534333,
+          "index" : 52
+        }
+      ],
+      "nextFrameDifference" : 3.892265350130519,
+      "startTime" : 0.19999999552965164
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 6,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.55090228123936,
+          "index" : 69
+        },
+        {
+          "difference" : 12.536630348428101,
+          "index" : 0
+        },
+        {
+          "difference" : 13.203183520599252,
+          "index" : 28
+        },
+        {
+          "difference" : 13.715866530473273,
+          "index" : 70
+        },
+        {
+          "difference" : 13.976733628419021,
+          "index" : 52
+        }
+      ],
+      "nextFrameDifference" : 7.282658041085007,
+      "startTime" : 0.23999999463558197
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 7,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.816422653501306,
+          "index" : 69
+        },
+        {
+          "difference" : 13.881171263193735,
+          "index" : 68
+        },
+        {
+          "difference" : 14.088752695494268,
+          "index" : 39
+        },
+        {
+          "difference" : 15.601180342753377,
+          "index" : 70
+        },
+        {
+          "difference" : 16.011122460560664,
+          "index" : 52
+        }
+      ],
+      "nextFrameDifference" : 5.333248212461696,
+      "startTime" : 0.2799999937415123
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 8,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 10.243020088525707,
+          "index" : 69
+        },
+        {
+          "difference" : 12.855209397344229,
+          "index" : 39
+        },
+        {
+          "difference" : 13.23876404494382,
+          "index" : 68
+        },
+        {
+          "difference" : 14.396464646464647,
+          "index" : 70
+        },
+        {
+          "difference" : 14.82785722392464,
+          "index" : 40
+        }
+      ],
+      "nextFrameDifference" : 6.838213596640563,
+      "startTime" : 0.3199999928474426
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 9,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 12.172937237543978,
+          "index" : 39
+        },
+        {
+          "difference" : 13.469498354329815,
+          "index" : 69
+        },
+        {
+          "difference" : 13.650181591192828,
+          "index" : 68
+        },
+        {
+          "difference" : 16.388633526273974,
+          "index" : 40
+        },
+        {
+          "difference" : 17.21711496992396,
+          "index" : 67
+        }
+      ],
+      "nextFrameDifference" : 7.4099704914311655,
+      "startTime" : 0.35999999195337296
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 10,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 14.641981613891726,
+          "index" : 39
+        },
+        {
+          "difference" : 15.763761207581432,
+          "index" : 68
+        },
+        {
+          "difference" : 16.759874021109976,
+          "index" : 67
+        },
+        {
+          "difference" : 17.461979344001815,
+          "index" : 52
+        },
+        {
+          "difference" : 17.49954602201793,
+          "index" : 69
+        }
+      ],
+      "nextFrameDifference" : 5.04863239132902,
+      "startTime" : 0.3999999910593033
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 11,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 15.263931449324708,
+          "index" : 39
+        },
+        {
+          "difference" : 15.993871297242084,
+          "index" : 68
+        },
+        {
+          "difference" : 16.096725683804337,
+          "index" : 67
+        },
+        {
+          "difference" : 16.530813755532858,
+          "index" : 52
+        },
+        {
+          "difference" : 16.62308478038815,
+          "index" : 53
+        }
+      ],
+      "nextFrameDifference" : 17.36834638520032,
+      "startTime" : 0.4399999901652336
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 12,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.628816252411758,
+          "index" : 53
+        },
+        {
+          "difference" : 14.358585858585858,
+          "index" : 66
+        },
+        {
+          "difference" : 14.653331063443423,
+          "index" : 54
+        },
+        {
+          "difference" : 15.425888094427421,
+          "index" : 52
+        },
+        {
+          "difference" : 16.061230280331404,
+          "index" : 55
+        }
+      ],
+      "nextFrameDifference" : 9.624531835205993,
+      "startTime" : 0.47999998927116394
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 13,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 12.468136420383612,
+          "index" : 53
+        },
+        {
+          "difference" : 13.797781182612644,
+          "index" : 54
+        },
+        {
+          "difference" : 13.87504256043582,
+          "index" : 65
+        },
+        {
+          "difference" : 14.712263080240609,
+          "index" : 66
+        },
+        {
+          "difference" : 14.72940074906367,
+          "index" : 55
+        }
+      ],
+      "nextFrameDifference" : 9.658778799228237,
+      "startTime" : 0.5199999883770943
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 14,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 14.517336284190216,
+          "index" : 53
+        },
+        {
+          "difference" : 14.971569628873,
+          "index" : 65
+        },
+        {
+          "difference" : 15.378475768925208,
+          "index" : 66
+        },
+        {
+          "difference" : 15.590143003064352,
+          "index" : 54
+        },
+        {
+          "difference" : 16.08109181704687,
+          "index" : 31
+        }
+      ],
+      "nextFrameDifference" : 21.036658722051982,
+      "startTime" : 0.5599999874830246
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 15,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 17.883412779480196,
+          "index" : 52
+        },
+        {
+          "difference" : 18.174753149472252,
+          "index" : 68
+        },
+        {
+          "difference" : 19.893201679718533,
+          "index" : 51
+        },
+        {
+          "difference" : 20.252723867892406,
+          "index" : 39
+        },
+        {
+          "difference" : 20.42560435818863,
+          "index" : 67
+        }
+      ],
+      "nextFrameDifference" : 9.88398025195778,
+      "startTime" : 0.5999999865889549
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 16,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 16.89039269095449,
+          "index" : 51
+        },
+        {
+          "difference" : 18.414027919645896,
+          "index" : 52
+        },
+        {
+          "difference" : 18.440188400862557,
+          "index" : 69
+        },
+        {
+          "difference" : 19.36190557257973,
+          "index" : 0
+        },
+        {
+          "difference" : 19.43567699466576,
+          "index" : 5
+        }
+      ],
+      "nextFrameDifference" : 27.415701963454772,
+      "startTime" : 0.6399999856948853
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 17,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 16.673504710021565,
+          "index" : 71
+        },
+        {
+          "difference" : 17.268981954375214,
+          "index" : 49
+        },
+        {
+          "difference" : 18.050505050505052,
+          "index" : 50
+        },
+        {
+          "difference" : 18.527891272273294,
+          "index" : 41
+        },
+        {
+          "difference" : 22.68264101691068,
+          "index" : 26
+        }
+      ],
+      "nextFrameDifference" : 24.14933038247645,
+      "startTime" : 0.6799999848008156
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 18,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.856628078538192,
+          "index" : 73
+        },
+        {
+          "difference" : 12.357961638860516,
+          "index" : 72
+        },
+        {
+          "difference" : 12.443422993984791,
+          "index" : 74
+        },
+        {
+          "difference" : 15.188315741686528,
+          "index" : 48
+        },
+        {
+          "difference" : 15.258398592668255,
+          "index" : 43
+        }
+      ],
+      "nextFrameDifference" : 14.580098740211099,
+      "startTime" : 0.7199999839067459
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 19,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.089008058109181,
+          "index" : 44
+        },
+        {
+          "difference" : 12.444018840086256,
+          "index" : 47
+        },
+        {
+          "difference" : 12.950090795596413,
+          "index" : 46
+        },
+        {
+          "difference" : 13.050419929633414,
+          "index" : 74
+        },
+        {
+          "difference" : 13.179945522642152,
+          "index" : 43
+        }
+      ],
+      "nextFrameDifference" : 19.87685847236409,
+      "startTime" : 0.7599999830126762
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 20,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 16.88729996595165,
+          "index" : 45
+        },
+        {
+          "difference" : 19.410424469413233,
+          "index" : 46
+        },
+        {
+          "difference" : 21.8466405629327,
+          "index" : 44
+        },
+        {
+          "difference" : 26.177079786630348,
+          "index" : 74
+        },
+        {
+          "difference" : 26.22832255135626,
+          "index" : 47
+        }
+      ],
+      "nextFrameDifference" : 5.499489274770173,
+      "startTime" : 0.7999999821186066
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 21,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 19.878050164567018,
+          "index" : 45
+        },
+        {
+          "difference" : 22.70363749858132,
+          "index" : 46
+        },
+        {
+          "difference" : 24.072835092498014,
+          "index" : 44
+        },
+        {
+          "difference" : 28.525564635115195,
+          "index" : 74
+        },
+        {
+          "difference" : 28.699296334127794,
+          "index" : 43
+        }
+      ],
+      "nextFrameDifference" : 15.838866189989785,
+      "startTime" : 0.8399999812245369
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 22,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 17.303711270003404,
+          "index" : 44
+        },
+        {
+          "difference" : 17.762200658268075,
+          "index" : 43
+        },
+        {
+          "difference" : 19.478464419475657,
+          "index" : 45
+        },
+        {
+          "difference" : 20.166042446941322,
+          "index" : 46
+        },
+        {
+          "difference" : 20.28509817273862,
+          "index" : 74
+        }
+      ],
+      "nextFrameDifference" : 13.611366473726024,
+      "startTime" : 0.8799999803304672
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 23,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 16.922227896947,
+          "index" : 74
+        },
+        {
+          "difference" : 17.085489728748154,
+          "index" : 72
+        },
+        {
+          "difference" : 18.37691521961185,
+          "index" : 73
+        },
+        {
+          "difference" : 18.53626149131767,
+          "index" : 43
+        },
+        {
+          "difference" : 19.418482578594936,
+          "index" : 44
+        }
+      ],
+      "nextFrameDifference" : 13.510186130972647,
+      "startTime" : 0.9199999794363976
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 24,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 15.902082623992737,
+          "index" : 73
+        },
+        {
+          "difference" : 16.152536601974806,
+          "index" : 74
+        },
+        {
+          "difference" : 17.554363863352627,
+          "index" : 72
+        },
+        {
+          "difference" : 18.871041879468844,
+          "index" : 42
+        },
+        {
+          "difference" : 19.59839972761321,
+          "index" : 47
+        }
+      ],
+      "nextFrameDifference" : 14.775706503234593,
+      "startTime" : 0.9599999785423279
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 25,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 16.932726137782318,
+          "index" : 71
+        },
+        {
+          "difference" : 17.691493587561002,
+          "index" : 72
+        },
+        {
+          "difference" : 17.967909431392577,
+          "index" : 41
+        },
+        {
+          "difference" : 18.151288162524118,
+          "index" : 73
+        },
+        {
+          "difference" : 18.841958914992624,
+          "index" : 49
+        }
+      ],
+      "nextFrameDifference" : 7.662836227442969,
+      "startTime" : 0.9999999776482582
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 26,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 14.180059017137669,
+          "index" : 71
+        },
+        {
+          "difference" : 18.06931676313699,
+          "index" : 50
+        },
+        {
+          "difference" : 18.164113040517535,
+          "index" : 41
+        },
+        {
+          "difference" : 18.638037680172513,
+          "index" : 2
+        },
+        {
+          "difference" : 18.688457609805923,
+          "index" : 3
+        }
+      ],
+      "nextFrameDifference" : 14.743672681874928,
+      "startTime" : 1.0399999767541885
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 27,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.378958120531154,
+          "index" : 4
+        },
+        {
+          "difference" : 11.517307910566338,
+          "index" : 3
+        },
+        {
+          "difference" : 11.654664623765747,
+          "index" : 2
+        },
+        {
+          "difference" : 13.021365338781068,
+          "index" : 1
+        },
+        {
+          "difference" : 15.098484848484848,
+          "index" : 0
+        }
+      ],
+      "nextFrameDifference" : 12.538162524117581,
+      "startTime" : 1.0799999758601189
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 28,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 10.284133469526727,
+          "index" : 0
+        },
+        {
+          "difference" : 11.467483827034389,
+          "index" : 1
+        },
+        {
+          "difference" : 11.493842923618205,
+          "index" : 4
+        },
+        {
+          "difference" : 11.52054250368857,
+          "index" : 5
+        },
+        {
+          "difference" : 13.1668936556577,
+          "index" : 51
+        }
+      ],
+      "nextFrameDifference" : 7.28367949154466,
+      "startTime" : 1.1199999749660492
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 29,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 12.822494609011462,
+          "index" : 0
+        },
+        {
+          "difference" : 13.58682328907048,
+          "index" : 5
+        },
+        {
+          "difference" : 13.747219384859834,
+          "index" : 52
+        },
+        {
+          "difference" : 14.884888207921916,
+          "index" : 6
+        },
+        {
+          "difference" : 15.596867551923731,
+          "index" : 51
+        }
+      ],
+      "nextFrameDifference" : 18.983259561911247,
+      "startTime" : 1.1599999740719795
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 30,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 15.293667007150153,
+          "index" : 13
+        },
+        {
+          "difference" : 15.360373396890251,
+          "index" : 53
+        },
+        {
+          "difference" : 15.627454318465555,
+          "index" : 65
+        },
+        {
+          "difference" : 16.419277040063555,
+          "index" : 66
+        },
+        {
+          "difference" : 16.420582226762,
+          "index" : 12
+        }
+      ],
+      "nextFrameDifference" : 11.862331176937918,
+      "startTime" : 1.1999999731779099
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 31,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 9.239331517421405,
+          "index" : 64
+        },
+        {
+          "difference" : 9.992282374304846,
+          "index" : 65
+        },
+        {
+          "difference" : 13.497247758483713,
+          "index" : 66
+        },
+        {
+          "difference" : 14.197679037566678,
+          "index" : 63
+        },
+        {
+          "difference" : 14.910027238678923,
+          "index" : 62
+        }
+      ],
+      "nextFrameDifference" : 6.0644648734536375,
+      "startTime" : 1.2399999722838402
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 32,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 8.872744296901601,
+          "index" : 64
+        },
+        {
+          "difference" : 9.960106684825785,
+          "index" : 65
+        },
+        {
+          "difference" : 12.119084099421178,
+          "index" : 63
+        },
+        {
+          "difference" : 12.226591760299625,
+          "index" : 61
+        },
+        {
+          "difference" : 12.465128816252411,
+          "index" : 62
+        }
+      ],
+      "nextFrameDifference" : 14.717483827034389,
+      "startTime" : 1.2799999713897705
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 33,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.448530246283056,
+          "index" : 62
+        },
+        {
+          "difference" : 11.524401316536148,
+          "index" : 63
+        },
+        {
+          "difference" : 11.543269776415844,
+          "index" : 61
+        },
+        {
+          "difference" : 12.210957893542163,
+          "index" : 59
+        },
+        {
+          "difference" : 12.210957893542163,
+          "index" : 60
+        }
+      ],
+      "nextFrameDifference" : 6.100896606514584,
+      "startTime" : 1.3199999704957008
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 34,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 13.139286119623199,
+          "index" : 61
+        },
+        {
+          "difference" : 13.220179321302917,
+          "index" : 62
+        },
+        {
+          "difference" : 13.597009420043127,
+          "index" : 59
+        },
+        {
+          "difference" : 13.597009420043127,
+          "index" : 60
+        },
+        {
+          "difference" : 14.144364998297583,
+          "index" : 63
+        }
+      ],
+      "nextFrameDifference" : 9.246538417886732,
+      "startTime" : 1.3599999696016312
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 35,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 16.29525593008739,
+          "index" : 59
+        },
+        {
+          "difference" : 16.29525593008739,
+          "index" : 60
+        },
+        {
+          "difference" : 16.96144024514811,
+          "index" : 58
+        },
+        {
+          "difference" : 17.778912722732947,
+          "index" : 61
+        },
+        {
+          "difference" : 18.471995233231187,
+          "index" : 62
+        }
+      ],
+      "nextFrameDifference" : 12.407360118034275,
+      "startTime" : 1.3999999687075615
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 36,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 6.581403926909545,
+          "index" : 59
+        },
+        {
+          "difference" : 6.581403926909545,
+          "index" : 60
+        },
+        {
+          "difference" : 7.937975258199978,
+          "index" : 58
+        },
+        {
+          "difference" : 8.842895244580637,
+          "index" : 61
+        },
+        {
+          "difference" : 9.329786630348428,
+          "index" : 57
+        }
+      ],
+      "nextFrameDifference" : 8.167376007263648,
+      "startTime" : 1.4399999678134918
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 37,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 5.80461922596754,
+          "index" : 57
+        },
+        {
+          "difference" : 7.284332084893883,
+          "index" : 58
+        },
+        {
+          "difference" : 8.093859947792533,
+          "index" : 59
+        },
+        {
+          "difference" : 8.093859947792533,
+          "index" : 60
+        },
+        {
+          "difference" : 8.502099648167064,
+          "index" : 56
+        }
+      ],
+      "nextFrameDifference" : 22.031324480762684,
+      "startTime" : 1.4799999669194221
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 38,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 7.4986948133015545,
+          "index" : 67
+        },
+        {
+          "difference" : 11.235699693564863,
+          "index" : 66
+        },
+        {
+          "difference" : 12.66765974350244,
+          "index" : 54
+        },
+        {
+          "difference" : 13.027494041538985,
+          "index" : 53
+        },
+        {
+          "difference" : 13.207326069685621,
+          "index" : 55
+        }
+      ],
+      "nextFrameDifference" : 11.789439337192146,
+      "startTime" : 1.5199999660253525
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 39,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 6.406537282941778,
+          "index" : 68
+        },
+        {
+          "difference" : 9.579474520485757,
+          "index" : 67
+        },
+        {
+          "difference" : 12.172937237543978,
+          "index" : 9
+        },
+        {
+          "difference" : 12.855209397344229,
+          "index" : 8
+        },
+        {
+          "difference" : 14.088752695494268,
+          "index" : 7
+        }
+      ],
+      "nextFrameDifference" : 21.41692202928158,
+      "startTime" : 1.5599999651312828
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 40,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 7.673987061627511,
+          "index" : 70
+        },
+        {
+          "difference" : 10.115026671206447,
+          "index" : 69
+        },
+        {
+          "difference" : 14.82785722392464,
+          "index" : 8
+        },
+        {
+          "difference" : 16.04341164453524,
+          "index" : 7
+        },
+        {
+          "difference" : 16.388633526273974,
+          "index" : 9
+        }
+      ],
+      "nextFrameDifference" : 22.060322324367267,
+      "startTime" : 1.5999999642372131
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 41,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 10.310747928725457,
+          "index" : 71
+        },
+        {
+          "difference" : 17.652139371240494,
+          "index" : 72
+        },
+        {
+          "difference" : 17.967909431392577,
+          "index" : 25
+        },
+        {
+          "difference" : 18.164113040517535,
+          "index" : 26
+        },
+        {
+          "difference" : 18.527891272273294,
+          "index" : 17
+        }
+      ],
+      "nextFrameDifference" : 11.664708886619,
+      "startTime" : 1.6399999633431435
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 42,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 10.688429236182046,
+          "index" : 72
+        },
+        {
+          "difference" : 12.689422313017818,
+          "index" : 73
+        },
+        {
+          "difference" : 17.013988196572466,
+          "index" : 18
+        },
+        {
+          "difference" : 18.502298263534218,
+          "index" : 71
+        },
+        {
+          "difference" : 18.871041879468844,
+          "index" : 24
+        }
+      ],
+      "nextFrameDifference" : 15.521450459652707,
+      "startTime" : 1.6799999624490738
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 43,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.382022471910112,
+          "index" : 73
+        },
+        {
+          "difference" : 12.266229712858927,
+          "index" : 74
+        },
+        {
+          "difference" : 13.127879922823743,
+          "index" : 72
+        },
+        {
+          "difference" : 13.179945522642152,
+          "index" : 19
+        },
+        {
+          "difference" : 15.258398592668255,
+          "index" : 18
+        }
+      ],
+      "nextFrameDifference" : 6.9843661332425375,
+      "startTime" : 1.7199999615550041
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 44,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.089008058109181,
+          "index" : 19
+        },
+        {
+          "difference" : 12.048178413346953,
+          "index" : 74
+        },
+        {
+          "difference" : 16.29868913857678,
+          "index" : 73
+        },
+        {
+          "difference" : 17.303711270003404,
+          "index" : 22
+        },
+        {
+          "difference" : 18.305924412665984,
+          "index" : 72
+        }
+      ],
+      "nextFrameDifference" : 10.158409942117807,
+      "startTime" : 1.7599999606609344
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 45,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 14.283963227783453,
+          "index" : 19
+        },
+        {
+          "difference" : 15.70136760867098,
+          "index" : 74
+        },
+        {
+          "difference" : 16.88729996595165,
+          "index" : 20
+        },
+        {
+          "difference" : 19.478464419475657,
+          "index" : 22
+        },
+        {
+          "difference" : 19.878050164567018,
+          "index" : 21
+        }
+      ],
+      "nextFrameDifference" : 6.60404607876518,
+      "startTime" : 1.7999999597668648
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 46,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 12.950090795596413,
+          "index" : 19
+        },
+        {
+          "difference" : 14.981443649982976,
+          "index" : 74
+        },
+        {
+          "difference" : 19.410424469413233,
+          "index" : 20
+        },
+        {
+          "difference" : 19.808903643173306,
+          "index" : 23
+        },
+        {
+          "difference" : 20.166042446941322,
+          "index" : 22
+        }
+      ],
+      "nextFrameDifference" : 9.764896152536602,
+      "startTime" : 1.839999958872795
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 47,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.125581659289525,
+          "index" : 74
+        },
+        {
+          "difference" : 12.444018840086256,
+          "index" : 19
+        },
+        {
+          "difference" : 16.036460106684824,
+          "index" : 73
+        },
+        {
+          "difference" : 16.268868459879695,
+          "index" : 18
+        },
+        {
+          "difference" : 18.86227442969016,
+          "index" : 72
+        }
+      ],
+      "nextFrameDifference" : 14.056775621382362,
+      "startTime" : 1.8799999579787254
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 48,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 14.62909998865055,
+          "index" : 73
+        },
+        {
+          "difference" : 14.737969583475202,
+          "index" : 74
+        },
+        {
+          "difference" : 15.188315741686528,
+          "index" : 18
+        },
+        {
+          "difference" : 17.250510725229827,
+          "index" : 72
+        },
+        {
+          "difference" : 20.44603336738168,
+          "index" : 42
+        }
+      ],
+      "nextFrameDifference" : 13.47196685960731,
+      "startTime" : 1.9199999570846558
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 49,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 17.268981954375214,
+          "index" : 17
+        },
+        {
+          "difference" : 18.841958914992624,
+          "index" : 25
+        },
+        {
+          "difference" : 18.89859266825559,
+          "index" : 73
+        },
+        {
+          "difference" : 19.066422653501306,
+          "index" : 72
+        },
+        {
+          "difference" : 20.111252979230507,
+          "index" : 26
+        }
+      ],
+      "nextFrameDifference" : 12.30013619339462,
+      "startTime" : 1.959999956190586
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 50,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 16.00561797752809,
+          "index" : 2
+        },
+        {
+          "difference" : 16.77735217341959,
+          "index" : 3
+        },
+        {
+          "difference" : 18.050505050505052,
+          "index" : 17
+        },
+        {
+          "difference" : 18.06931676313699,
+          "index" : 26
+        },
+        {
+          "difference" : 18.43380433548973,
+          "index" : 71
+        }
+      ],
+      "nextFrameDifference" : 20.87572352740892,
+      "startTime" : 1.9999999552965164
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 51,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 12.285325161729656,
+          "index" : 1
+        },
+        {
+          "difference" : 12.36374985813188,
+          "index" : 0
+        },
+        {
+          "difference" : 12.391981613891726,
+          "index" : 4
+        },
+        {
+          "difference" : 13.1668936556577,
+          "index" : 28
+        },
+        {
+          "difference" : 14.17177391896493,
+          "index" : 5
+        }
+      ],
+      "nextFrameDifference" : 12.530898876404494,
+      "startTime" : 2.0399999544024467
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 52,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 13.747219384859834,
+          "index" : 29
+        },
+        {
+          "difference" : 13.976733628419021,
+          "index" : 6
+        },
+        {
+          "difference" : 14.312421972534333,
+          "index" : 5
+        },
+        {
+          "difference" : 15.425888094427421,
+          "index" : 12
+        },
+        {
+          "difference" : 16.011122460560664,
+          "index" : 7
+        }
+      ],
+      "nextFrameDifference" : 13.30876177505391,
+      "startTime" : 2.079999953508377
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 53,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.55351265463625,
+          "index" : 66
+        },
+        {
+          "difference" : 11.628816252411758,
+          "index" : 12
+        },
+        {
+          "difference" : 12.27916808534786,
+          "index" : 67
+        },
+        {
+          "difference" : 12.468136420383612,
+          "index" : 13
+        },
+        {
+          "difference" : 13.027494041538985,
+          "index" : 38
+        }
+      ],
+      "nextFrameDifference" : 9.294745204857565,
+      "startTime" : 2.1199999526143074
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 54,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 8.405799568720917,
+          "index" : 66
+        },
+        {
+          "difference" : 9.848286233117694,
+          "index" : 65
+        },
+        {
+          "difference" : 11.762569515378503,
+          "index" : 64
+        },
+        {
+          "difference" : 12.66765974350244,
+          "index" : 38
+        },
+        {
+          "difference" : 13.797781182612644,
+          "index" : 13
+        }
+      ],
+      "nextFrameDifference" : 4.816365906253547,
+      "startTime" : 2.1599999517202377
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 55,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 9.76086709794575,
+          "index" : 66
+        },
+        {
+          "difference" : 11.307314720236068,
+          "index" : 65
+        },
+        {
+          "difference" : 13.207326069685621,
+          "index" : 38
+        },
+        {
+          "difference" : 13.21598002496879,
+          "index" : 64
+        },
+        {
+          "difference" : 14.72940074906367,
+          "index" : 13
+        }
+      ],
+      "nextFrameDifference" : 8.61374985813188,
+      "startTime" : 2.199999950826168
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 56,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 8.502099648167064,
+          "index" : 37
+        },
+        {
+          "difference" : 11.258143230053342,
+          "index" : 65
+        },
+        {
+          "difference" : 11.837958234025649,
+          "index" : 64
+        },
+        {
+          "difference" : 13.045369424582908,
+          "index" : 66
+        },
+        {
+          "difference" : 13.912297128589264,
+          "index" : 36
+        }
+      ],
+      "nextFrameDifference" : 6.825842696629214,
+      "startTime" : 2.2399999499320984
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 57,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 5.80461922596754,
+          "index" : 37
+        },
+        {
+          "difference" : 9.329786630348428,
+          "index" : 36
+        },
+        {
+          "difference" : 12.401231415276358,
+          "index" : 64
+        },
+        {
+          "difference" : 12.523464986948133,
+          "index" : 63
+        },
+        {
+          "difference" : 14.117580297355579,
+          "index" : 65
+        }
+      ],
+      "nextFrameDifference" : 5.308052434456929,
+      "startTime" : 2.2799999490380287
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 58,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 7.284332084893883,
+          "index" : 37
+        },
+        {
+          "difference" : 7.937975258199978,
+          "index" : 36
+        },
+        {
+          "difference" : 14.683690840994212,
+          "index" : 64
+        },
+        {
+          "difference" : 14.71785268414482,
+          "index" : 33
+        },
+        {
+          "difference" : 15.925774599931904,
+          "index" : 34
+        }
+      ],
+      "nextFrameDifference" : 5.732465100442629,
+      "startTime" : 2.319999948143959
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 59,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 6.581403926909545,
+          "index" : 36
+        },
+        {
+          "difference" : 8.093859947792533,
+          "index" : 37
+        },
+        {
+          "difference" : 12.210957893542163,
+          "index" : 33
+        },
+        {
+          "difference" : 13.597009420043127,
+          "index" : 34
+        },
+        {
+          "difference" : 14.434910906821019,
+          "index" : 32
+        }
+      ],
+      "nextFrameDifference" : 0,
+      "startTime" : 2.3599999472498894
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 60,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 6.581403926909545,
+          "index" : 36
+        },
+        {
+          "difference" : 8.093859947792533,
+          "index" : 37
+        },
+        {
+          "difference" : 12.210957893542163,
+          "index" : 33
+        },
+        {
+          "difference" : 13.597009420043127,
+          "index" : 34
+        },
+        {
+          "difference" : 14.434910906821019,
+          "index" : 32
+        }
+      ],
+      "nextFrameDifference" : 4.578084212915674,
+      "startTime" : 2.3999999463558197
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 61,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 8.842895244580637,
+          "index" : 36
+        },
+        {
+          "difference" : 9.565599818408808,
+          "index" : 37
+        },
+        {
+          "difference" : 11.543269776415844,
+          "index" : 33
+        },
+        {
+          "difference" : 12.226591760299625,
+          "index" : 32
+        },
+        {
+          "difference" : 13.139286119623199,
+          "index" : 34
+        }
+      ],
+      "nextFrameDifference" : 5.074253773691976,
+      "startTime" : 2.43999994546175
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 62,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.448530246283056,
+          "index" : 33
+        },
+        {
+          "difference" : 11.689535807513336,
+          "index" : 36
+        },
+        {
+          "difference" : 12.111706957212576,
+          "index" : 37
+        },
+        {
+          "difference" : 12.465128816252411,
+          "index" : 32
+        },
+        {
+          "difference" : 13.220179321302917,
+          "index" : 34
+        }
+      ],
+      "nextFrameDifference" : 2.697877652933833,
+      "startTime" : 2.4799999445676804
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 63,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.524401316536148,
+          "index" : 33
+        },
+        {
+          "difference" : 11.938088752695494,
+          "index" : 36
+        },
+        {
+          "difference" : 12.119084099421178,
+          "index" : 32
+        },
+        {
+          "difference" : 12.417120644648735,
+          "index" : 37
+        },
+        {
+          "difference" : 12.523464986948133,
+          "index" : 57
+        }
+      ],
+      "nextFrameDifference" : 9.009590284871184,
+      "startTime" : 2.5199999436736107
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 64,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 8.872744296901601,
+          "index" : 32
+        },
+        {
+          "difference" : 9.239331517421405,
+          "index" : 31
+        },
+        {
+          "difference" : 11.762569515378503,
+          "index" : 54
+        },
+        {
+          "difference" : 11.837958234025649,
+          "index" : 56
+        },
+        {
+          "difference" : 11.869396209283849,
+          "index" : 37
+        }
+      ],
+      "nextFrameDifference" : 4.115679264555669,
+      "startTime" : 2.559999942779541
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 65,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 9.848286233117694,
+          "index" : 54
+        },
+        {
+          "difference" : 9.960106684825785,
+          "index" : 32
+        },
+        {
+          "difference" : 9.992282374304846,
+          "index" : 31
+        },
+        {
+          "difference" : 11.258143230053342,
+          "index" : 56
+        },
+        {
+          "difference" : 11.307314720236068,
+          "index" : 55
+        }
+      ],
+      "nextFrameDifference" : 6.787339689025083,
+      "startTime" : 2.5999999418854713
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 66,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 8.405799568720917,
+          "index" : 54
+        },
+        {
+          "difference" : 9.76086709794575,
+          "index" : 55
+        },
+        {
+          "difference" : 11.235699693564863,
+          "index" : 38
+        },
+        {
+          "difference" : 11.55351265463625,
+          "index" : 53
+        },
+        {
+          "difference" : 13.005362614913176,
+          "index" : 32
+        }
+      ],
+      "nextFrameDifference" : 12.8001645670185,
+      "startTime" : 2.6399999409914017
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 67,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 7.4986948133015545,
+          "index" : 38
+        },
+        {
+          "difference" : 9.579474520485757,
+          "index" : 39
+        },
+        {
+          "difference" : 12.27916808534786,
+          "index" : 53
+        },
+        {
+          "difference" : 15.227357848144365,
+          "index" : 54
+        },
+        {
+          "difference" : 16.096725683804337,
+          "index" : 11
+        }
+      ],
+      "nextFrameDifference" : 8.544347974123255,
+      "startTime" : 2.679999940097332
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 68,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 6.406537282941778,
+          "index" : 39
+        },
+        {
+          "difference" : 13.23876404494382,
+          "index" : 8
+        },
+        {
+          "difference" : 13.650181591192828,
+          "index" : 9
+        },
+        {
+          "difference" : 13.76866984451254,
+          "index" : 38
+        },
+        {
+          "difference" : 13.881171263193735,
+          "index" : 7
+        }
+      ],
+      "nextFrameDifference" : 13.803314039269095,
+      "startTime" : 2.7199999392032623
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 69,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 10.115026671206447,
+          "index" : 40
+        },
+        {
+          "difference" : 10.243020088525707,
+          "index" : 8
+        },
+        {
+          "difference" : 11.55090228123936,
+          "index" : 6
+        },
+        {
+          "difference" : 11.816422653501306,
+          "index" : 7
+        },
+        {
+          "difference" : 13.144450119169221,
+          "index" : 5
+        }
+      ],
+      "nextFrameDifference" : 9.094540914765634,
+      "startTime" : 2.7599999383091927
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 70,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 7.673987061627511,
+          "index" : 40
+        },
+        {
+          "difference" : 13.715866530473273,
+          "index" : 6
+        },
+        {
+          "difference" : 14.396464646464647,
+          "index" : 8
+        },
+        {
+          "difference" : 14.418482578594938,
+          "index" : 5
+        },
+        {
+          "difference" : 15.197934400181591,
+          "index" : 27
+        }
+      ],
+      "nextFrameDifference" : 15.15866530473272,
+      "startTime" : 2.799999937415123
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 71,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 10.310747928725457,
+          "index" : 41
+        },
+        {
+          "difference" : 14.180059017137669,
+          "index" : 26
+        },
+        {
+          "difference" : 16.559073884916582,
+          "index" : 27
+        },
+        {
+          "difference" : 16.673504710021565,
+          "index" : 17
+        },
+        {
+          "difference" : 16.932726137782318,
+          "index" : 25
+        }
+      ],
+      "nextFrameDifference" : 23.374815571444785,
+      "startTime" : 2.8399999365210533
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 72,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 10.688429236182046,
+          "index" : 42
+        },
+        {
+          "difference" : 12.357961638860516,
+          "index" : 18
+        },
+        {
+          "difference" : 13.127879922823743,
+          "index" : 43
+        },
+        {
+          "difference" : 17.085489728748154,
+          "index" : 23
+        },
+        {
+          "difference" : 17.250510725229827,
+          "index" : 48
+        }
+      ],
+      "nextFrameDifference" : 7.548490523209624,
+      "startTime" : 2.8799999356269836
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 73,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.382022471910112,
+          "index" : 43
+        },
+        {
+          "difference" : 11.856628078538192,
+          "index" : 18
+        },
+        {
+          "difference" : 12.689422313017818,
+          "index" : 42
+        },
+        {
+          "difference" : 14.62909998865055,
+          "index" : 48
+        },
+        {
+          "difference" : 15.902082623992737,
+          "index" : 24
+        }
+      ],
+      "nextFrameDifference" : 9.879440472137102,
+      "startTime" : 2.919999934732914
+    },
+    {
+      "duration" : 0.03999999910593033,
+      "index" : 74,
+      "nearestNonAdjacent" : [
+        {
+          "difference" : 11.125581659289525,
+          "index" : 47
+        },
+        {
+          "difference" : 12.048178413346953,
+          "index" : 44
+        },
+        {
+          "difference" : 12.266229712858927,
+          "index" : 43
+        },
+        {
+          "difference" : 12.443422993984791,
+          "index" : 18
+        },
+        {
+          "difference" : 13.050419929633414,
+          "index" : 19
+        }
+      ],
+      "startTime" : 2.9599999338388443
+    }
+  ],
+  "maxAdjacentDifference" : 27.415701963454772,
+  "meanAdjacentDifference" : 10.94308366078029,
+  "metric" : "Mean absolute byte difference of sRGB premultiplied RGBA; 0 identical, 255 maximum; pose heuristic, not optical flow",
+  "sha256" : "5d706228309d677af6ee7d58d0ac94646c5ca963a99a09857a011ef7955bc654",
+  "source" : "rope-pig.png",
+  "transitions" : [
+    {
+      "difference" : 42.86678583588696,
+      "from" : 74,
+      "to" : 0
+    },
+    {
+      "difference" : 10.284133469526727,
+      "from" : 0,
+      "to" : 28
+    },
+    {
+      "difference" : 10.284133469526727,
+      "from" : 28,
+      "to" : 0
+    },
+    {
+      "difference" : 12.36374985813188,
+      "from" : 51,
+      "to" : 0
+    }
+  ]
+}

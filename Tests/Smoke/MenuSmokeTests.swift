@@ -23,6 +23,8 @@ extension PigAppDelegate {
                   let action = item.action else { preconditionFailure("Missing mode menu item") }
             precondition(NSApp.sendAction(action, to: item.target, from: item))
             precondition(controller.mode == mode && defaults.string(forKey: "DisplayMode") == mode.rawValue)
+            precondition(modes.items.map(\.title) == DisplayMode.allCases.map(\.title))
+            precondition(Array(DisplayMode.allCases.prefix(2)) == [.rope, .ghost])
             guard let refreshed = statusItem?.menu?.items.first(where: { $0.submenu?.title == "模式" })?.submenu else {
                 preconditionFailure("Missing refreshed mode menu")
             }
@@ -30,14 +32,15 @@ extension PigAppDelegate {
             guard let menu = statusItem?.menu,
                   let visibility = menu.items.first(where: { $0.title == mode.visibilityMenuTitle }),
                   let size = menu.items.first(where: { $0.title == ParameterID.size.title(mode: mode) }),
-            let reset = menu.items.first(where: { $0.title == mode.resetPoseTitle }),
-            let detail = menu.items.first(where: {
-                $0.title == mode.menuDescription(balloonCount: controller.balloonCount)
-            }) else { preconditionFailure("Mode-specific menu items were not refreshed for \(mode.rawValue)") }
+                  let reset = menu.items.first(where: { $0.title == "重置位置" }) else {
+                preconditionFailure("Mode-specific menu items were not refreshed for \(mode.rawValue)")
+            }
             let length = menu.items.first(where: { $0.title == ParameterID.length.title(mode: mode) })
             precondition(visibility.state == .on && size.submenu != nil && reset.isEnabled)
             precondition((length?.submenu != nil) == (mode != .ghost))
-            precondition(detail.isEnabled == false)
+            precondition(menu.items.allSatisfy {
+                !$0.title.contains("鼠标旁跟随") && !$0.title.contains("音乐律动")
+            })
             let countItem = menu.items.first(where: { $0.title == "气球数量" })
             precondition((countItem != nil) == (mode == .balloon))
             if mode == .balloon {

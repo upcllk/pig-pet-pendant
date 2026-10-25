@@ -41,7 +41,8 @@ func runPhysicsTests() {
     var bambooSettings = PendantSettings()
     bambooSettings.mode = .bamboo
     let simulation = PendantSimulation(settings: bambooSettings,
-                                      frameDurations: Array(repeating: 0.04, count: 62))
+                                      frameDurations: Array(repeating: 0.04, count: 62),
+                                      ropeFrameDurations: Array(repeating: 0.04, count: 75))
     let jitterAnchor = V2(-500, 300)
     simulation.reset(anchor: jitterAnchor)
     simulation.bambooBend = BambooBend(progress: 0.45)
